@@ -3,12 +3,12 @@
 import { midiToName, assignFret } from './theory.js';
 
 const STRING_COLORS = [
-  '#c4553b', '#cf7b3e', '#c9a13b', '#8a9b4e', '#5f8f8c',
-  '#8a7bb0', '#b0718a', '#7f8a6a', '#a8763f', '#6f7fa0',
+  '#8b93ff', '#6ee7f0', '#a5b4fc', '#f0abfc', '#93c5fd',
+  '#c4b5fd', '#7dd3fc', '#e9d5ff', '#67e8f9', '#c7d2fe',
 ];
-const JUDGE_COLORS = { perfect: '#8a9b4e', good: '#5f8f8c', ok: '#c9a13b', miss: '#c4553b' };
+const JUDGE_COLORS = { perfect: '#a5b4fc', good: '#7dd3fc', ok: '#c7d2fe', miss: '#f0857a' };
 const JUDGE_TEXT = { perfect: 'ИДЕАЛЬНО', good: 'ХОРОШО', ok: 'ОК', miss: 'ПРОМАХ' };
-const INK = '#1a140b';
+const INK = '#0b0b18';
 const MONO = 'ui-monospace, Menlo, Consolas, monospace';
 const SANS = 'system-ui, -apple-system, Segoe UI, Roboto, sans-serif';
 
@@ -60,8 +60,8 @@ export class HighwayRenderer {
 
     // фон
     const bg = ctx.createLinearGradient(0, 0, 0, h);
-    bg.addColorStop(0, '#17130d');
-    bg.addColorStop(1, '#100d08');
+    bg.addColorStop(0, '#0c0c17');
+    bg.addColorStop(1, '#07070d');
     ctx.fillStyle = bg;
     ctx.fillRect(0, 0, w, h);
 
@@ -69,16 +69,16 @@ export class HighwayRenderer {
     ctx.save();
     for (let s = 1; s <= strings; s++) {
       const x = x0 + (s - 1) * laneW;
-      ctx.fillStyle = s % 2 ? 'rgba(236,227,211,0.018)' : 'rgba(236,227,211,0.04)';
+      ctx.fillStyle = s % 2 ? 'rgba(244,244,251,0.02)' : 'rgba(244,244,251,0.045)';
       ctx.fillRect(x, 0, laneW, h);
-      ctx.strokeStyle = 'rgba(236,227,211,0.09)';
+      ctx.strokeStyle = 'rgba(244,244,251,0.09)';
       ctx.lineWidth = 1;
       ctx.beginPath();
       ctx.moveTo(x + 0.5, 0);
       ctx.lineTo(x + 0.5, h);
       ctx.stroke();
     }
-    ctx.strokeStyle = 'rgba(236,227,211,0.16)';
+    ctx.strokeStyle = 'rgba(244,244,251,0.18)';
     ctx.beginPath();
     ctx.moveTo(x0 + 0.5, 0);
     ctx.lineTo(x0 + 0.5, h);
@@ -91,7 +91,7 @@ export class HighwayRenderer {
       for (const beat of song.grid.beats) {
         const y = timeToY(beat.t);
         if (y < -2 || y > h + 2) continue;
-        ctx.strokeStyle = beat.bar ? 'rgba(236,227,211,0.17)' : 'rgba(236,227,211,0.06)';
+        ctx.strokeStyle = beat.bar ? 'rgba(244,244,251,0.18)' : 'rgba(244,244,251,0.06)';
         ctx.lineWidth = 1;
         ctx.beginPath();
         ctx.moveTo(x0, y + 0.5);
@@ -114,7 +114,7 @@ export class HighwayRenderer {
       for (const note of g.notes) {
         const lane = note.string;
         const cx = laneCenter(lane);
-        const baseColor = note.dead ? '#6a6051' : STRING_COLORS[(lane - 1) % STRING_COLORS.length];
+        const baseColor = note.dead ? '#4a4a63' : STRING_COLORS[(lane - 1) % STRING_COLORS.length];
 
         let color = baseColor;
         let alpha = 1;
@@ -146,7 +146,7 @@ export class HighwayRenderer {
         ctx.stroke();
 
         if (showFret) {
-          ctx.fillStyle = note.dead ? '#d8cbb0' : INK;
+          ctx.fillStyle = note.dead ? '#c7d2fe' : INK;
           ctx.font = `700 ${Math.round(nh * 0.6)}px ${MONO}`;
           ctx.fillText(note.dead ? '×' : String(note.fret), cx, y + 1);
         }
@@ -155,7 +155,7 @@ export class HighwayRenderer {
     ctx.globalAlpha = 1;
 
     // линия удара
-    ctx.strokeStyle = '#d8cbb0';
+    ctx.strokeStyle = '#f4f4fb';
     ctx.lineWidth = 2;
     ctx.beginPath();
     ctx.moveTo(x0, hitLineY + 0.5);
@@ -174,7 +174,7 @@ export class HighwayRenderer {
     }
 
     // подписи струн
-    ctx.fillStyle = 'rgba(162,147,122,0.95)';
+    ctx.fillStyle = 'rgba(159,161,189,0.95)';
     ctx.font = `600 11px ${MONO}`;
     for (let s = 1; s <= strings; s++) {
       const open = song.tuning[s - 1];
@@ -197,7 +197,7 @@ export class HighwayRenderer {
         ctx.lineWidth = 1.5;
         ctx.stroke();
         ctx.globalAlpha = 1;
-        ctx.fillStyle = '#ece3d3';
+        ctx.fillStyle = '#f4f4fb';
         ctx.font = `700 12px ${MONO}`;
         ctx.fillText(`${midiToName(detected.midi)} ${a.fret}`, cx, hitLineY + 46);
       }
@@ -208,7 +208,7 @@ export class HighwayRenderer {
     if (lj && songTime - lj.t < 0.6) {
       const alpha = Math.max(0, 1 - (songTime - lj.t) / 0.6);
       ctx.globalAlpha = alpha;
-      ctx.fillStyle = JUDGE_COLORS[lj.judge] || '#ece3d3';
+      ctx.fillStyle = JUDGE_COLORS[lj.judge] || '#f4f4fb';
       ctx.font = `700 22px ${MONO}`;
       ctx.textAlign = 'center';
       ctx.fillText(JUDGE_TEXT[lj.judge] || '', w / 2, h * 0.3);
