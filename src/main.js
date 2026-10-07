@@ -215,12 +215,20 @@ function applyTheme() {
 // ---------------------------------------------------------------------------
 function setSwitch(node, on) { node.setAttribute('aria-checked', on ? 'true' : 'false'); }
 
+function updateSpeedChips(rate) {
+  const pct = Math.round(rate * 100);
+  for (const c of el.speedChips.querySelectorAll('.chip')) {
+    c.setAttribute('aria-pressed', Number(c.dataset.speed) === pct ? 'true' : 'false');
+  }
+}
+
 function applySettingsToUi() {
   const s = state.settings;
   state.rate = s.rate;
   el.speed.value = String(Math.round(s.rate * 100));
   el.speedVal.textContent = Math.round(s.rate * 100) + '%';
   el.speedBig.textContent = Math.round(s.rate * 100) + '%';
+  updateSpeedChips(s.rate);
   setSwitch(el.metronome, s.metronome);
   setSwitch(el.countIn, s.countIn);
   setSwitch(el.showFret, s.showFret);
@@ -463,7 +471,8 @@ function updateHero() {
   const item = currentItem();
   el.heroType.textContent = item && item.type === 'song' ? 'Песня' : 'Упражнение';
   el.heroTitle.textContent = song.title;
-  el.heroArtist.textContent = song.artist || song.trackName || '';
+  const sub = song.artist && !/^упражнени/i.test(song.artist) ? song.artist : (song.trackName || '');
+  el.heroArtist.textContent = sub;
   el.heroBpm.textContent = String(Math.round(song.bpm));
   el.heroDur.textContent = fmtTime(song.duration);
   el.heroNotes.textContent = String(song.notes.length);
@@ -780,9 +789,7 @@ function setRate(rate) {
   el.speed.value = String(Math.round(rate * 100));
   el.speedVal.textContent = Math.round(rate * 100) + '%';
   el.speedBig.textContent = Math.round(rate * 100) + '%';
-  for (const c of el.speedChips.querySelectorAll('.chip')) {
-    c.setAttribute('aria-pressed', Number(c.dataset.speed) === Math.round(rate * 100) ? 'true' : 'false');
-  }
+  updateSpeedChips(rate);
   if (state.playing && !state.paused) {
     const cur = computeSongTime();
     state.rate = rate;

@@ -38,7 +38,6 @@
 
     <main class="stage">
       <canvas id="stage"></canvas>
-
       <div class="hud">
         <div class="hud__stats">
           <div class="stat"><span class="stat__value" id="score">0</span><span class="stat__label">Очки</span></div>
@@ -49,255 +48,6 @@
           <div class="pitch" id="pitchNote">— <span id="pitchCents"></span></div>
         </div>
       </div>
-
-      <!-- ===================== Библиотека ===================== -->
-      <div class="overlay" id="libraryOverlay" role="dialog" aria-modal="true" aria-labelledby="libraryTitle">
-        <div class="sheet">
-          <div class="sheet__head">
-            <h1 class="sheet__title" id="libraryTitle">Библиотека</h1>
-            <button class="btn btn--icon btn--ghost" id="btnCloseLibrary" aria-label="Закрыть библиотеку" data-tip="Закрыть">✕</button>
-          </div>
-          <div class="sheet__body">
-            <div class="bento">
-              <section class="card card--hero col-4" id="heroCard">
-                <div class="hero-head">
-                  <div>
-                    <div class="hero-type" id="heroType">Упражнение</div>
-                    <h2 class="card__hero-title" id="heroTitle">—</h2>
-                    <div class="hero-artist" id="heroArtist"></div>
-                  </div>
-                </div>
-                <div class="hero-stats">
-                  <div><div class="hero-stat__v mono" id="heroBpm">—</div><div class="hero-stat__k">BPM</div></div>
-                  <div><div class="hero-stat__v mono" id="heroDur">—</div><div class="hero-stat__k">Длительность</div></div>
-                  <div><div class="hero-stat__v mono" id="heroNotes">—</div><div class="hero-stat__k">Нот</div></div>
-                  <div><div class="hero-stat__v mono" id="heroTuning">—</div><div class="hero-stat__k">Строй</div></div>
-                </div>
-                <canvas class="tab-preview" id="tabPreview" role="img" aria-label="Превью табулатуры"></canvas>
-                <div class="hero-bottom" style="margin-top:var(--space-4)">
-                  <div>
-                    <div class="hero-stat__k">Лучшая точность</div>
-                    <div class="hero-stat__v mono" id="heroBest">—</div>
-                  </div>
-                  <div>
-                    <div class="hero-stat__k">Сложность</div>
-                    <div class="dots" id="heroDifficulty" aria-label="Сложность"></div>
-                  </div>
-                  <button class="btn btn--accent" id="btnLibPlay">Играть</button>
-                </div>
-              </section>
-
-              <section class="card col-2">
-                <h2 class="card__title">Скорость</h2>
-                <div class="speed-big" id="speedBig">100%</div>
-                <div class="speed-chips" id="speedChips">
-                  <button class="chip" data-speed="50" aria-pressed="false">50%</button>
-                  <button class="chip" data-speed="75" aria-pressed="false">75%</button>
-                  <button class="chip" data-speed="100" aria-pressed="true">100%</button>
-                </div>
-                <input type="range" id="speed" min="25" max="150" step="5" value="100" aria-label="Скорость воспроизведения" />
-                <div class="field__row"><span class="field__label">25–150%</span><span class="field__value" id="speedVal">100%</span></div>
-              </section>
-
-              <section class="card col-3">
-                <h2 class="card__title">Песни</h2>
-                <input type="search" id="searchInput" placeholder="Поиск" aria-label="Поиск по песням" />
-                <div class="filters" id="filterChips" style="margin-top:var(--space-3)">
-                  <button class="chip is-active" data-filter="all" aria-pressed="true">Все</button>
-                  <button class="chip" data-filter="exercise" aria-pressed="false">Упражнения</button>
-                  <button class="chip" data-filter="song" aria-pressed="false">Песни</button>
-                  <button class="chip" data-filter="recent" aria-pressed="false">Недавние</button>
-                </div>
-                <div class="list" id="songList" role="listbox" aria-label="Список песен"></div>
-                <div class="track-picker hidden" id="trackPicker" style="margin-top:var(--space-3)">
-                  <label class="field__label" for="trackSelect">Дорожка</label>
-                  <select id="trackSelect" aria-label="Дорожка"></select>
-                </div>
-              </section>
-
-              <section class="card col-3">
-                <h2 class="card__title">Совет на сегодня</h2>
-                <p class="tip__text" id="tipText">—</p>
-                <button class="btn btn--accent btn--sm" id="btnTipApply">Применить</button>
-              </section>
-
-              <section class="card col-2">
-                <h2 class="card__title">Добавить</h2>
-                <label class="dropzone" id="dropZone">
-                  <input type="file" id="fileInput" accept=".gp,.gpx,.gp3,.gp4,.gp5,.mid,.midi,.json" aria-label="Открыть файл песни" />
-                  <span>Перетащите файл .gp .gpx .mid .json</span>
-                </label>
-                <button class="linklike" id="btnCatalogLink">Добавить каталог по ссылке</button>
-              </section>
-
-              <section class="card col-2">
-                <h2 class="card__title">Во время игры</h2>
-                <div class="switch-row"><span>Метроном</span><button class="switch" id="metronome" role="switch" aria-checked="true" aria-label="Метроном"></button></div>
-                <div class="switch-row"><span>Отсчёт</span><button class="switch" id="countIn" role="switch" aria-checked="true" aria-label="Отсчёт перед стартом"></button></div>
-                <div class="switch-row"><span>Номера ладов</span><button class="switch" id="showFret" role="switch" aria-checked="true" aria-label="Показывать номера ладов"></button></div>
-              </section>
-
-              <section class="card col-2">
-                <h2 class="card__title">Настройки</h2>
-                <p class="muted" style="margin-top:0">Громкости, задержка звука и чувствительность микрофона</p>
-                <button class="btn" id="btnAdvanced">Расширенные настройки</button>
-              </section>
-            </div>
-          </div>
-          <div class="sheet__cta">
-            <button class="btn btn--action" id="btnLibPlayMobile" style="flex:1">Играть</button>
-          </div>
-        </div>
-      </div>
-
-      <!-- ===================== Профиль ===================== -->
-      <div class="overlay overlay--center hidden" id="profileOverlay" role="dialog" aria-modal="true" aria-labelledby="profileTitle">
-        <div class="sheet" style="width:min(720px,100%)">
-          <div class="sheet__head">
-            <h1 class="sheet__title" id="profileTitle">Профиль</h1>
-            <button class="btn btn--icon btn--ghost" id="btnProfileClose" aria-label="Закрыть профиль" data-tip="Закрыть">✕</button>
-          </div>
-          <div class="sheet__body">
-            <div class="field">
-              <label class="field__label" for="profileName">Имя</label>
-              <input type="text" id="profileName" maxlength="24" placeholder="Имя игрока" />
-            </div>
-            <div class="metrics" id="profileStats"></div>
-            <h2 class="card__title" style="margin-top:var(--space-6)">Ошибки по струнам</h2>
-            <div class="errbars" id="profileErrStrings"></div>
-            <h2 class="card__title" style="margin-top:var(--space-6)">Песни</h2>
-            <div class="table" id="profileSongs"></div>
-            <div class="hero-bottom" style="margin-top:var(--space-4)">
-              <button class="btn btn--ghost" id="btnProfileReset">Сбросить</button>
-              <div style="display:flex;gap:var(--space-2)">
-                <button class="btn" id="btnProfileExport">Выгрузить</button>
-                <label class="btn">Загрузить<input type="file" id="profileImport" accept=".json" hidden aria-label="Загрузить профиль из файла" /></label>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- ===================== Расширенные настройки ===================== -->
-      <div class="overlay overlay--center hidden" id="advancedOverlay" role="dialog" aria-modal="true" aria-labelledby="advancedTitle">
-        <div class="sheet" style="width:min(520px,100%)">
-          <div class="sheet__head">
-            <h1 class="sheet__title" id="advancedTitle">Расширенные настройки</h1>
-            <button class="btn btn--icon btn--ghost" id="btnAdvancedClose" aria-label="Закрыть" data-tip="Закрыть">✕</button>
-          </div>
-          <div class="sheet__body">
-            <div class="field">
-              <div class="field__row"><span class="field__label">Громкость табулатуры</span><span class="field__value" id="guideVolVal">70%</span></div>
-              <input type="range" id="guideVol" min="0" max="100" step="5" value="70" aria-label="Громкость табулатуры" />
-            </div>
-            <div class="field">
-              <div class="field__row"><span class="field__label">Громкость метронома</span><span class="field__value" id="metroVolVal">60%</span></div>
-              <input type="range" id="metroVol" min="0" max="100" step="5" value="60" aria-label="Громкость метронома" />
-            </div>
-            <div class="field">
-              <div class="field__row"><span class="field__label">Задержка звука</span><span class="field__value" id="latencyVal">0 мс</span></div>
-              <input type="range" id="latency" min="-150" max="300" step="5" value="0" aria-label="Задержка звука" />
-              <button class="btn btn--sm" id="btnAutoLatency" style="margin-top:var(--space-2)">Подобрать автоматически</button>
-            </div>
-            <div class="field">
-              <div class="field__row"><span class="field__label">Чувствительность</span><span class="field__value" id="sensVal">6</span></div>
-              <input type="range" id="sens" min="2" max="50" step="1" value="6" aria-label="Чувствительность микрофона" />
-              <button class="btn btn--sm" id="btnAutoSens" style="margin-top:var(--space-2)">Подобрать автоматически</button>
-            </div>
-            <button class="btn btn--ghost" id="btnOpenWizard">Повторить мастер настройки</button>
-          </div>
-        </div>
-      </div>
-
-      <!-- ===================== Мастер ===================== -->
-      <div class="overlay overlay--center hidden" id="wizardOverlay" role="dialog" aria-modal="true" aria-labelledby="wizardTitle">
-        <div class="sheet wizard">
-          <div class="sheet__head">
-            <h1 class="sheet__title" id="wizardTitle">Настройка</h1>
-            <button class="btn btn--icon btn--ghost" id="wizSkip" aria-label="Пропустить мастер" data-tip="Пропустить">✕</button>
-          </div>
-          <div class="sheet__body">
-            <div class="steps" aria-hidden="true"><i class="on"></i><i></i><i></i></div>
-
-            <div class="wizard__pane" id="wizPane1">
-              <h2 class="card__title">Доступ к микрофону</h2>
-              <p class="muted">Разрешите доступ, чтобы приложение слышало гитару и засчитывало ноты.</p>
-              <button class="btn btn--accent" id="wizAllow">Разрешить доступ</button>
-              <p class="muted" id="wizMicState"></p>
-            </div>
-
-            <div class="wizard__pane hidden" id="wizPane2">
-              <h2 class="card__title">Индикатор уровня</h2>
-              <p class="muted">Сыграйте что-нибудь — полоса должна реагировать.</p>
-              <div class="level"><i id="wizLevelBar"></i></div>
-              <p class="muted" id="wizLevelHint">Тишина</p>
-            </div>
-
-            <div class="wizard__pane hidden" id="wizPane3">
-              <h2 class="card__title">Проверка строя</h2>
-              <p class="muted">Сыграйте открытую струну, затем подберите задержку звука.</p>
-              <div class="tune-note" id="wizTuneNote">—</div>
-              <button class="btn btn--sm" id="wizCalibrate">Подобрать задержку автоматически</button>
-              <p class="muted" id="wizCalState"></p>
-            </div>
-
-            <div class="wizard__foot">
-              <button class="btn btn--ghost" id="wizPrev">Назад</button>
-              <div style="display:flex;gap:var(--space-2)">
-                <button class="btn btn--ghost" id="wizSkip2">Пропустить</button>
-                <button class="btn btn--action" id="wizNext">Далее</button>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- ===================== Результаты ===================== -->
-      <div class="overlay overlay--center hidden" id="resultsOverlay" role="dialog" aria-modal="true" aria-labelledby="resultsTitle">
-        <div class="sheet" style="width:min(640px,100%)">
-          <div class="sheet__head">
-            <h1 class="sheet__title" id="resultsTitle">Результат</h1>
-            <button class="btn btn--icon btn--ghost" id="btnResultsClose" aria-label="Закрыть" data-tip="Закрыть">✕</button>
-          </div>
-          <div class="sheet__body">
-            <div class="metrics" id="resultGrid"></div>
-            <h2 class="card__title" style="margin-top:var(--space-6)">Ошибки по струнам</h2>
-            <div class="errbars" id="resultErrStrings"></div>
-            <h2 class="card__title" style="margin-top:var(--space-6)">Ошибки по ладам</h2>
-            <div class="errbars" id="resultErrFrets"></div>
-            <div class="hero-bottom" style="margin-top:var(--space-6)">
-              <button class="btn btn--ghost" id="btnResultsLibrary">К библиотеке</button>
-              <div style="display:flex;gap:var(--space-2)">
-                <button class="btn" id="btnAgain">Повторить</button>
-                <button class="btn btn--action" id="btnPracticeWeak">Отработать слабое место</button>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- ===================== Каталог ===================== -->
-      <div class="overlay overlay--center hidden" id="catalogOverlay" role="dialog" aria-modal="true" aria-labelledby="catalogTitle">
-        <div class="sheet" style="width:min(480px,100%)">
-          <div class="sheet__head">
-            <h1 class="sheet__title" id="catalogTitle">Каталог по ссылке</h1>
-            <button class="btn btn--icon btn--ghost" id="btnCatalogClose" aria-label="Закрыть" data-tip="Закрыть">✕</button>
-          </div>
-          <div class="sheet__body">
-            <div class="field">
-              <label class="field__label" for="catalogUrl">Ссылка на JSON-каталог</label>
-              <input type="url" id="catalogUrl" placeholder="https://…/catalog.json" />
-            </div>
-            <div style="display:flex;gap:var(--space-2);flex-wrap:wrap">
-              <button class="btn btn--accent" id="btnCatalogLoad">Загрузить</button>
-              <label class="btn">Каталог из файла<input type="file" id="catalogFileInput" accept=".json" hidden aria-label="Загрузить каталог из файла" /></label>
-            </div>
-            <p class="muted" id="catalogStatus"></p>
-          </div>
-        </div>
-      </div>
-
-      <div class="toasts" id="toasts" aria-live="polite" aria-atomic="false"></div>
     </main>
 
     <footer class="playbar">
@@ -318,6 +68,255 @@
       </div>
       <span class="time" id="timeReadout">0:00 / 0:00</span>
     </footer>
+
+    <!-- ===================== Библиотека ===================== -->
+    <div class="overlay" id="libraryOverlay" role="dialog" aria-modal="true" aria-labelledby="libraryTitle">
+      <div class="sheet">
+        <div class="sheet__head">
+          <h1 class="sheet__title" id="libraryTitle">Библиотека</h1>
+          <button class="btn btn--icon btn--ghost" id="btnCloseLibrary" aria-label="Закрыть библиотеку" data-tip="Закрыть">✕</button>
+        </div>
+        <div class="sheet__body">
+          <div class="bento">
+            <section class="card card--hero col-4" id="heroCard">
+              <div class="hero-head">
+                <div>
+                  <div class="hero-type" id="heroType">Упражнение</div>
+                  <h2 class="card__hero-title" id="heroTitle">—</h2>
+                  <div class="hero-artist" id="heroArtist"></div>
+                </div>
+              </div>
+              <div class="hero-stats">
+                <div><div class="hero-stat__v mono" id="heroBpm">—</div><div class="hero-stat__k">BPM</div></div>
+                <div><div class="hero-stat__v mono" id="heroDur">—</div><div class="hero-stat__k">Длительность</div></div>
+                <div><div class="hero-stat__v mono" id="heroNotes">—</div><div class="hero-stat__k">Нот</div></div>
+                <div><div class="hero-stat__v mono" id="heroTuning">—</div><div class="hero-stat__k">Строй</div></div>
+              </div>
+              <canvas class="tab-preview" id="tabPreview" role="img" aria-label="Превью табулатуры"></canvas>
+              <div class="hero-bottom" style="margin-top:var(--space-4)">
+                <div>
+                  <div class="hero-stat__k">Лучшая точность</div>
+                  <div class="hero-stat__v mono" id="heroBest">—</div>
+                </div>
+                <div>
+                  <div class="hero-stat__k">Сложность</div>
+                  <div class="dots" id="heroDifficulty" aria-label="Сложность"></div>
+                </div>
+                <button class="btn btn--accent" id="btnLibPlay">Играть</button>
+              </div>
+            </section>
+
+            <section class="card col-2">
+              <h2 class="card__title">Скорость</h2>
+              <div class="speed-big" id="speedBig">100%</div>
+              <div class="speed-chips" id="speedChips">
+                <button class="chip" data-speed="50" aria-pressed="false">50%</button>
+                <button class="chip" data-speed="75" aria-pressed="false">75%</button>
+                <button class="chip" data-speed="100" aria-pressed="true">100%</button>
+              </div>
+              <input type="range" id="speed" min="25" max="150" step="5" value="100" aria-label="Скорость воспроизведения" />
+              <div class="field__row"><span class="field__label">25–150%</span><span class="field__value" id="speedVal">100%</span></div>
+            </section>
+
+            <section class="card col-3">
+              <h2 class="card__title">Песни</h2>
+              <input type="search" id="searchInput" placeholder="Поиск" aria-label="Поиск по песням" />
+              <div class="filters" id="filterChips" style="margin-top:var(--space-3)">
+                <button class="chip is-active" data-filter="all" aria-pressed="true">Все</button>
+                <button class="chip" data-filter="exercise" aria-pressed="false">Упражнения</button>
+                <button class="chip" data-filter="song" aria-pressed="false">Песни</button>
+                <button class="chip" data-filter="recent" aria-pressed="false">Недавние</button>
+              </div>
+              <div class="list" id="songList" role="listbox" aria-label="Список песен"></div>
+              <div class="track-picker hidden" id="trackPicker" style="margin-top:var(--space-3)">
+                <label class="field__label" for="trackSelect">Дорожка</label>
+                <select id="trackSelect" aria-label="Дорожка"></select>
+              </div>
+            </section>
+
+            <section class="card col-3">
+              <h2 class="card__title">Совет на сегодня</h2>
+              <p class="tip__text" id="tipText">—</p>
+              <button class="btn btn--accent btn--sm" id="btnTipApply">Применить</button>
+            </section>
+
+            <section class="card col-2">
+              <h2 class="card__title">Добавить</h2>
+              <label class="dropzone" id="dropZone">
+                <input type="file" id="fileInput" accept=".gp,.gpx,.gp3,.gp4,.gp5,.mid,.midi,.json" aria-label="Открыть файл песни" />
+                <span>Перетащите файл .gp .gpx .mid .json</span>
+              </label>
+              <button class="linklike" id="btnCatalogLink">Добавить каталог по ссылке</button>
+            </section>
+
+            <section class="card col-2">
+              <h2 class="card__title">Во время игры</h2>
+              <div class="switch-row"><span>Метроном</span><button class="switch" id="metronome" role="switch" aria-checked="true" aria-label="Метроном"></button></div>
+              <div class="switch-row"><span>Отсчёт</span><button class="switch" id="countIn" role="switch" aria-checked="true" aria-label="Отсчёт перед стартом"></button></div>
+              <div class="switch-row"><span>Номера ладов</span><button class="switch" id="showFret" role="switch" aria-checked="true" aria-label="Показывать номера ладов"></button></div>
+            </section>
+
+            <section class="card col-2">
+              <h2 class="card__title">Настройки</h2>
+              <p class="muted" style="margin-top:0">Громкости, задержка звука и чувствительность микрофона</p>
+              <button class="btn" id="btnAdvanced">Расширенные настройки</button>
+            </section>
+          </div>
+        </div>
+        <div class="sheet__cta">
+          <button class="btn btn--action" id="btnLibPlayMobile" style="flex:1">Играть</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===================== Профиль ===================== -->
+    <div class="overlay overlay--center hidden" id="profileOverlay" role="dialog" aria-modal="true" aria-labelledby="profileTitle">
+      <div class="sheet" style="width:min(720px,100%)">
+        <div class="sheet__head">
+          <h1 class="sheet__title" id="profileTitle">Профиль</h1>
+          <button class="btn btn--icon btn--ghost" id="btnProfileClose" aria-label="Закрыть профиль" data-tip="Закрыть">✕</button>
+        </div>
+        <div class="sheet__body">
+          <div class="field">
+            <label class="field__label" for="profileName">Имя</label>
+            <input type="text" id="profileName" maxlength="24" placeholder="Имя игрока" />
+          </div>
+          <div class="metrics" id="profileStats"></div>
+          <h2 class="card__title" style="margin-top:var(--space-6)">Ошибки по струнам</h2>
+          <div class="errbars" id="profileErrStrings"></div>
+          <h2 class="card__title" style="margin-top:var(--space-6)">Песни</h2>
+          <div class="table" id="profileSongs"></div>
+          <div class="hero-bottom" style="margin-top:var(--space-4)">
+            <button class="btn btn--ghost" id="btnProfileReset">Сбросить</button>
+            <div style="display:flex;gap:var(--space-2)">
+              <button class="btn" id="btnProfileExport">Выгрузить</button>
+              <label class="btn">Загрузить<input type="file" id="profileImport" accept=".json" hidden aria-label="Загрузить профиль из файла" /></label>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===================== Расширенные настройки ===================== -->
+    <div class="overlay overlay--center hidden" id="advancedOverlay" role="dialog" aria-modal="true" aria-labelledby="advancedTitle">
+      <div class="sheet" style="width:min(520px,100%)">
+        <div class="sheet__head">
+          <h1 class="sheet__title" id="advancedTitle">Расширенные настройки</h1>
+          <button class="btn btn--icon btn--ghost" id="btnAdvancedClose" aria-label="Закрыть" data-tip="Закрыть">✕</button>
+        </div>
+        <div class="sheet__body">
+          <div class="field">
+            <div class="field__row"><span class="field__label">Громкость табулатуры</span><span class="field__value" id="guideVolVal">70%</span></div>
+            <input type="range" id="guideVol" min="0" max="100" step="5" value="70" aria-label="Громкость табулатуры" />
+          </div>
+          <div class="field">
+            <div class="field__row"><span class="field__label">Громкость метронома</span><span class="field__value" id="metroVolVal">60%</span></div>
+            <input type="range" id="metroVol" min="0" max="100" step="5" value="60" aria-label="Громкость метронома" />
+          </div>
+          <div class="field">
+            <div class="field__row"><span class="field__label">Задержка звука</span><span class="field__value" id="latencyVal">0 мс</span></div>
+            <input type="range" id="latency" min="-150" max="300" step="5" value="0" aria-label="Задержка звука" />
+            <button class="btn btn--sm" id="btnAutoLatency" style="margin-top:var(--space-2)">Подобрать автоматически</button>
+          </div>
+          <div class="field">
+            <div class="field__row"><span class="field__label">Чувствительность</span><span class="field__value" id="sensVal">6</span></div>
+            <input type="range" id="sens" min="2" max="50" step="1" value="6" aria-label="Чувствительность микрофона" />
+            <button class="btn btn--sm" id="btnAutoSens" style="margin-top:var(--space-2)">Подобрать автоматически</button>
+          </div>
+          <button class="btn btn--ghost" id="btnOpenWizard">Повторить мастер настройки</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===================== Мастер ===================== -->
+    <div class="overlay overlay--center hidden" id="wizardOverlay" role="dialog" aria-modal="true" aria-labelledby="wizardTitle">
+      <div class="sheet wizard">
+        <div class="sheet__head">
+          <h1 class="sheet__title" id="wizardTitle">Настройка</h1>
+          <button class="btn btn--icon btn--ghost" id="wizSkip" aria-label="Пропустить мастер" data-tip="Пропустить">✕</button>
+        </div>
+        <div class="sheet__body">
+          <div class="steps" aria-hidden="true"><i class="on"></i><i></i><i></i></div>
+
+          <div class="wizard__pane" id="wizPane1">
+            <h2 class="card__title">Доступ к микрофону</h2>
+            <p class="muted">Разрешите доступ, чтобы приложение слышало гитару и засчитывало ноты.</p>
+            <button class="btn btn--accent" id="wizAllow">Разрешить доступ</button>
+            <p class="muted" id="wizMicState"></p>
+          </div>
+
+          <div class="wizard__pane hidden" id="wizPane2">
+            <h2 class="card__title">Индикатор уровня</h2>
+            <p class="muted">Сыграйте что-нибудь — полоса должна реагировать.</p>
+            <div class="level"><i id="wizLevelBar"></i></div>
+            <p class="muted" id="wizLevelHint">Тишина</p>
+          </div>
+
+          <div class="wizard__pane hidden" id="wizPane3">
+            <h2 class="card__title">Проверка строя</h2>
+            <p class="muted">Сыграйте открытую струну, затем подберите задержку звука.</p>
+            <div class="tune-note" id="wizTuneNote">—</div>
+            <button class="btn btn--sm" id="wizCalibrate">Подобрать задержку автоматически</button>
+            <p class="muted" id="wizCalState"></p>
+          </div>
+
+          <div class="wizard__foot">
+            <button class="btn btn--ghost" id="wizPrev">Назад</button>
+            <div style="display:flex;gap:var(--space-2)">
+              <button class="btn btn--ghost" id="wizSkip2">Пропустить</button>
+              <button class="btn btn--action" id="wizNext">Далее</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===================== Результаты ===================== -->
+    <div class="overlay overlay--center hidden" id="resultsOverlay" role="dialog" aria-modal="true" aria-labelledby="resultsTitle">
+      <div class="sheet" style="width:min(640px,100%)">
+        <div class="sheet__head">
+          <h1 class="sheet__title" id="resultsTitle">Результат</h1>
+          <button class="btn btn--icon btn--ghost" id="btnResultsClose" aria-label="Закрыть" data-tip="Закрыть">✕</button>
+        </div>
+        <div class="sheet__body">
+          <div class="metrics" id="resultGrid"></div>
+          <h2 class="card__title" style="margin-top:var(--space-6)">Ошибки по струнам</h2>
+          <div class="errbars" id="resultErrStrings"></div>
+          <h2 class="card__title" style="margin-top:var(--space-6)">Ошибки по ладам</h2>
+          <div class="errbars" id="resultErrFrets"></div>
+          <div class="hero-bottom" style="margin-top:var(--space-6)">
+            <button class="btn btn--ghost" id="btnResultsLibrary">К библиотеке</button>
+            <div style="display:flex;gap:var(--space-2)">
+              <button class="btn" id="btnAgain">Повторить</button>
+              <button class="btn btn--action" id="btnPracticeWeak">Отработать слабое место</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===================== Каталог ===================== -->
+    <div class="overlay overlay--center hidden" id="catalogOverlay" role="dialog" aria-modal="true" aria-labelledby="catalogTitle">
+      <div class="sheet" style="width:min(480px,100%)">
+        <div class="sheet__head">
+          <h1 class="sheet__title" id="catalogTitle">Каталог по ссылке</h1>
+          <button class="btn btn--icon btn--ghost" id="btnCatalogClose" aria-label="Закрыть" data-tip="Закрыть">✕</button>
+        </div>
+        <div class="sheet__body">
+          <div class="field">
+            <label class="field__label" for="catalogUrl">Ссылка на JSON-каталог</label>
+            <input type="url" id="catalogUrl" placeholder="https://…/catalog.json" />
+          </div>
+          <div style="display:flex;gap:var(--space-2);flex-wrap:wrap">
+            <button class="btn btn--accent" id="btnCatalogLoad">Загрузить</button>
+            <label class="btn">Каталог из файла<input type="file" id="catalogFileInput" accept=".json" hidden aria-label="Загрузить каталог из файла" /></label>
+          </div>
+          <p class="muted" id="catalogStatus"></p>
+        </div>
+      </div>
+    </div>
+
+    <div class="toasts" id="toasts" aria-live="polite" aria-atomic="false"></div>
   </div>
 
   <script type="module" src="src/main.js"></script>
