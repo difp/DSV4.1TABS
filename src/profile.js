@@ -16,6 +16,8 @@ export function defaultProfile() {
     sessions: 0,
     songs: {},
     days: [],
+    missByString: {},
+    missByFret: {},
   };
 }
 
@@ -44,6 +46,8 @@ export function normalizeProfile(data) {
   p.notesHit = Number(p.notesHit) || 0;
   p.notesMissed = Number(p.notesMissed) || 0;
   p.sessions = Number(p.sessions) || 0;
+  p.missByString = (p.missByString && typeof p.missByString === 'object') ? p.missByString : {};
+  p.missByFret = (p.missByFret && typeof p.missByFret === 'object') ? p.missByFret : {};
   return p;
 }
 
@@ -53,10 +57,12 @@ export function resetProfile() {
   return p;
 }
 
-export function recordSession(p, { key, title, score, accuracy, maxCombo, hits, misses }) {
+export function recordSession(p, { key, title, score, accuracy, maxCombo, hits, misses, missByString, missByFret }) {
   p.sessions += 1;
   p.notesHit += hits;
   p.notesMissed += misses;
+  for (const [k, v] of Object.entries(missByString || {})) p.missByString[k] = (p.missByString[k] || 0) + v;
+  for (const [k, v] of Object.entries(missByFret || {})) p.missByFret[k] = (p.missByFret[k] || 0) + v;
   const s = p.songs[key] || { title, plays: 0, bestScore: 0, bestAccuracy: 0, bestCombo: 0, lastPlayed: 0 };
   s.title = title || s.title;
   s.plays += 1;

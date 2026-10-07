@@ -24,6 +24,8 @@ export class Game {
     this.maxCombo = 0;
     this.hits = 0;
     this.misses = 0;
+    this.missByString = {};
+    this.missByFret = {};
     this.notesTotal = this.groups.length;
     this.pointer = 0;
     this.events = [];
@@ -114,6 +116,13 @@ export class Game {
     g.judge = 'miss';
     this.combo = 0;
     this.misses++;
+    // статистика ошибок: по струне и по ладу (для советов и отработки)
+    for (const n of g.notes) {
+      const s = String(n.string);
+      const f = String(n.fret);
+      this.missByString[s] = (this.missByString[s] || 0) + 1;
+      this.missByFret[f] = (this.missByFret[f] || 0) + 1;
+    }
     this.lastJudge = { judge: 'miss', t: now };
     this.events.push({ type: 'miss', notes: g.notes, t: now });
   }
