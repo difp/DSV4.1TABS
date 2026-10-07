@@ -4,14 +4,14 @@
 
 :root {
   /* поверхности и текст */
-  --bg: #07070d;
-  --surface: #11111b;
-  --surface-2: #17172a;
-  --surface-sel: #14143a;
-  --line: #23233a;
-  --line-strong: #3b3d8f;
-  --text: #f4f4fb;
-  --text-2: #9fa1bd;
+  --bg: #05050a;
+  --surface: #14141f;
+  --surface-2: #1d1d2c;
+  --surface-sel: #1b1b46;
+  --line: #2c2c47;
+  --line-strong: #5558c0;
+  --text: #f5f5fb;
+  --text-2: #a6a8c4;
 
   /* индиго */
   --indigo: #6366f1;
@@ -31,8 +31,9 @@
 
   /* прочее */
   --focus: var(--indigo);
-  --shadow: 0 24px 60px rgba(0, 0, 0, 0.55);
-  --scrim: rgba(6, 6, 12, 0.72);
+  --shadow: 0 30px 80px rgba(0, 0, 0, 0.62);
+  --card-shadow: 0 1px 0 rgba(255, 255, 255, 0.05) inset, 0 10px 26px rgba(0, 0, 0, 0.38);
+  --scrim: rgba(5, 5, 10, 0.76);
   --radius-card: 16px;
   --radius-ctl: 10px;
   --dur: 200ms;
@@ -50,7 +51,7 @@
   --stage-text: #f4f4fb;
   --stage-text-2: #9fa1bd;
   --stage-line: #2a2a45;
-  --backdrop: #05050a;
+  --backdrop: #030308;
 
   /* безопасные зоны устройства (fallback 0) */
   --sat: env(safe-area-inset-top, 0px);
@@ -61,14 +62,14 @@
 
 /* Светлая тема — та же система токенов; «белая» кнопка становится тёмной. */
 body[data-theme="light"] {
-  --bg: #f5f5fa;
+  --bg: #e9ebf2;
   --surface: #ffffff;
-  --surface-2: #f0f0f7;
-  --surface-sel: #eceeff;
-  --line: #e2e2ee;
+  --surface-2: #f3f4f9;
+  --surface-sel: #e6e9ff;
+  --line: #d3d6e2;
   --line-strong: #4f52c9;
   --text: #141422;
-  --text-2: #5b5d78;
+  --text-2: #565873;
 
   --indigo: #5b5ee8;
   --indigo-strong: #4f52c9;
@@ -83,9 +84,10 @@ body[data-theme="light"] {
   --error: #b4342a;
   --success: #1f7a4d;
 
-  --shadow: 0 24px 60px rgba(30, 30, 60, 0.16);
-  --scrim: rgba(20, 20, 40, 0.42);
-  --backdrop: #e7e7f2;
+  --shadow: 0 24px 60px rgba(30, 30, 60, 0.18);
+  --card-shadow: 0 1px 0 rgba(255, 255, 255, 0.9) inset, 0 8px 22px rgba(30, 30, 60, 0.1);
+  --scrim: rgba(20, 20, 40, 0.45);
+  --backdrop: #dfe2ec;
 }
 
 * { box-sizing: border-box; }
@@ -190,9 +192,10 @@ body[data-theme="light"] .btn--accent { color: #ffffff; }
 .card {
   position: relative;
   background: var(--surface);
-  border: 0.5px solid var(--line);
+  border: 1px solid var(--line);
   border-radius: var(--radius-card);
   padding: var(--space-4);
+  box-shadow: var(--card-shadow);
 }
 .card--selected { background: var(--surface-sel); border-color: var(--line-strong); }
 .card__title { margin: 0 0 var(--space-3); font-size: 12px; font-weight: 500; letter-spacing: 0.08em; text-transform: none; color: var(--text-2); }
@@ -381,7 +384,7 @@ input[type="range"]::-moz-range-thumb {
   width: min(1080px, 100%);
   margin: auto;
   background: var(--surface);
-  border: 0.5px solid var(--line);
+  border: 1px solid var(--line);
   border-radius: var(--radius-card);
   box-shadow: var(--shadow);
   animation: rise var(--dur) var(--ease);
@@ -422,16 +425,20 @@ input[type="range"]::-moz-range-thumb {
   border-radius: 50%;
 }
 .hero-nav:hover { border-color: var(--indigo); color: var(--indigo-text); background: var(--indigo-tint); }
-.hero-indicator { display: flex; align-items: center; justify-content: center; gap: var(--space-3); margin-top: var(--space-4); }
-.hero-count { font-size: 12px; color: var(--text-2); }
-.hero-dots { display: flex; align-items: center; justify-content: center; flex-wrap: wrap; gap: 6px; max-width: 72%; }
+.hero-indicator { display: flex; align-items: center; justify-content: center; gap: var(--space-3); margin-top: var(--space-4); flex-wrap: wrap; }
+.hero-count {
+  font-family: var(--mono); font-size: 13px; font-weight: 500; color: var(--indigo-text);
+  border: 1px solid var(--indigo-line); background: var(--indigo-tint);
+  border-radius: 999px; padding: 4px 12px; white-space: nowrap;
+}
+.hero-dots { display: flex; align-items: center; justify-content: center; flex-wrap: wrap; gap: 7px; max-width: 100%; }
 .hero-dots button {
-  width: 8px; height: 8px; padding: 0; border: 0; border-radius: 50%;
+  width: 9px; height: 9px; padding: 0; border: 0; border-radius: 50%;
   background: var(--line-strong); cursor: pointer;
   transition: transform var(--dur) var(--ease), background var(--dur) var(--ease);
 }
 .hero-dots button:hover { background: var(--indigo-text); }
-.hero-dots button.on { background: var(--indigo); transform: scale(1.5); }
+.hero-dots button.on { background: var(--indigo-text); transform: scale(1.6); box-shadow: 0 0 0 3px color-mix(in srgb, var(--indigo) 28%, transparent); }
 .hero-hint { margin: var(--space-3) 0 0; font-size: 12px; text-align: center; color: var(--text-2); }
 .hero-actions { display: flex; align-items: center; gap: var(--space-2); }
 .hero-type { display: inline-flex; align-items: center; gap: var(--space-1); font-size: 12px; color: var(--indigo-text); text-transform: none; letter-spacing: 0.08em; }
@@ -635,11 +642,11 @@ body.is-playing .hud { padding-top: max(var(--space-4), var(--sat)); }
 .home { width: min(820px, 100%); }
 .home__hero { text-align: center; margin-bottom: var(--space-6); }
 .home__brand { justify-content: center; margin-bottom: var(--space-3); }
-.home__title { margin: 0 0 var(--space-2); font-size: 32px; font-weight: 500; line-height: 1.15; }
+.home__title { margin: 0 0 var(--space-2); font-size: 30px; font-weight: 500; line-height: 1.15; letter-spacing: -0.01em; }
 .home__tagline { margin: 0; color: var(--text-2); font-size: 15px; }
-.home__lead { margin: 0 0 var(--space-6); line-height: 1.6; }
+.home__lead { max-width: 62ch; margin: 0 auto var(--space-6); line-height: 1.6; text-align: center; }
 .home__grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: var(--space-3); }
-.home__card { background: var(--surface); border: 0.5px solid var(--line); border-radius: var(--radius-card); padding: var(--space-4); }
+.home__card { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius-card); padding: var(--space-4); box-shadow: var(--card-shadow); }
 .home__card--wide { grid-column: 1 / -1; }
 .home__card h3 { margin: 0 0 var(--space-2); font-size: 14px; font-weight: 500; }
 .home__card p { margin: 0; color: var(--text-2); font-size: 13px; line-height: 1.55; }
