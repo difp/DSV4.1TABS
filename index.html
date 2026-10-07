@@ -46,6 +46,7 @@
         </div>
         <div class="hud__right">
           <div class="pitch" id="pitchNote">— <span id="pitchCents"></span></div>
+          <div class="feedback" id="feedback" aria-live="polite"></div>
         </div>
       </div>
     </main>
@@ -217,11 +218,31 @@
             <div class="field__row"><span class="field__label">Задержка звука</span><span class="field__value" id="latencyVal">0 мс</span></div>
             <input type="range" id="latency" min="-150" max="300" step="5" value="0" aria-label="Задержка звука" />
             <button class="btn btn--sm" id="btnAutoLatency" style="margin-top:var(--space-2)">Подобрать автоматически</button>
+            <button class="btn btn--sm" id="btnVerifyLatency" style="margin-top:var(--space-2)">Проверить</button>
+            <div class="verify" id="latencyVerify" aria-live="polite"></div>
           </div>
           <div class="field">
             <div class="field__row"><span class="field__label">Чувствительность</span><span class="field__value" id="sensVal">6</span></div>
             <input type="range" id="sens" min="2" max="50" step="1" value="6" aria-label="Чувствительность микрофона" />
             <button class="btn btn--sm" id="btnAutoSens" style="margin-top:var(--space-2)">Подобрать автоматически</button>
+          </div>
+          <div class="field">
+            <div class="field__row"><span class="field__label">Пресет чувствительности</span></div>
+            <select id="sensPreset" aria-label="Пресет чувствительности">
+              <option value="quiet">Тихий микрофон</option>
+              <option value="room">Комната</option>
+              <option value="amp">Усилитель или интерфейс</option>
+              <option value="noisy">Шумно</option>
+              <option value="custom">Вручную</option>
+            </select>
+          </div>
+          <div class="field">
+            <div class="field__row"><span class="field__label">Аккорды</span></div>
+            <select id="chordMode" aria-label="Режим распознавания аккордов">
+              <option value="any">Любая нота аккорда</option>
+              <option value="root">Только корневая нота</option>
+              <option value="all">Все ноты аккорда</option>
+            </select>
           </div>
           <button class="btn btn--ghost" id="btnOpenWizard">Повторить мастер настройки</button>
         </div>

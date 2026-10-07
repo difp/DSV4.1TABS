@@ -2,6 +2,7 @@
 // каталоги, профиль, мастер настройки. Аудио/тайминг/парсеры не менялись.
 import { AudioEngine } from './engine/audio.js';
 import { PitchDetector } from './engine/pitch.js';
+import { SpectralAnalyzer } from './engine/spectral.js';
 import { HighwayRenderer } from './engine/renderer.js';
 import { Game } from './engine/game.js';
 import { buildSong, midiToName } from './engine/theory.js';
@@ -22,7 +23,7 @@ const el = {
   menuWizard: $('menuWizard'), menuAutoplay: $('menuAutoplay'), menuAutoplayVal: $('menuAutoplayVal'),
   menuTheme: $('menuTheme'), menuThemeVal: $('menuThemeVal'), menuDevice: $('menuDevice'), menuDeviceVal: $('menuDeviceVal'),
   stage: $('stage'), score: $('score'), combo: $('combo'), accuracy: $('accuracy'),
-  pitchNote: $('pitchNote'), pitchCents: $('pitchCents'),
+  pitchNote: $('pitchNote'), pitchCents: $('pitchCents'), feedback: $('feedback'),
   libraryOverlay: $('libraryOverlay'), btnCloseLibrary: $('btnCloseLibrary'),
   heroType: $('heroType'), heroTitle: $('heroTitle'), heroArtist: $('heroArtist'),
   heroBpm: $('heroBpm'), heroDur: $('heroDur'), heroNotes: $('heroNotes'), heroTuning: $('heroTuning'),
@@ -42,6 +43,7 @@ const el = {
   guideVol: $('guideVol'), guideVolVal: $('guideVolVal'), metroVol: $('metroVol'), metroVolVal: $('metroVolVal'),
   latency: $('latency'), latencyVal: $('latencyVal'), btnAutoLatency: $('btnAutoLatency'),
   sens: $('sens'), sensVal: $('sensVal'), btnAutoSens: $('btnAutoSens'), btnOpenWizard: $('btnOpenWizard'),
+  chordMode: $('chordMode'), sensPreset: $('sensPreset'), btnVerifyLatency: $('btnVerifyLatency'), latencyVerify: $('latencyVerify'),
   wizardOverlay: $('wizardOverlay'), wizSkip: $('wizSkip'), wizSkip2: $('wizSkip2'), wizPrev: $('wizPrev'), wizNext: $('wizNext'),
   wizPane1: $('wizPane1'), wizPane2: $('wizPane2'), wizPane3: $('wizPane3'),
   wizAllow: $('wizAllow'), wizMicState: $('wizMicState'), wizLevelBar: $('wizLevelBar'), wizLevelHint: $('wizLevelHint'),
@@ -59,6 +61,7 @@ const el = {
 
 const audio = new AudioEngine();
 const pitch = new PitchDetector(44100);
+const spectral = new SpectralAnalyzer(44100);
 const renderer = new HighwayRenderer(el.stage);
 
 const SETTINGS_KEY = 'riffhero.settings.v1';
@@ -88,7 +91,8 @@ const state = {
   lastErrors: null,
   settings: Object.assign({
     rate: 1, metronome: true, countIn: true, showFret: true,
-    guideVol: 70, metroVol: 60, latency: 0, sens: 6,
+    guideVol: 70, metroVol: 60, latency: 0, sens: 6, clarity: 0.5,
+    chordMode: 'any', sensPreset: 'room',
     autoplay: false, onboarded: false, recent: [],
   }, loadStoredSettings()),
 };
@@ -243,7 +247,34 @@ function applySettingsToUi() {
   el.sensVal.textContent = String(s.sens);
   pitch.rmsGate = s.sens / 1000;
   el.menuAutoplayVal.textContent = s.autoplay ? 'вкл' : 'выкл';
-  if (state.game) state.game.autoplay = s.autoplay;
+  el.chordMode.value = s.chordMode;
+  el.sensPreset.value = s.sensPreset;
+  if (state.game) {
+    state.game.autoplay = s.autoplay;
+    state.game.opts.chordMode = s.chordMode;
+    state.game.opts.clarity = s.clarity;
+  }
+}
+
+// Пресеты чувствительности под условия записи.
+const SENS_PRESETS = {
+  quiet: { sens: 4, clarity: 0.45 },
+  room: { sens: 6, clarity: 0.5 },
+  amp: { sens: 12, clarity: 0.35 },
+  noisy: { sens: 20, clarity: 0.55 },
+};
+
+function applySensPreset(name) {
+  const p = SENS_PRESETS[name];
+  if (!p) return;
+  state.settings.sens = p.sens;
+  state.settings.clarity = p.clarity;
+  state.settings.sensPreset = name;
+  pitch.rmsGate = p.sens / 1000;
+  el.sens.value = String(p.sens);
+  el.sensVal.textContent = String(p.sens);
+  if (state.game) state.game.opts.clarity = p.clarity;
+  saveSettings();
 }
 
 // ---------------------------------------------------------------------------
@@ -979,6 +1010,28 @@ function updateHud(songTime) {
     el.pitchNote.firstChild.textContent = '— ';
     el.pitchCents.textContent = '';
   }
+
+  // мгновенная обратная связь: что ждём и что слышим
+  el.feedback.dataset.state = '';
+  let fb = '';
+  if (audio.micReady && state.song) {
+    const jt = t - state.latencySec;
+    const ng = nearestGroup(jt);
+    if (ng && Math.abs(ng.t - jt) <= 0.7) {
+      fb = 'Ждём: ' + ng.notes.map((n) => `${midiToName(n.midi)} (лад ${n.fret})`).join(' · ');
+      if (d && Number.isFinite(d.midi) && d.clarity > 0.45) {
+        const cents = Math.round((d.midi - Math.round(d.midi)) * 100);
+        const ok = (d.heard && ng.notes.some((n) => d.heard.has(Math.round(n.midi))))
+          || ng.notes.some((n) => Math.abs(n.midi - d.midi) < 0.7);
+        fb += ` · слышу: ${midiToName(d.midi)} ${(cents > 0 ? '+' : '') + cents}¢` + (ok ? '' : ' — не та нота');
+        el.feedback.dataset.state = ok ? 'ok' : 'warn';
+      } else {
+        fb += ' · тишина';
+      }
+    }
+  }
+  el.feedback.textContent = fb;
+
   updateLoopMarkers();
 }
 
@@ -1105,7 +1158,7 @@ async function toggleMic() {
 // ---------------------------------------------------------------------------
 // Автокалибровка
 // ---------------------------------------------------------------------------
-async function autoCalibrateLatency() {
+async function measureLatency() {
   await audio.ensure();
   if (!audio.micReady) throw new Error('сначала включите микрофон');
   const prevGain = audio.metro.gain.value;
@@ -1130,11 +1183,40 @@ async function autoCalibrateLatency() {
     }
     if (!offsets.length) throw new Error('клики не слышны — проверьте звук и микрофон');
     offsets.sort((a, b) => a - b);
-    const med = offsets[Math.floor(offsets.length / 2)];
-    return clamp(Math.round(med * 1000), -150, 300);
+    const median = offsets[Math.floor(offsets.length / 2)];
+    const mean = offsets.reduce((a, b) => a + b, 0) / offsets.length;
+    const spread = Math.sqrt(offsets.reduce((a, b) => a + (b - mean) * (b - mean), 0) / offsets.length);
+    return {
+      offsets: offsets.map((o) => Math.round(o * 1000)),
+      median: clamp(Math.round(median * 1000), -150, 300),
+      spread: Math.round(spread * 1000),
+    };
   } finally {
     audio.metro.gain.value = prevGain;
   }
+}
+
+async function autoCalibrateLatency() {
+  const r = await measureLatency();
+  return r.median;
+}
+
+async function verifyLatency() {
+  const r = await measureLatency();
+  renderLatencyVerify(r);
+  state.settings.latency = r.median;
+  state.latencySec = r.median / 1000;
+  saveSettings();
+  el.latency.value = String(r.median);
+  el.latencyVal.textContent = r.median + ' мс';
+  return r;
+}
+
+function renderLatencyVerify(r) {
+  const maxAbs = Math.max(1, ...r.offsets.map((o) => Math.abs(o)));
+  const bars = r.offsets.map((o) => `<span class="verify__bar${o < 0 ? ' neg' : ''}" style="height:${Math.max(8, Math.round((Math.abs(o) / maxAbs) * 40))}px" title="${o} мс"></span>`).join('');
+  const verdict = r.spread <= 15 ? 'стабильно' : r.spread <= 30 ? 'средне' : 'нестабильно';
+  el.latencyVerify.innerHTML = `<div class="verify__bars">${bars}</div><div class="verify__summary">Клики: ${r.offsets.join(', ')} мс · медиана ${r.median} мс · разброс ±${r.spread} мс (${verdict})</div>`;
 }
 
 async function autoCalibrateSens() {
@@ -1150,6 +1232,65 @@ async function autoCalibrateSens() {
   }
   const gate = clamp(peak * 1.6, 0.002, 0.05);
   return clamp(Math.round(gate * 1000), 2, 50);
+}
+
+// ---------------------------------------------------------------------------
+// Guided-детекция: проверяем энергию на ожидаемых нотах таба (Гоерцель).
+// Это устойчивее к октавным ошибкам и работает с аккордами.
+// ---------------------------------------------------------------------------
+function nearestGroup(now) {
+  const g = state.game;
+  if (!g) return null;
+  let best = null, bd = Infinity;
+  for (let i = g.pointer; i < g.groups.length; i++) {
+    const grp = g.groups[i];
+    if (grp.t - now > 0.8) break;
+    if (grp.judged) continue;
+    const dt = Math.abs(grp.t - now);
+    if (dt < bd) { bd = dt; best = grp; }
+  }
+  return best;
+}
+
+function collectCandidates(now) {
+  const g = state.game;
+  if (!g) return [];
+  const { early, late } = g.opts;
+  const set = new Set();
+  for (let i = g.pointer; i < g.groups.length; i++) {
+    const grp = g.groups[i];
+    if (grp.t - early > now) break;
+    if (grp.judged) continue;
+    if (now - grp.t > late) continue;
+    for (const n of grp.notes) {
+      if (n.dead) continue;
+      const m = Math.round(n.midi);
+      set.add(m);
+      set.add(m - 12);
+      set.add(m + 12);
+    }
+    if (set.size >= 30) break;
+  }
+  return [...set].filter((m) => m >= 24 && m <= 96);
+}
+
+function detectionTick() {
+  if (!audio.micReady) { state.detected = null; return; }
+  const data = audio.getTimeData();
+  if (!data) return;
+  const d = pitch.detect(data) || { freq: 0, midi: NaN, clarity: 0, rms: 0 };
+  const now = (state.playing ? (state.paused ? state.pauseSong : computeSongTime()) : state.startSong) - state.latencySec;
+  const cand = collectCandidates(now);
+  if (cand.length && d.rms >= pitch.rmsGate * 0.6) {
+    const res = spectral.analyze(data, cand);
+    if (res && res.rms >= pitch.rmsGate * 0.6 && res.max > 0.0008) {
+      const thr = Math.max(res.max * 0.45, 0.001);
+      const heard = new Set();
+      cand.forEach((m, i) => { if (res.scores[i] >= thr) heard.add(m); });
+      if (heard.size) d.heard = heard;
+    }
+  }
+  state.detected = d;
 }
 
 // ---------------------------------------------------------------------------
@@ -1307,7 +1448,34 @@ function bindEvents() {
   el.guideVol.addEventListener('input', () => { state.settings.guideVol = Number(el.guideVol.value); el.guideVolVal.textContent = el.guideVol.value + '%'; saveSettings(); audio.setGuideVolume(state.settings.guideVol / 100); });
   el.metroVol.addEventListener('input', () => { state.settings.metroVol = Number(el.metroVol.value); el.metroVolVal.textContent = el.metroVol.value + '%'; saveSettings(); audio.setMetroVolume(state.settings.metroVol / 100); });
   el.latency.addEventListener('input', () => { state.settings.latency = Number(el.latency.value); state.latencySec = state.settings.latency / 1000; el.latencyVal.textContent = el.latency.value + ' мс'; saveSettings(); });
-  el.sens.addEventListener('input', () => { state.settings.sens = Number(el.sens.value); pitch.rmsGate = state.settings.sens / 1000; el.sensVal.textContent = el.sens.value; saveSettings(); });
+  el.sens.addEventListener('input', () => {
+    state.settings.sens = Number(el.sens.value);
+    pitch.rmsGate = state.settings.sens / 1000;
+    el.sensVal.textContent = el.sens.value;
+    if (state.settings.sensPreset !== 'custom') { state.settings.sensPreset = 'custom'; el.sensPreset.value = 'custom'; }
+    saveSettings();
+  });
+  el.sensPreset.addEventListener('change', () => applySensPreset(el.sensPreset.value));
+  el.chordMode.addEventListener('change', () => {
+    state.settings.chordMode = el.chordMode.value;
+    saveSettings();
+    if (state.game) state.game.opts.chordMode = state.settings.chordMode;
+    toast('Режим аккордов обновлён');
+  });
+  el.btnVerifyLatency.addEventListener('click', async () => {
+    el.btnVerifyLatency.disabled = true;
+    const prev = el.btnVerifyLatency.textContent;
+    el.btnVerifyLatency.textContent = 'Измеряю…';
+    try {
+      const r = await verifyLatency();
+      toast(`Задержка: ${r.median} мс (±${r.spread})`, 'ok');
+    } catch (e) {
+      el.latencyVerify.innerHTML = `<div class="verify__summary">${escapeHtml(e.message)}</div>`;
+    } finally {
+      el.btnVerifyLatency.disabled = false;
+      el.btnVerifyLatency.textContent = prev;
+    }
+  });
   el.btnAutoLatency.addEventListener('click', async () => {
     el.btnAutoLatency.disabled = true; el.btnAutoLatency.textContent = 'Измеряю…';
     try {
@@ -1400,12 +1568,7 @@ function init() {
   renderList();
   updateHero();
 
-  setInterval(() => {
-    if (!audio.micReady) return;
-    const data = audio.getTimeData();
-    if (!data) return;
-    state.detected = pitch.detect(data);
-  }, 16);
+  setInterval(detectionTick, 16);
 
   requestAnimationFrame(frame);
 

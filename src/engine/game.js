@@ -11,6 +11,7 @@ export class Game {
       late: 0.20,
       chordTolerance: 0.035,
       clarity: 0.5,
+      chordMode: 'any', // any | root | all
     }, opts);
     this.groups = groupNotes(song.notes, this.opts.chordTolerance);
     this.autoplay = false;
@@ -58,22 +59,24 @@ export class Game {
         if (g.t > now) break;
         if (now - g.t <= late) this._hit(g, now, 0);
       }
-    } else if (detected && Number.isFinite(detected.midi) && detected.clarity >= clarity) {
-      let best = null;
-      let bestDt = Infinity;
-      for (let i = this.pointer; i < this.groups.length; i++) {
-        const g = this.groups[i];
-        if (g.judged) continue;
-        if (g.t - early > now) break;
-        const dt = Math.abs(now - g.t);
-        if (dt > late || dt > bestDt) continue;
-        const anyDead = g.notes.every(n => n.dead);
-        const match = anyDead || g.notes.some(n => Math.round(n.midi) === Math.round(detected.midi));
-        if (!match) continue;
-        best = g;
-        bestDt = dt;
+    } else if (detected) {
+      const heard = detected.heard instanceof Set ? detected.heard : null;
+      const yinMidi = Number.isFinite(detected.midi) && detected.clarity >= clarity ? Math.round(detected.midi) : null;
+      if (heard || yinMidi != null) {
+        let best = null;
+        let bestDt = Infinity;
+        for (let i = this.pointer; i < this.groups.length; i++) {
+          const g = this.groups[i];
+          if (g.judged) continue;
+          if (g.t - early > now) break;
+          const dt = Math.abs(now - g.t);
+          if (dt > late || dt > bestDt) continue;
+          if (!this._matches(g, heard, yinMidi)) continue;
+          best = g;
+          bestDt = dt;
+        }
+        if (best) this._hit(best, now, now - best.t);
       }
-      if (best) this._hit(best, now, now - best.t);
     }
 
     // Пропуски
@@ -90,6 +93,21 @@ export class Game {
       this.finished = true;
       this.events.push({ type: 'finish', t: now });
     }
+  }
+
+  // Совпадает ли группа с услышанным (guided-энергия и/или YIN).
+  _matches(g, heard, yinMidi) {
+    const has = (m) => (heard != null && heard.has(m)) || (yinMidi != null && yinMidi === m);
+    if (g.notes.every((n) => n.dead)) return heard != null || yinMidi != null;
+    const mode = this.opts.chordMode || 'any';
+    if (mode === 'all' && heard && g.notes.length > 1) {
+      return g.notes.every((n) => n.dead || has(Math.round(n.midi)));
+    }
+    if (mode === 'root') {
+      const root = g.notes.reduce((a, b) => (b.midi < a.midi ? b : a), g.notes[0]);
+      return has(Math.round(root.midi));
+    }
+    return g.notes.some((n) => has(Math.round(n.midi)));
   }
 
   _hit(g, now, dt) {
