@@ -411,10 +411,10 @@ function computeDifficulty(song) {
   const chordRatio = song.notes.length ? chordNotes / song.notes.length : 0;
 
   let score = 1;
-  score += clamp(nps / 3.2, 0, 1.6);
-  score += clamp(avgFret / 14, 0, 1.0);
-  score += clamp(maxFret / 20, 0, 0.8);
-  score += chordRatio > 0.25 ? 1 : chordRatio > 0.1 ? 0.5 : 0;
+  score += clamp(nps / 2.8, 0, 3.0);
+  score += clamp(avgFret / 12, 0, 0.9);
+  score += clamp(maxFret / 22, 0, 0.6);
+  score += chordRatio > 0.25 ? 0.8 : chordRatio > 0.1 ? 0.4 : 0;
   return clamp(Math.round(score), 1, 5);
 }
 
