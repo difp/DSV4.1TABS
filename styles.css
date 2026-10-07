@@ -1,0 +1,321 @@
+/* Riff Hero — минималистичное оформление: нейтральная тёмная тема,
+   тонкие линии, один акцент, без теней и градиентов. */
+
+:root {
+  --bg: #0f0f11;
+  --bg-2: #131316;
+  --surface: #161619;
+  --line: #26262b;
+  --line-2: #34343c;
+  --text: #e9e9ec;
+  --muted: #8a8a93;
+  --accent: #e0a13a;
+  --accent-ink: #141006;
+  --olive: #8a9b4e;
+  --teal: #5f8f8c;
+  --brick: #c4553b;
+  --scrim: rgba(9, 9, 11, 0.93);
+  --backdrop: #08080a;
+  /* цвета поверх тёмной трассы (не зависят от темы) */
+  --stage-text: #e9e9ec;
+  --stage-muted: #8a8a93;
+  --stage-line: #34343c;
+  --mono: ui-monospace, "SFMono-Regular", Menlo, Consolas, "Liberation Mono", monospace;
+  --sans: system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+}
+
+/* Светлая тема — только хром; трасса остаётся тёмной. */
+body[data-theme="light"] {
+  --bg: #f6f6f7;
+  --bg-2: #efeff1;
+  --surface: #ffffff;
+  --line: #e3e3e6;
+  --line-2: #d2d2d8;
+  --text: #17171a;
+  --muted: #6b6b73;
+  --accent: #c9862a;
+  --accent-ink: #17110a;
+  --scrim: rgba(246, 246, 247, 0.95);
+  --backdrop: #dddde0;
+}
+
+* { box-sizing: border-box; }
+
+html, body {
+  margin: 0;
+  height: 100%;
+  overflow: hidden;
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--sans);
+  font-size: 14px;
+}
+
+button { font: inherit; cursor: pointer; }
+.hidden { display: none !important; }
+.muted { color: var(--muted); }
+.mono { font-family: var(--mono); }
+.small { font-size: 11px; }
+.mt { margin-top: 22px; }
+.row { display: flex; gap: 10px; }
+
+#app { display: flex; flex-direction: column; height: 100vh; min-height: 0; }
+
+/* ---------- Верхняя панель ---------- */
+.topbar {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  padding: 12px 18px;
+  background: var(--bg);
+  border-bottom: 1px solid var(--line);
+}
+
+.brand { font-family: var(--mono); font-size: 14px; font-weight: 600; letter-spacing: 3px; white-space: nowrap; }
+.brand b { color: var(--accent); font-weight: 600; }
+
+.songinfo { flex: 1; min-width: 0; }
+.songinfo #songTitle { font-size: 14px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.songinfo #songMeta { font-size: 11px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+.topactions { display: flex; align-items: center; gap: 8px; }
+
+/* сегментированный переключатель */
+.seg { display: inline-flex; border: 1px solid var(--line-2); border-radius: 2px; overflow: hidden; }
+.seg button {
+  background: none;
+  border: 0;
+  color: var(--muted);
+  padding: 8px 10px;
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+}
+.seg button + button { border-left: 1px solid var(--line-2); }
+.seg button:hover { color: var(--text); }
+.seg button.active { background: var(--accent); color: var(--accent-ink); }
+
+/* ---------- Кнопки ---------- */
+button.ghost {
+  background: none;
+  border: 1px solid var(--line-2);
+  color: var(--muted);
+  border-radius: 2px;
+  padding: 9px 14px;
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+}
+button.ghost:hover { color: var(--text); border-color: var(--text); }
+button.ghost.active { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
+button.ghost:disabled { opacity: 0.35; cursor: default; }
+button.ghost.danger { color: var(--brick); border-color: #4a2a22; }
+button.ghost.danger:hover { color: var(--brick); border-color: var(--brick); }
+
+button.primary {
+  background: var(--accent);
+  border: 1px solid var(--accent);
+  color: var(--accent-ink);
+  border-radius: 2px;
+  padding: 10px 18px;
+  font-family: var(--mono);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+}
+button.primary:hover { filter: brightness(1.08); }
+button.primary:disabled { opacity: 0.35; cursor: default; }
+button.big { font-size: 13px; padding: 13px 26px; }
+
+/* ---------- Сцена ---------- */
+.stage-wrap { position: relative; flex: 1; min-height: 0; }
+#stage { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+
+/* ---------- HUD ---------- */
+.hud { position: absolute; inset: 0; pointer-events: none; display: flex; justify-content: space-between; padding: 14px 18px; color: var(--stage-text); }
+.hud-left { display: flex; gap: 26px; align-items: flex-start; }
+.stat { display: flex; flex-direction: column; align-items: flex-start; min-width: 58px; }
+.stat span { font-family: var(--mono); font-size: 22px; font-weight: 600; line-height: 1; text-shadow: 0 1px 2px rgba(0, 0, 0, 0.6); }
+.stat label { font-family: var(--mono); font-size: 10px; letter-spacing: 1.4px; text-transform: uppercase; color: var(--stage-muted); margin-top: 4px; }
+.hud-right { display: flex; flex-direction: column; align-items: flex-end; gap: 8px; }
+.pitch-readout { display: flex; align-items: baseline; gap: 8px; min-height: 30px; font-family: var(--mono); font-size: 24px; font-weight: 600; text-shadow: 0 1px 2px rgba(0, 0, 0, 0.6); }
+.pitch-readout .muted { color: var(--stage-muted); font-size: 12px; font-weight: 400; }
+.pill { font-family: var(--mono); font-size: 10px; letter-spacing: 1px; text-transform: uppercase; padding: 4px 9px; border: 1px solid var(--stage-line); border-radius: 2px; color: var(--stage-muted); background: rgba(0, 0, 0, 0.3); }
+.pill.on { color: var(--olive); border-color: var(--olive); }
+
+/* ---------- Оверлеи ---------- */
+.overlay { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; padding: 18px; overflow: auto; background: var(--scrim); }
+.panel { width: min(880px, 100%); background: var(--surface); border: 1px solid var(--line); border-radius: 2px; padding: 24px; }
+.panel-head { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; margin-bottom: 18px; }
+.panel h1 { margin: 0; font-size: 20px; font-weight: 600; letter-spacing: 0.3px; }
+.panel h2 {
+  margin: 0 0 12px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--line);
+  font-family: var(--mono);
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.panel > .row { margin-top: 4px; }
+
+.grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 26px; margin: 4px 0 20px; }
+@media (max-width: 720px) { .grid2 { grid-template-columns: 1fr; } }
+
+/* ---------- Список песен ---------- */
+.song-list { display: flex; flex-direction: column; margin-bottom: 14px; }
+.list-head { display: flex; justify-content: space-between; align-items: center; margin: 12px 0 0; font-family: var(--mono); font-size: 10px; letter-spacing: 1.5px; text-transform: uppercase; color: var(--muted); }
+.list-head:first-child { margin-top: 0; }
+.list-head button { background: none; border: 0; color: var(--muted); font: inherit; padding: 0; }
+.list-head button:hover { color: var(--brick); }
+
+.song-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  text-align: left;
+  padding: 9px 2px;
+  background: none;
+  border: 0;
+  border-bottom: 1px solid var(--line);
+  color: var(--text);
+  border-radius: 0;
+}
+.song-item:hover, .song-item.selected { color: var(--accent); }
+.song-item.loading { color: var(--muted); }
+.song-item .name { font-size: 14px; }
+.song-item .meta { font-family: var(--mono); font-size: 11px; color: var(--muted); white-space: nowrap; }
+
+/* ---------- Каталог ---------- */
+.catalog-row { display: flex; gap: 8px; }
+.catalog-row input {
+  flex: 1;
+  min-width: 0;
+  background: var(--bg-2);
+  border: 1px solid var(--line-2);
+  border-radius: 2px;
+  color: var(--text);
+  padding: 9px 10px;
+  font-family: var(--mono);
+  font-size: 11px;
+}
+.catalog-row input::placeholder { color: var(--muted); }
+#catalogStatus { margin-top: 10px; min-height: 14px; line-height: 1.4; }
+
+.file-drop {
+  display: block;
+  padding: 11px;
+  margin-top: 10px;
+  border: 1px dashed var(--line-2);
+  border-radius: 2px;
+  text-align: center;
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--muted);
+  cursor: pointer;
+}
+.file-drop:hover { border-color: var(--accent); color: var(--text); }
+.file-drop.compact { padding: 8px; }
+.file-drop input { display: none; }
+
+.track-picker { margin-top: 12px; font-size: 13px; display: flex; align-items: center; gap: 8px; }
+select { background: var(--bg-2); color: var(--text); border: 1px solid var(--line-2); border-radius: 2px; padding: 7px 8px; font-family: var(--mono); font-size: 12px; }
+
+/* ---------- Поля / чекбоксы ---------- */
+.field, .check { display: flex; align-items: center; gap: 12px; margin-bottom: 11px; font-size: 13px; }
+.field { color: var(--muted); }
+.field input[type="range"] { flex: 1; }
+.field .mono { color: var(--text); min-width: 44px; text-align: right; }
+.check { color: var(--text); }
+.check input { width: 15px; height: 15px; }
+.field-inline { display: flex; align-items: center; gap: 10px; margin-bottom: 18px; font-size: 13px; color: var(--muted); }
+.field-inline input {
+  flex: 1;
+  max-width: 300px;
+  background: var(--bg-2);
+  border: 1px solid var(--line-2);
+  border-radius: 2px;
+  color: var(--text);
+  padding: 8px 10px;
+  font: inherit;
+}
+
+details.adv { margin-top: 4px; }
+details.adv summary { cursor: pointer; padding: 8px 0; font-family: var(--mono); font-size: 11px; letter-spacing: 1px; text-transform: uppercase; color: var(--muted); list-style: none; }
+details.adv summary::-webkit-details-marker { display: none; }
+details.adv summary::before { content: "+ "; }
+details.adv[open] summary::before { content: "– "; }
+details.adv summary:hover { color: var(--text); }
+
+/* ---------- Ползунки ---------- */
+input[type="range"] { -webkit-appearance: none; appearance: none; height: 2px; background: var(--line-2); border-radius: 2px; outline: none; }
+input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; appearance: none; width: 12px; height: 12px; border-radius: 50%; background: var(--accent); cursor: pointer; }
+input[type="range"]::-moz-range-thumb { width: 12px; height: 12px; border: 0; border-radius: 50%; background: var(--accent); cursor: pointer; }
+input[type="checkbox"] { accent-color: var(--accent); }
+
+/* ---------- Метрики ---------- */
+.metrics { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1px; background: var(--line); border: 1px solid var(--line); margin: 16px 0; }
+.metrics .m { background: var(--surface); padding: 14px 10px; text-align: center; }
+.metrics .m b { display: block; font-family: var(--mono); font-size: 21px; font-weight: 600; }
+.metrics .m span { font-family: var(--mono); font-size: 10px; letter-spacing: 1.2px; text-transform: uppercase; color: var(--muted); }
+
+/* ---------- Таблица песен (профиль) ---------- */
+.song-table { display: flex; flex-direction: column; }
+.song-table .row-item { display: grid; grid-template-columns: 1fr auto auto auto; gap: 14px; align-items: baseline; padding: 9px 2px; border-bottom: 1px solid var(--line); font-size: 13px; }
+.song-table .row-item .t { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.song-table .row-item .v { font-family: var(--mono); font-size: 12px; color: var(--muted); }
+.song-table .empty { color: var(--muted); font-size: 13px; padding: 12px 0; }
+
+/* ---------- Нижняя панель ---------- */
+.controls { display: flex; align-items: center; gap: 14px; padding: 11px 18px; background: var(--bg); border-top: 1px solid var(--line); }
+.controls #timeReadout { font-size: 12px; }
+
+.loop-group { display: inline-flex; gap: 4px; }
+button.ghost.tiny { padding: 9px 9px; min-width: 30px; }
+
+.progress-wrap { position: relative; flex: 1; display: flex; align-items: center; min-width: 80px; }
+.progress-wrap #progressBar { flex: 1; }
+.loop-markers { position: absolute; inset: 0; pointer-events: none; }
+.loop-markers .lm-range { position: absolute; top: 50%; height: 3px; transform: translateY(-50%); background: color-mix(in srgb, var(--accent) 40%, transparent); border-radius: 2px; display: none; }
+.loop-markers .lm-a, .loop-markers .lm-b { position: absolute; top: 50%; width: 2px; height: 14px; transform: translate(-50%, -50%); background: var(--accent); display: none; }
+
+.file-btn { display: inline-flex; align-items: center; }
+.file-btn input { display: none; }
+
+/* ---------- Тосты ---------- */
+.toasts { position: absolute; left: 50%; bottom: 20px; transform: translateX(-50%); display: flex; flex-direction: column; align-items: center; gap: 8px; }
+.toast { max-width: 72vw; padding: 10px 14px; background: var(--surface); border: 1px solid var(--line-2); border-radius: 2px; font-family: var(--mono); font-size: 12px; }
+.toast.err { border-color: var(--brick); }
+.toast.ok { border-color: var(--olive); }
+
+/* ==================== Режим «Телефон» ==================== */
+body[data-ui="phone"] { display: flex; align-items: center; justify-content: center; background: var(--backdrop); }
+body[data-ui="phone"] #app {
+  width: min(390px, 100vw);
+  height: min(844px, 100vh);
+  border: 1px solid var(--line-2);
+  border-radius: 16px;
+  overflow: hidden;
+  background: var(--bg);
+}
+body[data-ui="phone"] .topbar { flex-wrap: wrap; row-gap: 8px; padding: 10px 12px; gap: 10px; }
+body[data-ui="phone"] .songinfo { order: 3; flex-basis: 100%; }
+body[data-ui="phone"] .topactions { flex-wrap: wrap; gap: 6px; }
+body[data-ui="phone"] .topactions .ghost,
+body[data-ui="phone"] .seg button { padding: 7px 9px; font-size: 10px; }
+body[data-ui="phone"] .hud { padding: 12px; }
+body[data-ui="phone"] .hud-left { gap: 16px; }
+body[data-ui="phone"] .stat span { font-size: 18px; }
+body[data-ui="phone"] .pitch-readout { font-size: 18px; }
+body[data-ui="phone"] .controls { flex-wrap: wrap; row-gap: 8px; padding: 10px 12px; gap: 10px; }
+body[data-ui="phone"] #progressBar { order: 5; flex-basis: 100%; }
+body[data-ui="phone"] .grid2 { grid-template-columns: 1fr; gap: 20px; }
+body[data-ui="phone"] .panel { padding: 18px; }
+body[data-ui="phone"] .metrics { grid-template-columns: repeat(2, 1fr); }

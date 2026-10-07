@@ -1,0 +1,154 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Riff Hero</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div id="app">
+    <header class="topbar">
+      <div class="brand">RIFF<b>HERO</b></div>
+      <div class="songinfo">
+        <div id="songTitle">Выберите песню</div>
+        <div id="songMeta" class="mono muted"></div>
+      </div>
+      <nav class="topactions">
+        <div class="seg" id="layoutSeg" title="Режим отображения">
+          <button data-layout="auto">Авто</button>
+          <button data-layout="desktop">ПК</button>
+          <button data-layout="phone">Телефон</button>
+        </div>
+        <button id="btnTheme" class="ghost" title="Светлая / тёмная тема">Тема</button>
+        <button id="btnProfile" class="ghost">Профиль</button>
+        <button id="btnMic" class="ghost">Микрофон</button>
+        <button id="btnListen" class="ghost">Демо</button>
+        <button id="btnLibrary" class="ghost">Песни</button>
+      </nav>
+    </header>
+
+    <main class="stage-wrap">
+      <canvas id="stage"></canvas>
+
+      <div class="hud">
+        <div class="hud-left">
+          <div class="stat"><span id="score">0</span><label>очки</label></div>
+          <div class="stat"><span id="combo">0</span><label>комбо</label></div>
+          <div class="stat"><span id="accuracy">100%</span><label>точность</label></div>
+        </div>
+        <div class="hud-right">
+          <div class="pitch-readout">
+            <span id="pitchNote">—</span><span id="pitchCents" class="muted"></span>
+          </div>
+          <div id="micState" class="pill off">микрофон выкл</div>
+        </div>
+      </div>
+
+      <div id="startOverlay" class="overlay">
+        <div class="panel">
+          <div class="panel-head">
+            <h1>Библиотека</h1>
+            <span class="mono muted small">Guitar Pro · MIDI · JSON</span>
+          </div>
+
+          <div class="grid2">
+            <section>
+              <h2>Песни</h2>
+              <div id="songList" class="song-list"></div>
+              <label class="file-drop">
+                <input id="fileInput" type="file" accept=".json,.mid,.midi,.gp,.gpx,.gp3,.gp4,.gp5" />
+                <span>Открыть файл — .gp / .gpx / .mid / .json</span>
+              </label>
+              <div id="trackPicker" class="track-picker hidden">
+                <label>Дорожка <select id="trackSelect"></select></label>
+              </div>
+            </section>
+
+            <section>
+              <h2>Каталог</h2>
+              <div class="catalog-row">
+                <input id="catalogUrl" type="url" placeholder="https://…/catalog.json" />
+                <button id="btnCatalogLoad" class="ghost">Загрузить</button>
+              </div>
+              <label class="file-drop compact">
+                <input id="catalogFileInput" type="file" accept=".json" />
+                <span>Каталог из файла</span>
+              </label>
+              <div id="catalogStatus" class="mono muted small"></div>
+
+              <h2 class="mt">Настройки</h2>
+              <label class="field">Скорость <input id="speed" type="range" min="0.4" max="1.25" step="0.05" value="1" /> <span id="speedVal" class="mono">1.0×</span></label>
+              <label class="check"><input id="metronome" type="checkbox" checked /> Метроном</label>
+              <label class="check"><input id="countIn" type="checkbox" checked /> Отсчёт</label>
+              <label class="check"><input id="showFret" type="checkbox" checked /> Номера ладов</label>
+
+              <details class="adv">
+                <summary>Дополнительно</summary>
+                <label class="field">Громкость таба <input id="guideVol" type="range" min="0" max="1" step="0.05" value="0.7" /></label>
+                <label class="field">Громкость метронома <input id="metroVol" type="range" min="0" max="1" step="0.05" value="0.6" /></label>
+                <label class="field">Задержка звука <input id="latency" type="range" min="-150" max="300" step="5" value="0" /> <span id="latencyVal" class="mono">0 мс</span></label>
+                <label class="field">Чувствительность <input id="sens" type="range" min="0.002" max="0.05" step="0.001" value="0.006" /></label>
+              </details>
+            </section>
+          </div>
+
+          <button id="btnStart" class="primary big" disabled>Начать</button>
+        </div>
+      </div>
+
+      <div id="profileOverlay" class="overlay hidden">
+        <div class="panel">
+          <div class="panel-head">
+            <h1>Профиль</h1>
+            <button id="btnProfileClose" class="ghost">Закрыть</button>
+          </div>
+          <label class="field-inline">Имя <input id="profileName" type="text" placeholder="Имя игрока" maxlength="24" /></label>
+          <div id="profileStats" class="metrics"></div>
+          <h2>Песни</h2>
+          <div id="profileSongs" class="song-table"></div>
+          <div class="row">
+            <button id="btnProfileReset" class="ghost danger">Сбросить</button>
+            <button id="btnProfileExport" class="ghost">Выгрузить</button>
+            <label class="ghost file-btn">Загрузить<input id="profileImport" type="file" accept=".json" /></label>
+          </div>
+        </div>
+      </div>
+
+      <div id="finishOverlay" class="overlay hidden">
+        <div class="panel">
+          <div class="panel-head"><h1 id="finishTitle">Результат</h1></div>
+          <div id="resultGrid" class="metrics"></div>
+          <div class="row">
+            <button id="btnAgain" class="primary">Ещё раз</button>
+            <button id="btnBack" class="ghost">К библиотеке</button>
+          </div>
+        </div>
+      </div>
+
+      <div id="toasts" class="toasts"></div>
+    </main>
+
+    <footer class="controls">
+      <button id="btnPlay" class="primary" disabled>Играть</button>
+      <button id="btnRestart" class="ghost" disabled>Сначала</button>
+      <div class="loop-group" title="A/B повтор фрагмента">
+        <button id="btnLoopA" class="ghost tiny">A</button>
+        <button id="btnLoopB" class="ghost tiny">B</button>
+        <button id="btnLoopClear" class="ghost tiny">✕</button>
+      </div>
+      <div class="progress-wrap">
+        <input id="progressBar" type="range" min="0" max="1000" value="0" />
+        <div id="loopMarkers" class="loop-markers">
+          <span class="lm-range"></span>
+          <span class="lm-a"></span>
+          <span class="lm-b"></span>
+        </div>
+      </div>
+      <span id="timeReadout" class="mono muted">0:00 / 0:00</span>
+    </footer>
+  </div>
+
+  <script type="module" src="src/main.js"></script>
+</body>
+</html>

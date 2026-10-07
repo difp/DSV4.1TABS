@@ -1,0 +1,28 @@
+{
+  "name": "Пример каталога",
+  "songs": [
+    { "title": "GPIF: квинты", "artist": "Генератор", "url": "demo.gp" },
+    { "title": "MIDI: хроматика", "artist": "Генератор", "url": "demo.mid" },
+    { "title": "MIDI: гитара + бас", "artist": "Генератор", "url": "multi.mid" },
+    { "title": "JSON: мелодия", "artist": "Генератор", "url": "demo.json" },
+    {
+      "title": "Пентатоника (в каталоге)",
+      "artist": "Пример",
+      "song": {
+        "bpm": 96,
+        "tuning": "E2 A2 D3 G3 B3 E4",
+        "timeSignature": [4, 4],
+        "notes": [
+          { "beat": 0, "string": 1, "fret": 5, "dur": 1 },
+          { "beat": 1, "string": 1, "fret": 8, "dur": 1 },
+          { "beat": 2, "string": 2, "fret": 5, "dur": 1 },
+          { "beat": 3, "string": 2, "fret": 7, "dur": 1 },
+          { "beat": 4, "string": 3, "fret": 5, "dur": 1 },
+          { "beat": 5, "string": 3, "fret": 7, "dur": 1 },
+          { "beat": 6, "string": 4, "fret": 7, "dur": 1 },
+          { "beat": 7, "string": 5, "fret": 5, "dur": 1 }
+        ]
+      }
+    }
+  ]
+}

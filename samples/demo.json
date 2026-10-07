@@ -1,0 +1,43 @@
+{
+  "title": "JSON тест",
+  "artist": "Генератор",
+  "bpm": 120,
+  "tuning": [
+    "E2",
+    "A2",
+    "D3",
+    "G3",
+    "B3",
+    "E4"
+  ],
+  "timeSignature": [
+    4,
+    4
+  ],
+  "notes": [
+    {
+      "beat": 0,
+      "string": 1,
+      "fret": 0,
+      "dur": 1
+    },
+    {
+      "beat": 1,
+      "string": 1,
+      "fret": 3,
+      "dur": 1
+    },
+    {
+      "beat": 2,
+      "string": 2,
+      "fret": 2,
+      "dur": 1
+    },
+    {
+      "beat": 3,
+      "string": 3,
+      "fret": 0,
+      "dur": 1
+    }
+  ]
+}
