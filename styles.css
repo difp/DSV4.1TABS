@@ -188,7 +188,7 @@ body[data-theme="light"] .btn--accent { color: #ffffff; }
   padding: var(--space-4);
 }
 .card--selected { background: var(--surface-sel); border-color: var(--line-strong); }
-.card__title { margin: 0 0 var(--space-3); font-size: 12px; font-weight: 500; letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-2); }
+.card__title { margin: 0 0 var(--space-3); font-size: 12px; font-weight: 500; letter-spacing: 0.08em; text-transform: none; color: var(--text-2); }
 .card__hero-title { margin: 0; font-size: 26px; font-weight: 500; line-height: 1.15; }
 
 /* мягкое индиго-свечение за главной карточкой */
@@ -334,10 +334,17 @@ input[type="range"]::-moz-range-thumb {
 #stage { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
 
 .hud { position: absolute; inset: 0; pointer-events: none; display: flex; justify-content: space-between; padding: var(--space-4); color: var(--stage-text); }
+.hud::before {
+  content: "";
+  position: absolute; top: 0; left: 0; right: 0; height: 104px;
+  background: linear-gradient(180deg, rgba(7, 7, 13, 0.7), transparent);
+  pointer-events: none;
+}
+.hud > * { position: relative; }
 .hud__stats { display: flex; gap: var(--space-6); }
 .stat { display: flex; flex-direction: column; min-width: 56px; }
 .stat__value { font-family: var(--mono); font-size: 34px; font-weight: 500; line-height: 1; text-shadow: 0 2px 12px rgba(0, 0, 0, 0.75); }
-.stat__label { margin-top: var(--space-1); font-family: var(--mono); font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--stage-text-2); }
+.stat__label { margin-top: var(--space-1); font-family: var(--mono); font-size: 11px; letter-spacing: 0.1em; text-transform: none; color: var(--stage-text-2); }
 .hud__right { display: flex; flex-direction: column; align-items: flex-end; gap: var(--space-2); }
 .pitch { font-family: var(--mono); font-size: 26px; font-weight: 500; text-shadow: 0 2px 12px rgba(0, 0, 0, 0.75); }
 .pitch span { font-size: 13px; color: var(--stage-text-2); }
@@ -386,7 +393,7 @@ input[type="range"]::-moz-range-thumb {
 
 /* главная карточка */
 .hero-head { display: flex; align-items: flex-start; justify-content: space-between; gap: var(--space-4); }
-.hero-type { display: inline-flex; align-items: center; gap: var(--space-1); font-size: 12px; color: var(--indigo-text); text-transform: uppercase; letter-spacing: 0.08em; }
+.hero-type { display: inline-flex; align-items: center; gap: var(--space-1); font-size: 12px; color: var(--indigo-text); text-transform: none; letter-spacing: 0.08em; }
 .hero-artist { margin: var(--space-1) 0 var(--space-3); color: var(--text-2); }
 .hero-stats { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: var(--space-3); margin: var(--space-3) 0; }
 .hero-stat__v { font-family: var(--mono); font-size: 16px; }
@@ -418,7 +425,7 @@ input[type="range"]::-moz-range-thumb {
 .list__row[aria-selected="true"] { background: var(--surface-sel); border-color: var(--line-strong); }
 .list__name { font-size: 14px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .list__meta { font-family: var(--mono); font-size: 12px; color: var(--text-2); white-space: nowrap; }
-.list__group { margin: var(--space-3) 0 var(--space-1); font-size: 12px; color: var(--text-2); text-transform: uppercase; letter-spacing: 0.08em; }
+.list__group { margin: var(--space-3) 0 var(--space-1); font-size: 12px; color: var(--text-2); text-transform: none; letter-spacing: 0.08em; }
 
 .filters { display: flex; gap: var(--space-2); flex-wrap: wrap; }
 
@@ -467,7 +474,7 @@ input[type="range"]::-moz-range-thumb {
 .metrics { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1px; background: var(--line); border: 0.5px solid var(--line); border-radius: var(--radius-ctl); overflow: hidden; }
 .metrics .m { background: var(--surface); padding: var(--space-4); text-align: center; }
 .metrics .m b { display: block; font-family: var(--mono); font-size: 26px; font-weight: 500; }
-.metrics .m span { font-size: 12px; color: var(--text-2); text-transform: uppercase; letter-spacing: 0.08em; }
+.metrics .m span { font-size: 12px; color: var(--text-2); text-transform: none; letter-spacing: 0.08em; }
 
 .errbars { display: flex; flex-direction: column; gap: var(--space-2); margin-top: var(--space-2); }
 .errbar { display: grid; grid-template-columns: 56px 1fr 40px; align-items: center; gap: var(--space-3); font-size: 13px; }
