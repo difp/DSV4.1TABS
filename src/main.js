@@ -918,6 +918,12 @@ function frame() {
   const realDt = state.lastFrame ? Math.min(1, (nowMs - state.lastFrame) / 1000) : 0;
   state.lastFrame = nowMs;
 
+  const playingNow = state.playing && !state.paused;
+  if (state.playingFlag !== playingNow) {
+    state.playingFlag = playingNow;
+    document.body.classList.toggle('is-playing', playingNow);
+  }
+
   let songTime = state.playing ? (state.paused ? state.pauseSong : computeSongTime()) : state.startSong;
 
   if (state.playing && !state.paused && loopActive() && songTime >= state.loopB) {
@@ -934,9 +940,16 @@ function frame() {
     if (state.game.finished || songTime > state.song.duration + 2.5) onFinish();
   }
 
+  let countIn = null;
+  if (state.playing && !state.paused && songTime < -0.001) {
+    const beatLen = 60 / (state.song.bpm || 120);
+    countIn = Math.max(1, Math.min(4, 4 - Math.floor((-songTime) / beatLen)));
+  }
+
   renderer.render({
     song: state.song, game: state.game, songTime,
     pxPerSec: 230, detected: state.detected, showFret: state.settings.showFret,
+    countIn,
   });
 
   updateHud(songTime);

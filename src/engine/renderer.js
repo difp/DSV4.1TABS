@@ -46,7 +46,7 @@ export class HighwayRenderer {
   }
 
   render(state) {
-    const { song, game, songTime, pxPerSec, detected, showFret } = state;
+    const { song, game, songTime, pxPerSec, detected, showFret, countIn } = state;
     const ctx = this.ctx;
     const { w, h } = this;
     const strings = song.stringCount || 6;
@@ -136,18 +136,18 @@ export class HighwayRenderer {
         this._roundRect(ctx, cx - laneW * 0.16, y - tail, laneW * 0.32, tail, 2);
         ctx.fill();
 
-        const nh = Math.min(28, laneW * 0.42);
+        const nh = Math.min(34, laneW * 0.46);
         ctx.globalAlpha = alpha;
         ctx.fillStyle = color;
-        this._roundRect(ctx, cx - laneW * 0.37, y - nh / 2, laneW * 0.74, nh, 3);
+        this._roundRect(ctx, cx - laneW * 0.39, y - nh / 2, laneW * 0.78, nh, 3);
         ctx.fill();
         ctx.strokeStyle = 'rgba(0,0,0,0.35)';
         ctx.lineWidth = 1;
         ctx.stroke();
 
         if (showFret) {
-          ctx.fillStyle = note.dead ? '#c7d2fe' : INK;
-          ctx.font = `700 ${Math.round(nh * 0.6)}px ${MONO}`;
+          ctx.fillStyle = note.dead ? '#e8ecff' : INK;
+          ctx.font = `700 ${Math.round(nh * 0.72)}px ${MONO}`;
           ctx.fillText(note.dead ? '×' : String(note.fret), cx, y + 1);
         }
       }
@@ -201,6 +201,21 @@ export class HighwayRenderer {
         ctx.font = `700 12px ${MONO}`;
         ctx.fillText(`${midiToName(detected.midi)} ${a.fret}`, cx, hitLineY + 46);
       }
+    }
+
+    // отсчёт перед стартом — крупно и контрастно (читается с расстояния)
+    if (countIn) {
+      const size = Math.min(w, h) * 0.34;
+      ctx.save();
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.font = `700 ${size}px ${MONO}`;
+      ctx.lineWidth = size * 0.07;
+      ctx.strokeStyle = 'rgba(7, 7, 13, 0.85)';
+      ctx.strokeText(String(countIn), w / 2, h * 0.44);
+      ctx.fillStyle = '#f4f4fb';
+      ctx.fillText(String(countIn), w / 2, h * 0.44);
+      ctx.restore();
     }
 
     // всплывающая оценка

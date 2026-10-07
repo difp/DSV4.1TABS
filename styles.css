@@ -573,12 +573,24 @@ body[data-ui="phone"] .sheet__cta { display: flex; }
 
 /* все элементы управления — не меньше 44×44 на телефоне */
 @media (max-width: 700px) {
-  .btn, .chip, .mic, .switch-row { min-height: 44px; }
-  .switch { width: 48px; height: 28px; }
-  .switch::after { width: 22px; height: 22px; }
+  .btn, .chip, .mic, .switch-row { min-height: 48px; }
+  .switch { width: 52px; height: 30px; }
+  .switch::after { width: 24px; height: 24px; }
   .switch[aria-checked="true"]::after { transform: translateX(20px); }
-  .btn--icon { min-height: 44px; min-width: 44px; }
+  .btn--icon { min-height: 48px; min-width: 48px; }
+  .playbar__loop .btn { min-width: 48px; }
 }
+
+/* ------------------------- Минимальный режим игры ------------------------- */
+/* Во время игры оставляем только трассу, текущую ноту и прогресс. */
+body.is-playing .brand,
+body.is-playing #btnLibrary,
+body.is-playing #btnProfile,
+body.is-playing .menu { display: none; }
+body.is-playing .stat--score { display: none; }
+body.is-playing .playbar #btnRestart,
+body.is-playing .playbar__loop { display: none; }
+body.is-playing .hud { padding-top: max(var(--space-4), var(--sat)); }
 
 /* ------------------------- Предпочтения ------------------------- */
 @media (prefers-reduced-transparency: reduce) {
