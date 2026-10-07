@@ -51,6 +51,12 @@
   --stage-text-2: #9fa1bd;
   --stage-line: #2a2a45;
   --backdrop: #05050a;
+
+  /* безопасные зоны устройства (fallback 0) */
+  --sat: env(safe-area-inset-top, 0px);
+  --sab: env(safe-area-inset-bottom, 0px);
+  --sal: env(safe-area-inset-left, 0px);
+  --sar: env(safe-area-inset-right, 0px);
 }
 
 /* Светлая тема — та же система токенов; «белая» кнопка становится тёмной. */
@@ -88,6 +94,7 @@ html, body {
   margin: 0;
   height: 100%;
   overflow: hidden;
+  overscroll-behavior: none;
   background: var(--bg);
   color: var(--text);
   font-family: var(--font);
@@ -272,14 +279,15 @@ input[type="range"]::-moz-range-thumb {
 [data-tip]:hover::after, [data-tip]:focus-visible::after { opacity: 1; }
 
 /* ------------------------- Каркас ------------------------- */
-#app { display: flex; flex-direction: column; height: 100vh; min-height: 0; position: relative; }
+/* dynamic viewport height — чтобы браузерная панель на телефоне не обрезала экран */
+#app { display: flex; flex-direction: column; height: 100vh; height: 100dvh; min-height: 0; position: relative; }
 
 /* ------------------------- Шапка ------------------------- */
 .topbar {
   display: flex;
   align-items: center;
   gap: var(--space-4);
-  padding: var(--space-3) var(--space-4);
+  padding: max(var(--space-3), var(--sat)) max(var(--space-4), var(--sar)) var(--space-3) max(var(--space-4), var(--sal));
   background: var(--bg);
   border-bottom: 0.5px solid var(--line);
   z-index: 30;
@@ -353,7 +361,7 @@ input[type="range"]::-moz-range-thumb {
 .overlay {
   position: absolute; inset: 0; z-index: 50;
   display: flex; align-items: flex-start; justify-content: center;
-  padding: var(--space-4);
+  padding: max(var(--space-4), var(--sat)) max(var(--space-4), var(--sar)) max(var(--space-4), var(--sab)) max(var(--space-4), var(--sal));
   overflow: auto;
   background: var(--scrim);
   animation: fade var(--dur) var(--ease);
@@ -452,8 +460,7 @@ input[type="range"]::-moz-range-thumb {
 .playbar {
   position: relative; z-index: 20;
   display: flex; align-items: center; gap: var(--space-3);
-  padding: var(--space-3) var(--space-4);
-  padding-bottom: max(var(--space-3), env(safe-area-inset-bottom));
+  padding: var(--space-3) max(var(--space-4), var(--sar)) max(var(--space-3), var(--sab)) max(var(--space-4), var(--sal));
   background: color-mix(in srgb, var(--surface) 78%, transparent);
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
@@ -488,7 +495,7 @@ input[type="range"]::-moz-range-thumb {
 .table .empty { color: var(--text-2); padding: var(--space-3); }
 
 /* ------------------------- Тосты ------------------------- */
-.toasts { position: absolute; left: 50%; bottom: calc(72px + env(safe-area-inset-bottom)); transform: translateX(-50%); display: flex; flex-direction: column; align-items: center; gap: var(--space-2); z-index: 70; }
+.toasts { position: absolute; left: 50%; bottom: calc(72px + var(--sab)); transform: translateX(-50%); display: flex; flex-direction: column; align-items: center; gap: var(--space-2); z-index: 70; }
 .toast {
   display: flex; align-items: center; gap: var(--space-2);
   max-width: 76vw; padding: var(--space-3) var(--space-4);
@@ -515,16 +522,21 @@ input[type="range"]::-moz-range-thumb {
 .wizard__foot { display: flex; align-items: center; justify-content: space-between; gap: var(--space-3); margin-top: var(--space-4); }
 
 /* ------------------------- Телефон ------------------------- */
+/* На реальном телефоне — во весь экран (без рамки), чтобы ничего не обрезалось. */
 body[data-ui="phone"] { display: flex; align-items: center; justify-content: center; background: var(--backdrop); }
-body[data-ui="phone"] #app {
-  width: min(390px, 100vw);
-  height: min(844px, 100vh);
-  border: 0.5px solid var(--line);
-  border-radius: 18px;
-  overflow: hidden;
-  background: var(--bg);
+body[data-ui="phone"] #app { width: 100%; height: 100dvh; background: var(--bg); }
+
+/* Рамка устройства — только как превью на большом экране. */
+@media (min-width: 520px) {
+  body[data-ui="phone"] #app {
+    width: min(390px, 100vw);
+    height: min(844px, 100dvh);
+    border: 0.5px solid var(--line);
+    border-radius: 18px;
+    overflow: hidden;
+  }
 }
-body[data-ui="phone"] .topbar { flex-wrap: wrap; row-gap: var(--space-2); gap: var(--space-2); padding: var(--space-3); }
+body[data-ui="phone"] .topbar { flex-wrap: wrap; row-gap: var(--space-2); gap: var(--space-2); padding: max(var(--space-3), var(--sat)) max(var(--space-3), var(--sar)) var(--space-3) max(var(--space-3), var(--sal)); }
 body[data-ui="phone"] .now-playing { flex-basis: 100%; order: 3; }
 body[data-ui="phone"] .topbar__actions { flex-wrap: wrap; gap: var(--space-1); }
 body[data-ui="phone"] .mic__text { display: none; }
@@ -535,13 +547,14 @@ body[data-ui="phone"] .stat__value { font-size: 26px; }
 body[data-ui="phone"] .pitch { font-size: 20px; }
 
 body[data-ui="phone"] .overlay { padding: 0; align-items: stretch; }
-body[data-ui="phone"] .overlay--center { align-items: center; padding: var(--space-3); }
+body[data-ui="phone"] .overlay--center { align-items: center; padding: max(var(--space-3), var(--sat)) max(var(--space-3), var(--sar)) max(var(--space-3), var(--sab)) max(var(--space-3), var(--sal)); }
 body[data-ui="phone"] .sheet {
   width: 100%; height: 100%; max-height: none; margin: 0;
   border-radius: 0; border-left: 0; border-right: 0; border-bottom: 0;
   display: flex; flex-direction: column;
 }
-body[data-ui="phone"] .sheet__body { flex: 1; overflow: auto; padding-bottom: var(--space-6); }
+body[data-ui="phone"] .sheet__body { flex: 1; overflow: auto; padding-left: max(var(--space-4), var(--sal)); padding-right: max(var(--space-4), var(--sar)); padding-bottom: var(--space-6); }
+body[data-ui="phone"] .sheet__head { padding-top: max(var(--space-4), var(--sat)); }
 body[data-ui="phone"] .bento { grid-template-columns: 1fr; }
 body[data-ui="phone"] .col-6, body[data-ui="phone"] .col-4, body[data-ui="phone"] .col-3, body[data-ui="phone"] .col-2 { grid-column: span 1; }
 body[data-ui="phone"] .hero-stats { grid-template-columns: repeat(2, 1fr); }
@@ -551,8 +564,7 @@ body[data-ui="phone"] .metrics { grid-template-columns: repeat(2, 1fr); }
 .sheet__cta {
   position: sticky; bottom: 0;
   display: none; gap: var(--space-2);
-  padding: var(--space-3) var(--space-4);
-  padding-bottom: max(var(--space-3), env(safe-area-inset-bottom));
+  padding: var(--space-3) max(var(--space-4), var(--sar)) max(var(--space-3), var(--sab)) max(var(--space-4), var(--sal));
   background: color-mix(in srgb, var(--surface) 88%, transparent);
   backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px);
   border-top: 0.5px solid var(--line);
