@@ -27,6 +27,7 @@
           <button class="btn btn--icon" id="btnMenu" aria-haspopup="menu" aria-expanded="false" aria-label="Ещё" data-tip="Ещё">⋯</button>
           <div class="popover hidden" id="menuPopover" role="menu" aria-label="Дополнительно">
             <button class="popover__item" role="menuitem" id="menuWizard">Мастер настройки</button>
+            <button class="popover__item" role="menuitem" id="menuHome">О проекте</button>
             <button class="popover__item" role="menuitem" id="menuAutoplay">Автоигра <span class="popover__value" id="menuAutoplayVal">выкл</span></button>
             <div class="popover__sep" role="separator"></div>
             <button class="popover__item" role="menuitem" id="menuTheme">Тема <span class="popover__value" id="menuThemeVal">тёмная</span></button>
@@ -72,8 +73,54 @@
       <span class="time" id="timeReadout">0:00 / 0:00</span>
     </footer>
 
+    <!-- ===================== Главная ===================== -->
+    <div class="overlay overlay--center" id="homeOverlay" role="dialog" aria-modal="true" aria-labelledby="homeTitle">
+      <div class="sheet home">
+        <div class="sheet__body">
+          <div class="home__hero">
+            <div class="brand home__brand">RIFF<b>HERO</b></div>
+            <h1 class="home__title" id="homeTitle">Тренажёр гитары, который слышит вас</h1>
+            <p class="home__tagline">Ноты падают по трассе — микрофон слушает и считает попадания</p>
+          </div>
+
+          <p class="home__lead">RiffHero — лёгкий браузерный тренажёр в духе Rocksmith. Играйте встроенные упражнения или загружайте свои табы, а приложение в реальном времени распознаёт ноты через микрофон, начисляет очки и показывает, что услышало.</p>
+
+          <div class="home__grid">
+            <div class="home__card">
+              <h3>Что умеет</h3>
+              <p>13 упражнений с уровнями 1–5, импорт Guitar Pro и MIDI, распознавание нот по микрофону, режимы аккордов, профиль со статистикой и «совет на сегодня», тёмная и светлая темы, свайп-выбор упражнений.</p>
+            </div>
+            <div class="home__card">
+              <h3>Как это сделано</h3>
+              <p>Проект собран «вайбкодингом» — короткими итерациями в паре с ИИ: от дизайн-системы и адаптива до распознавания звука. Без сборки и без зависимостей: браузер загружает нативные ES-модули напрямую.</p>
+            </div>
+            <div class="home__card home__card--wide">
+              <h3>Технологии</h3>
+              <div class="chips">
+                <span>Web Audio API</span>
+                <span>YIN</span>
+                <span>Гоерцель</span>
+                <span>Canvas 2D</span>
+                <span>localStorage</span>
+                <span>ES-модули</span>
+                <span>GitHub Pages</span>
+                <span>0 зависимостей</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="home__actions">
+            <button class="btn btn--action" id="btnHomeStart">Начать</button>
+            <button class="btn" id="btnHomeProfile">Профиль</button>
+            <a class="btn" id="btnHomeGithub" href="https://github.com/difp/DSV4.1TABS" target="_blank" rel="noopener">GitHub</a>
+          </div>
+          <p class="home__note">Встроенные упражнения оригинальные. Форматы .gp3/.gp4/.gp5 не поддерживаются. После загрузки работает офлайн.</p>
+        </div>
+      </div>
+    </div>
+
     <!-- ===================== Библиотека ===================== -->
-    <div class="overlay" id="libraryOverlay" role="dialog" aria-modal="true" aria-labelledby="libraryTitle">
+    <div class="overlay hidden" id="libraryOverlay" role="dialog" aria-modal="true" aria-labelledby="libraryTitle">
       <div class="sheet">
         <div class="sheet__head">
           <h1 class="sheet__title" id="libraryTitle">Упражнения</h1>

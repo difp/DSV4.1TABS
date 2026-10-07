@@ -20,10 +20,11 @@ const el = {
   songTitle: $('songTitle'), songMeta: $('songMeta'),
   micStatus: $('micStatus'), micText: $('micText'), micLevelBar: $('micLevelBar'),
   btnLibrary: $('btnLibrary'), btnProfile: $('btnProfile'), btnMenu: $('btnMenu'), menuPopover: $('menuPopover'),
-  menuWizard: $('menuWizard'), menuAutoplay: $('menuAutoplay'), menuAutoplayVal: $('menuAutoplayVal'),
+  menuWizard: $('menuWizard'), menuHome: $('menuHome'), menuAutoplay: $('menuAutoplay'), menuAutoplayVal: $('menuAutoplayVal'),
   menuTheme: $('menuTheme'), menuThemeVal: $('menuThemeVal'), menuDevice: $('menuDevice'), menuDeviceVal: $('menuDeviceVal'),
   stage: $('stage'), score: $('score'), combo: $('combo'), accuracy: $('accuracy'),
   pitchNote: $('pitchNote'), pitchCents: $('pitchCents'), feedback: $('feedback'),
+  homeOverlay: $('homeOverlay'), btnHomeStart: $('btnHomeStart'), btnHomeProfile: $('btnHomeProfile'),
   libraryOverlay: $('libraryOverlay'), btnCloseLibrary: $('btnCloseLibrary'),
   heroType: $('heroType'), heroTitle: $('heroTitle'), heroArtist: $('heroArtist'), heroCard: $('heroCard'),
   heroSlide: $('heroSlide'), heroDots: $('heroDots'), heroCount: $('heroCount'),
@@ -158,7 +159,7 @@ function rmsOf(buf) {
 // ---------------------------------------------------------------------------
 // Оверлеи: открытие/закрытие, Esc, фокус
 // ---------------------------------------------------------------------------
-const OVERLAYS = () => [el.libraryOverlay, el.profileOverlay, el.advancedOverlay, el.wizardOverlay, el.resultsOverlay, el.catalogOverlay];
+const OVERLAYS = () => [el.homeOverlay, el.libraryOverlay, el.profileOverlay, el.advancedOverlay, el.wizardOverlay, el.resultsOverlay, el.catalogOverlay];
 
 function visibleOverlay() {
   return OVERLAYS().find((o) => !o.classList.contains('hidden')) || null;
@@ -169,7 +170,7 @@ let lastTrigger = null;
 function openOverlay(node, trigger) {
   lastTrigger = trigger || (document.activeElement instanceof HTMLElement ? document.activeElement : null);
   node.classList.remove('hidden');
-  if (node === el.libraryOverlay) maybeShowSwipeHint();
+  if (node === el.libraryOverlay) { updateHero(); maybeShowSwipeHint(); }
   const focusable = node.querySelector('button:not([disabled]), [href], input, select, textarea, [tabindex]:not([tabindex="-1"])');
   if (focusable) setTimeout(() => focusable.focus(), 0);
 }
@@ -1460,6 +1461,17 @@ function bindEvents() {
   el.btnLibPlay.addEventListener('click', () => { closeOverlay(el.libraryOverlay); play(); });
   el.btnLibPlayMobile.addEventListener('click', () => { closeOverlay(el.libraryOverlay); play(); });
   el.btnLibrary.addEventListener('click', () => openOverlay(el.libraryOverlay, el.btnLibrary));
+  document.querySelector('.brand').addEventListener('click', () => openOverlay(el.homeOverlay, null));
+  el.btnHomeStart.addEventListener('click', () => {
+    closeOverlay(el.homeOverlay);
+    if (!state.settings.onboarded) openWizard();
+    else openOverlay(el.libraryOverlay, el.btnLibrary);
+  });
+  el.btnHomeProfile.addEventListener('click', () => {
+    closeOverlay(el.homeOverlay);
+    renderProfile();
+    openOverlay(el.profileOverlay, el.btnProfile);
+  });
   el.btnCloseLibrary.addEventListener('click', () => closeOverlay(el.libraryOverlay));
   el.btnPrevSong.addEventListener('click', () => stepSelection(-1));
   el.btnNextSong.addEventListener('click', () => stepSelection(1));
@@ -1505,6 +1517,7 @@ function bindEvents() {
   el.btnMenu.addEventListener('click', () => toggleMenu());
   document.addEventListener('click', (e) => { if (!el.menuPopover.contains(e.target) && !el.btnMenu.contains(e.target)) toggleMenu(false); });
   el.menuWizard.addEventListener('click', () => { toggleMenu(false); closeOverlay(el.libraryOverlay); openWizard(); });
+  el.menuHome.addEventListener('click', () => { toggleMenu(false); closeOverlay(el.libraryOverlay); openOverlay(el.homeOverlay, null); });
   el.menuAutoplay.addEventListener('click', () => {
     state.settings.autoplay = !state.settings.autoplay; saveSettings(); applySettingsToUi();
     toast(state.settings.autoplay ? 'Автоигра включена' : 'Автоигра выключена');
@@ -1737,13 +1750,8 @@ function init() {
   const params = new URLSearchParams(location.search);
   if (params.get('demo') === '1') { state.settings.autoplay = true; applySettingsToUi(); }
 
-  // первый запуск — мастер
-  if (!state.settings.onboarded) {
-    el.libraryOverlay.classList.add('hidden');
-    openWizard();
-  } else {
-    openOverlay(el.libraryOverlay, el.btnLibrary);
-  }
+  // сначала — главная страница
+  openOverlay(el.homeOverlay, null);
 
   window.__riff = { state, audio, pitch, renderer, play, pause, togglePlay, startFrom, restart, loadRaw, renderProfile, applyLayout, applyTheme, frame, autoCalibrateLatency };
 }
