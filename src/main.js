@@ -25,7 +25,8 @@ const el = {
   stage: $('stage'), score: $('score'), combo: $('combo'), accuracy: $('accuracy'),
   pitchNote: $('pitchNote'), pitchCents: $('pitchCents'), feedback: $('feedback'),
   libraryOverlay: $('libraryOverlay'), btnCloseLibrary: $('btnCloseLibrary'),
-  heroType: $('heroType'), heroTitle: $('heroTitle'), heroArtist: $('heroArtist'),
+  heroType: $('heroType'), heroTitle: $('heroTitle'), heroArtist: $('heroArtist'), heroCard: $('heroCard'),
+  btnPrevSong: $('btnPrevSong'), btnNextSong: $('btnNextSong'), btnToggleList: $('btnToggleList'), listCard: $('listCard'),
   heroBpm: $('heroBpm'), heroDur: $('heroDur'), heroNotes: $('heroNotes'), heroTuning: $('heroTuning'),
   heroBest: $('heroBest'), heroDifficulty: $('heroDifficulty'), tabPreview: $('tabPreview'),
   btnLibPlay: $('btnLibPlay'), btnLibPlayMobile: $('btnLibPlayMobile'),
@@ -44,6 +45,7 @@ const el = {
   latency: $('latency'), latencyVal: $('latencyVal'), btnAutoLatency: $('btnAutoLatency'),
   sens: $('sens'), sensVal: $('sensVal'), btnAutoSens: $('btnAutoSens'), btnOpenWizard: $('btnOpenWizard'),
   chordMode: $('chordMode'), sensPreset: $('sensPreset'), btnVerifyLatency: $('btnVerifyLatency'), latencyVerify: $('latencyVerify'),
+  micSelect: $('micSelect'), outputSelect: $('outputSelect'), btnRefreshDevices: $('btnRefreshDevices'), deviceHint: $('deviceHint'),
   wizardOverlay: $('wizardOverlay'), wizSkip: $('wizSkip'), wizSkip2: $('wizSkip2'), wizPrev: $('wizPrev'), wizNext: $('wizNext'),
   wizPane1: $('wizPane1'), wizPane2: $('wizPane2'), wizPane3: $('wizPane3'),
   wizAllow: $('wizAllow'), wizMicState: $('wizMicState'), wizLevelBar: $('wizLevelBar'), wizLevelHint: $('wizLevelHint'),
@@ -92,7 +94,7 @@ const state = {
   settings: Object.assign({
     rate: 1, metronome: true, countIn: true, showFret: true,
     guideVol: 70, metroVol: 60, latency: 0, sens: 6, clarity: 0.5,
-    chordMode: 'any', sensPreset: 'room',
+    chordMode: 'any', sensPreset: 'room', micDeviceId: '', outputDeviceId: '',
     autoplay: false, onboarded: false, recent: [],
   }, loadStoredSettings()),
 };
@@ -420,6 +422,16 @@ async function selectItem(item, autoplay) {
 
 function currentItem() {
   return state.items.find((i) => i.id === state.selectedId) || null;
+}
+
+// Карусель: переход к предыдущему/следующему элементу текущего фильтра.
+function stepSelection(delta) {
+  const list = filteredItems();
+  if (!list.length) return;
+  let idx = list.findIndex((i) => i.id === state.selectedId);
+  if (idx < 0) idx = 0;
+  idx = (idx + delta + list.length) % list.length;
+  selectItem(list[idx], false);
 }
 
 // ---------------------------------------------------------------------------
@@ -1141,11 +1153,12 @@ async function toggleMic() {
     return true;
   }
   try {
-    await audio.enableMic();
+    await audio.enableMic(state.settings.micDeviceId || undefined);
     pitch.setSampleRate(audio.ctx.sampleRate);
     el.micStatus.dataset.state = 'ready';
     el.micText.textContent = 'Микрофон готов';
     toast('Микрофон включён', 'ok');
+    refreshDevices();
     return true;
   } catch (e) {
     el.micStatus.dataset.state = 'denied';
@@ -1153,6 +1166,41 @@ async function toggleMic() {
     toast('Микрофон недоступен: ' + e.message, 'err', 6000);
     return false;
   }
+}
+
+// ---------------------------------------------------------------------------
+// Устройства: микрофон и вывод (наушники)
+// ---------------------------------------------------------------------------
+function fillSelect(sel, items, defaultLabel, value) {
+  sel.innerHTML = '';
+  const def = document.createElement('option');
+  def.value = '';
+  def.textContent = defaultLabel;
+  sel.appendChild(def);
+  for (const d of items) {
+    const o = document.createElement('option');
+    o.value = d.id;
+    o.textContent = d.label;
+    sel.appendChild(o);
+  }
+  sel.value = value || '';
+}
+
+async function refreshDevices() {
+  if (!el.micSelect) return;
+  let info = { inputs: [], outputs: [], canSelectOutput: false };
+  try { info = await audio.listDevices(); } catch { /* noop */ }
+  fillSelect(el.micSelect, info.inputs, 'Микрофон по умолчанию', state.settings.micDeviceId);
+  if (info.canSelectOutput) {
+    fillSelect(el.outputSelect, info.outputs, 'Вывод по умолчанию', state.settings.outputDeviceId);
+    el.outputSelect.disabled = false;
+  } else {
+    el.outputSelect.innerHTML = '<option value="">Не поддерживается браузером</option>';
+    el.outputSelect.disabled = true;
+  }
+  el.deviceHint.textContent = !audio.micReady
+    ? 'Включите микрофон, чтобы увидеть названия устройств.'
+    : (info.inputs.some((d) => !/^Микрофон \d+$/.test(d.label)) ? '' : 'Названия устройств недоступны без доступа к микрофону.');
 }
 
 // ---------------------------------------------------------------------------
@@ -1357,6 +1405,37 @@ function bindEvents() {
   el.btnLibPlayMobile.addEventListener('click', () => { closeOverlay(el.libraryOverlay); play(); });
   el.btnLibrary.addEventListener('click', () => openOverlay(el.libraryOverlay, el.btnLibrary));
   el.btnCloseLibrary.addEventListener('click', () => closeOverlay(el.libraryOverlay));
+  el.btnPrevSong.addEventListener('click', () => stepSelection(-1));
+  el.btnNextSong.addEventListener('click', () => stepSelection(1));
+  el.btnToggleList.addEventListener('click', () => {
+    const open = !el.listCard.classList.toggle('hidden');
+    el.btnToggleList.setAttribute('aria-expanded', open ? 'true' : 'false');
+    el.btnToggleList.textContent = open ? 'Скрыть список' : 'Список';
+    if (open) renderList();
+  });
+  // свайп карточки упражнения
+  let swipeX = null;
+  el.heroCard.addEventListener('touchstart', (e) => {
+    if (e.touches.length !== 1) return;
+    swipeX = e.touches[0].clientX;
+  }, { passive: true });
+  el.heroCard.addEventListener('touchend', (e) => {
+    if (swipeX == null) return;
+    const dx = e.changedTouches[0].clientX - swipeX;
+    swipeX = null;
+    if (Math.abs(dx) > 45) stepSelection(dx < 0 ? 1 : -1);
+  }, { passive: true });
+  el.heroCard.addEventListener('pointerdown', (e) => {
+    if (e.pointerType === 'mouse' && e.button !== 0) return;
+    if (e.target.closest('button, input, select, a')) return;
+    swipeX = e.clientX;
+  });
+  el.heroCard.addEventListener('pointerup', (e) => {
+    if (swipeX == null) return;
+    const dx = e.clientX - swipeX;
+    swipeX = null;
+    if (Math.abs(dx) > 45) stepSelection(dx < 0 ? 1 : -1);
+  });
   el.btnResultsLibrary.addEventListener('click', () => { closeOverlay(el.resultsOverlay); resetPlayback(); openOverlay(el.libraryOverlay, el.btnLibrary); });
   el.btnResultsClose.addEventListener('click', () => closeOverlay(el.resultsOverlay));
   el.btnPracticeWeak.addEventListener('click', practiceWeak);
@@ -1442,8 +1521,29 @@ function bindEvents() {
   el.profileImport.addEventListener('change', (e) => { const f = e.target.files && e.target.files[0]; if (f) importProfile(f); e.target.value = ''; });
 
   // расширенные
-  el.btnAdvanced.addEventListener('click', () => openOverlay(el.advancedOverlay, el.btnAdvanced));
+  el.btnAdvanced.addEventListener('click', () => { openOverlay(el.advancedOverlay, el.btnAdvanced); refreshDevices(); });
   el.btnAdvancedClose.addEventListener('click', () => closeOverlay(el.advancedOverlay));
+  el.btnRefreshDevices.addEventListener('click', refreshDevices);
+  el.micSelect.addEventListener('change', async () => {
+    state.settings.micDeviceId = el.micSelect.value;
+    saveSettings();
+    if (audio.micReady) {
+      try {
+        await audio.enableMic(state.settings.micDeviceId || undefined);
+        pitch.setSampleRate(audio.ctx.sampleRate);
+        toast('Микрофон переключён', 'ok');
+        refreshDevices();
+      } catch (e) { toast('Не удалось переключить микрофон: ' + e.message, 'err', 6000); }
+    }
+  });
+  el.outputSelect.addEventListener('change', async () => {
+    state.settings.outputDeviceId = el.outputSelect.value;
+    saveSettings();
+    try {
+      await audio.setOutputDevice(state.settings.outputDeviceId || '');
+      toast('Вывод переключён', 'ok');
+    } catch (e) { toast('Вывод: ' + e.message, 'err', 6000); }
+  });
   el.btnOpenWizard.addEventListener('click', () => { closeOverlay(el.advancedOverlay); openWizard(); });
   el.guideVol.addEventListener('input', () => { state.settings.guideVol = Number(el.guideVol.value); el.guideVolVal.textContent = el.guideVol.value + '%'; saveSettings(); audio.setGuideVolume(state.settings.guideVol / 100); });
   el.metroVol.addEventListener('input', () => { state.settings.metroVol = Number(el.metroVol.value); el.metroVolVal.textContent = el.metroVol.value + '%'; saveSettings(); audio.setMetroVolume(state.settings.metroVol / 100); });
@@ -1536,8 +1636,8 @@ function bindEvents() {
     else if (e.code === 'BracketLeft') { e.preventDefault(); setLoopA(); }
     else if (e.code === 'BracketRight') { e.preventDefault(); setLoopB(); }
     else if (e.code === 'Backslash') { e.preventDefault(); clearLoop(); }
-    else if (e.code === 'ArrowLeft') { e.preventDefault(); seekBy(-5); }
-    else if (e.code === 'ArrowRight') { e.preventDefault(); seekBy(5); }
+    else if (e.code === 'ArrowLeft') { e.preventDefault(); if (!el.libraryOverlay.classList.contains('hidden')) stepSelection(-1); else seekBy(-5); }
+    else if (e.code === 'ArrowRight') { e.preventDefault(); if (!el.libraryOverlay.classList.contains('hidden')) stepSelection(1); else seekBy(5); }
   });
 
   window.addEventListener('resize', () => { applyLayout(); if (state.song) drawTabPreview(state.song); });
@@ -1567,6 +1667,7 @@ function init() {
   loadRaw(first.raw);
   renderList();
   updateHero();
+  refreshDevices();
 
   setInterval(detectionTick, 16);
 

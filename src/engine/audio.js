@@ -112,20 +112,21 @@ export class AudioEngine {
     return this._track({ stop: () => { try { o.stop(); } catch { /* noop */ } }, end: when + 0.09 });
   }
 
-  async enableMic() {
+  async enableMic(deviceId) {
     await this.ensure();
     if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
       throw new Error('Микрофон недоступен: нет navigator.mediaDevices (нужен https или localhost)');
     }
-    const stream = await navigator.mediaDevices.getUserMedia({
-      audio: {
-        echoCancellation: false,
-        noiseSuppression: false,
-        autoGainControl: false,
-        channelCount: 1,
-      },
-    });
+    const constraints = {
+      echoCancellation: false,
+      noiseSuppression: false,
+      autoGainControl: false,
+      channelCount: 1,
+    };
+    if (deviceId) constraints.deviceId = { exact: deviceId };
+    const stream = await navigator.mediaDevices.getUserMedia({ audio: constraints });
     this.disableMic();
+    this.inputDeviceId = deviceId || '';
     this.micStream = stream;
     this.micSource = this.ctx.createMediaStreamSource(stream);
     const an = this.ctx.createAnalyser();
@@ -135,6 +136,33 @@ export class AudioEngine {
     this.micSource.connect(an);
     this._micBuf = new Float32Array(an.fftSize);
     return true;
+  }
+
+  // Список доступных устройств (метки появляются только после разрешения).
+  async listDevices() {
+    if (!navigator.mediaDevices || !navigator.mediaDevices.enumerateDevices) {
+      return { inputs: [], outputs: [], canSelectOutput: false };
+    }
+    let devices = [];
+    try { devices = await navigator.mediaDevices.enumerateDevices(); } catch { /* noop */ }
+    const inputs = devices.filter((d) => d.kind === 'audioinput')
+      .map((d, i) => ({ id: d.deviceId, label: d.label || `Микрофон ${i + 1}` }));
+    const outputs = devices.filter((d) => d.kind === 'audiooutput')
+      .map((d, i) => ({ id: d.deviceId, label: d.label || `Устройство вывода ${i + 1}` }));
+    const proto = window.AudioContext && window.AudioContext.prototype;
+    const canSelectOutput = !!((this.ctx && typeof this.ctx.setSinkId === 'function')
+      || (proto && typeof proto.setSinkId === 'function'));
+    return { inputs, outputs, canSelectOutput };
+  }
+
+  // Выбор устройства вывода (наушники и т.п.).
+  async setOutputDevice(deviceId) {
+    await this.ensure();
+    if (typeof this.ctx.setSinkId !== 'function') {
+      throw new Error('Выбор вывода не поддерживается браузером');
+    }
+    await this.ctx.setSinkId(deviceId || '');
+    this.outputDeviceId = deviceId || '';
   }
 
   disableMic() {

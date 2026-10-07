@@ -199,6 +199,7 @@ body[data-theme="light"] .btn--accent { color: #ffffff; }
 .card__hero-title { margin: 0; font-size: 26px; font-weight: 500; line-height: 1.15; }
 
 /* мягкое индиго-свечение за главной карточкой */
+.card--hero { touch-action: pan-y; }
 .card--hero::before {
   content: "";
   position: absolute;
@@ -408,13 +409,19 @@ input[type="range"]::-moz-range-thumb {
 @media (max-width: 900px) { .bento { grid-template-columns: repeat(2, 1fr); } .col-6, .col-4, .col-3, .col-2 { grid-column: span 2; } }
 
 /* главная карточка */
-.hero-head { display: flex; align-items: flex-start; justify-content: space-between; gap: var(--space-4); }
+.hero-head { display: flex; align-items: center; gap: var(--space-3); }
+.hero-main { flex: 1; min-width: 0; text-align: center; }
+.hero-nav { flex: none; font-size: 22px; line-height: 1; }
+.hero-hint { margin: var(--space-4) 0 0; font-size: 12px; text-align: center; }
+.hero-actions { display: flex; align-items: center; gap: var(--space-2); }
 .hero-type { display: inline-flex; align-items: center; gap: var(--space-1); font-size: 12px; color: var(--indigo-text); text-transform: none; letter-spacing: 0.08em; }
 .hero-artist { margin: var(--space-1) 0 var(--space-3); color: var(--text-2); }
 .hero-stats { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: var(--space-3); margin: var(--space-3) 0; }
 .hero-stat__v { font-family: var(--mono); font-size: 16px; }
 .hero-stat__k { font-size: 12px; color: var(--text-2); }
 .hero-bottom { display: flex; align-items: center; justify-content: space-between; gap: var(--space-4); flex-wrap: wrap; }
+.small { font-size: 12px; }
+.verify-actions { display: flex; gap: var(--space-2); margin-top: var(--space-2); }
 
 /* сложность */
 .dots { display: inline-flex; gap: 6px; align-items: center; }
@@ -477,7 +484,8 @@ input[type="range"]::-moz-range-thumb {
 @supports not ((backdrop-filter: blur(2px)) or (-webkit-backdrop-filter: blur(2px))) {
   .playbar { background: var(--surface); }
 }
-.playbar__loop { display: inline-flex; gap: var(--space-1); }
+.playbar__group { display: inline-flex; gap: var(--space-2); }
+.playbar__loop { display: inline-flex; gap: var(--space-1); padding-left: var(--space-3); border-left: 0.5px solid var(--line); }
 .progress { position: relative; flex: 1; min-width: 80px; display: flex; align-items: center; }
 .progress input { flex: 1; }
 .progress__marks { position: absolute; inset: 0; pointer-events: none; }
@@ -567,6 +575,9 @@ body[data-ui="phone"] .bento { grid-template-columns: 1fr; }
 body[data-ui="phone"] .col-6, body[data-ui="phone"] .col-4, body[data-ui="phone"] .col-3, body[data-ui="phone"] .col-2 { grid-column: span 1; }
 body[data-ui="phone"] .hero-stats { grid-template-columns: repeat(2, 1fr); }
 body[data-ui="phone"] .metrics { grid-template-columns: repeat(2, 1fr); }
+body[data-ui="phone"] .playbar { flex-wrap: wrap; row-gap: var(--space-2); }
+body[data-ui="phone"] .playbar .progress { order: 5; flex-basis: 100%; }
+body[data-ui="phone"] .playbar__loop { border-left: 0; padding-left: 0; }
 
 /* закреплённая кнопка «Играть» с учётом safe-area */
 .sheet__cta {
