@@ -26,6 +26,7 @@ const el = {
   pitchNote: $('pitchNote'), pitchCents: $('pitchCents'), feedback: $('feedback'),
   libraryOverlay: $('libraryOverlay'), btnCloseLibrary: $('btnCloseLibrary'),
   heroType: $('heroType'), heroTitle: $('heroTitle'), heroArtist: $('heroArtist'), heroCard: $('heroCard'),
+  heroSlide: $('heroSlide'), heroDots: $('heroDots'), heroCount: $('heroCount'),
   btnPrevSong: $('btnPrevSong'), btnNextSong: $('btnNextSong'), btnToggleList: $('btnToggleList'), listCard: $('listCard'),
   heroBpm: $('heroBpm'), heroDur: $('heroDur'), heroNotes: $('heroNotes'), heroTuning: $('heroTuning'),
   heroBest: $('heroBest'), heroDifficulty: $('heroDifficulty'), tabPreview: $('tabPreview'),
@@ -91,6 +92,7 @@ const state = {
   practiceBuffer: 0, sessionPractice: 0, lastFrame: 0,
   wizardStep: 1, wizardActive: false,
   lastErrors: null,
+  swipeHintShown: false,
   settings: Object.assign({
     rate: 1, metronome: true, countIn: true, showFret: true,
     guideVol: 70, metroVol: 60, latency: 0, sens: 6, clarity: 0.5,
@@ -143,6 +145,10 @@ function escapeHtml(s) {
 
 function clamp(v, a, b) { return Math.min(b, Math.max(a, v)); }
 
+function reducedMotion() {
+  return !!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
+}
+
 function rmsOf(buf) {
   let sum = 0;
   for (let i = 0; i < buf.length; i++) sum += buf[i] * buf[i];
@@ -163,6 +169,7 @@ let lastTrigger = null;
 function openOverlay(node, trigger) {
   lastTrigger = trigger || (document.activeElement instanceof HTMLElement ? document.activeElement : null);
   node.classList.remove('hidden');
+  if (node === el.libraryOverlay) maybeShowSwipeHint();
   const focusable = node.querySelector('button:not([disabled]), [href], input, select, textarea, [tabindex]:not([tabindex="-1"])');
   if (focusable) setTimeout(() => focusable.focus(), 0);
 }
@@ -395,6 +402,7 @@ function renderList() {
     row.addEventListener('dblclick', () => selectItem(item, true));
     el.songList.appendChild(row);
   }
+  updateHeroIndicator();
 }
 
 async function selectItem(item, autoplay) {
@@ -425,13 +433,60 @@ function currentItem() {
 }
 
 // Карусель: переход к предыдущему/следующему элементу текущего фильтра.
-function stepSelection(delta) {
+async function stepSelection(delta) {
   const list = filteredItems();
   if (!list.length) return;
   let idx = list.findIndex((i) => i.id === state.selectedId);
   if (idx < 0) idx = 0;
   idx = (idx + delta + list.length) % list.length;
-  selectItem(list[idx], false);
+  flashHero(delta);
+  await selectItem(list[idx], false);
+}
+
+function flashHero(delta) {
+  const slide = el.heroSlide;
+  if (!slide || !slide.animate || reducedMotion()) return;
+  slide.getAnimations?.().forEach((a) => a.cancel());
+  slide.style.transform = '';
+  slide.style.opacity = '';
+  const dir = delta >= 0 ? 1 : -1;
+  slide.animate(
+    [{ opacity: 0, transform: `translateX(${30 * dir}px)` }, { opacity: 1, transform: 'translateX(0)' }],
+    { duration: 220, easing: 'cubic-bezier(0.2, 0.7, 0.3, 1)' },
+  );
+}
+
+// Индикатор: счётчик и точки-страницы.
+function updateHeroIndicator() {
+  const list = filteredItems();
+  let idx = list.findIndex((i) => i.id === state.selectedId);
+  if (idx < 0) idx = 0;
+  el.heroCount.textContent = list.length ? `${idx + 1} / ${list.length}` : '0 / 0';
+  el.heroDots.innerHTML = '';
+  if (list.length > 40) return;
+  list.forEach((item, i) => {
+    const b = document.createElement('button');
+    b.type = 'button';
+    b.className = i === idx ? 'on' : '';
+    b.setAttribute('aria-label', item.title);
+    b.addEventListener('click', () => selectItem(item, false));
+    el.heroDots.appendChild(b);
+  });
+}
+
+// Один раз подсказываем жестом, что карточку можно свайпать.
+function maybeShowSwipeHint() {
+  if (state.swipeHintShown) return;
+  state.swipeHintShown = true;
+  const slide = el.heroSlide;
+  if (!slide || !slide.animate || reducedMotion()) return;
+  slide.animate([
+    { transform: 'translateX(0)' },
+    { transform: 'translateX(-16px)' },
+    { transform: 'translateX(0)' },
+    { transform: 'translateX(12px)' },
+    { transform: 'translateX(0)' },
+  ], { duration: 900, easing: 'ease-in-out', delay: 350 });
 }
 
 // ---------------------------------------------------------------------------
@@ -524,6 +579,7 @@ function updateHero() {
   el.heroBest.textContent = best != null ? Math.round(best * 100) + '%' : '—';
   renderDifficulty(computeDifficulty(song));
   drawTabPreview(song);
+  updateHeroIndicator();
 }
 
 // ---------------------------------------------------------------------------
@@ -1413,29 +1469,34 @@ function bindEvents() {
     el.btnToggleList.textContent = open ? 'Скрыть список' : 'Список';
     if (open) renderList();
   });
-  // свайп карточки упражнения
-  let swipeX = null;
-  el.heroCard.addEventListener('touchstart', (e) => {
-    if (e.touches.length !== 1) return;
-    swipeX = e.touches[0].clientX;
-  }, { passive: true });
-  el.heroCard.addEventListener('touchend', (e) => {
-    if (swipeX == null) return;
-    const dx = e.changedTouches[0].clientX - swipeX;
-    swipeX = null;
-    if (Math.abs(dx) > 45) stepSelection(dx < 0 ? 1 : -1);
-  }, { passive: true });
+  // свайп карточки: следуем за пальцем и «доводим» до соседнего упражнения
+  let drag = null;
+  const slide = el.heroSlide;
+  const endDrag = (advance) => {
+    if (!drag) return;
+    const dx = drag.dx;
+    drag = null;
+    slide.style.transform = '';
+    slide.style.opacity = '';
+    if (advance !== false && Math.abs(dx) > 45) stepSelection(dx < 0 ? 1 : -1);
+  };
   el.heroCard.addEventListener('pointerdown', (e) => {
-    if (e.pointerType === 'mouse' && e.button !== 0) return;
     if (e.target.closest('button, input, select, a')) return;
-    swipeX = e.clientX;
+    if (e.pointerType === 'mouse' && e.button !== 0) return;
+    slide.getAnimations?.().forEach((a) => a.cancel());
+    drag = { x: e.clientX, dx: 0, id: e.pointerId };
+    try { el.heroCard.setPointerCapture(e.pointerId); } catch { /* noop */ }
   });
-  el.heroCard.addEventListener('pointerup', (e) => {
-    if (swipeX == null) return;
-    const dx = e.clientX - swipeX;
-    swipeX = null;
-    if (Math.abs(dx) > 45) stepSelection(dx < 0 ? 1 : -1);
+  el.heroCard.addEventListener('pointermove', (e) => {
+    if (!drag || e.pointerId !== drag.id) return;
+    drag.dx = e.clientX - drag.x;
+    const d = clamp(drag.dx * 0.45, -90, 90);
+    slide.style.transform = `translateX(${d}px)`;
+    slide.style.opacity = String(1 - Math.min(0.4, Math.abs(d) / 240));
   });
+  el.heroCard.addEventListener('pointerup', (e) => { if (drag && e.pointerId === drag.id) endDrag(true); });
+  el.heroCard.addEventListener('pointercancel', () => endDrag(false));
+  el.heroCard.addEventListener('lostpointercapture', () => endDrag(true));
   el.btnResultsLibrary.addEventListener('click', () => { closeOverlay(el.resultsOverlay); resetPlayback(); openOverlay(el.libraryOverlay, el.btnLibrary); });
   el.btnResultsClose.addEventListener('click', () => closeOverlay(el.resultsOverlay));
   el.btnPracticeWeak.addEventListener('click', practiceWeak);

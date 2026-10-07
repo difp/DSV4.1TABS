@@ -83,36 +83,42 @@
           <div class="bento">
             <section class="card card--hero col-6" id="heroCard">
               <div class="hero-head">
-                <button class="btn btn--icon btn--ghost hero-nav" id="btnPrevSong" aria-label="Предыдущее упражнение" data-tip="Предыдущее">‹</button>
-                <div class="hero-main">
-                  <div class="hero-type" id="heroType">Упражнение</div>
-                  <h2 class="card__hero-title" id="heroTitle">—</h2>
-                  <div class="hero-artist" id="heroArtist"></div>
+                <button class="btn btn--icon hero-nav" id="btnPrevSong" aria-label="Предыдущее упражнение" data-tip="Предыдущее">‹</button>
+                <div class="hero-slide" id="heroSlide">
+                  <div class="hero-main">
+                    <div class="hero-type" id="heroType">Упражнение</div>
+                    <h2 class="card__hero-title" id="heroTitle">—</h2>
+                    <div class="hero-artist" id="heroArtist"></div>
+                  </div>
+                  <div class="hero-stats">
+                    <div><div class="hero-stat__v mono" id="heroBpm">—</div><div class="hero-stat__k">BPM</div></div>
+                    <div><div class="hero-stat__v mono" id="heroDur">—</div><div class="hero-stat__k">Длительность</div></div>
+                    <div><div class="hero-stat__v mono" id="heroNotes">—</div><div class="hero-stat__k">Нот</div></div>
+                    <div><div class="hero-stat__v mono" id="heroTuning">—</div><div class="hero-stat__k">Строй</div></div>
+                  </div>
+                  <canvas class="tab-preview" id="tabPreview" role="img" aria-label="Превью табулатуры"></canvas>
+                  <div class="hero-bottom" style="margin-top:var(--space-4)">
+                    <div>
+                      <div class="hero-stat__k">Лучшая точность</div>
+                      <div class="hero-stat__v mono" id="heroBest">—</div>
+                    </div>
+                    <div>
+                      <div class="hero-stat__k">Сложность</div>
+                      <div class="dots" id="heroDifficulty" aria-label="Сложность"></div>
+                    </div>
+                    <div class="hero-actions">
+                      <button class="btn btn--ghost btn--sm" id="btnToggleList" aria-expanded="false">Список</button>
+                      <button class="btn btn--accent" id="btnLibPlay">Играть</button>
+                    </div>
+                  </div>
                 </div>
-                <button class="btn btn--icon btn--ghost hero-nav" id="btnNextSong" aria-label="Следующее упражнение" data-tip="Следующее">›</button>
+                <button class="btn btn--icon hero-nav" id="btnNextSong" aria-label="Следующее упражнение" data-tip="Следующее">›</button>
               </div>
-              <div class="hero-stats">
-                <div><div class="hero-stat__v mono" id="heroBpm">—</div><div class="hero-stat__k">BPM</div></div>
-                <div><div class="hero-stat__v mono" id="heroDur">—</div><div class="hero-stat__k">Длительность</div></div>
-                <div><div class="hero-stat__v mono" id="heroNotes">—</div><div class="hero-stat__k">Нот</div></div>
-                <div><div class="hero-stat__v mono" id="heroTuning">—</div><div class="hero-stat__k">Строй</div></div>
+              <div class="hero-indicator">
+                <span class="mono hero-count" id="heroCount">1 / 1</span>
+                <div class="hero-dots" id="heroDots" role="group" aria-label="Быстрый выбор упражнения"></div>
               </div>
-              <canvas class="tab-preview" id="tabPreview" role="img" aria-label="Превью табулатуры"></canvas>
-              <div class="hero-bottom" style="margin-top:var(--space-4)">
-                <div>
-                  <div class="hero-stat__k">Лучшая точность</div>
-                  <div class="hero-stat__v mono" id="heroBest">—</div>
-                </div>
-                <div>
-                  <div class="hero-stat__k">Сложность</div>
-                  <div class="dots" id="heroDifficulty" aria-label="Сложность"></div>
-                </div>
-                <div class="hero-actions">
-                  <button class="btn btn--ghost btn--sm" id="btnToggleList" aria-expanded="false">Список</button>
-                  <button class="btn btn--accent" id="btnLibPlay">Играть</button>
-                </div>
-              </div>
-              <p class="hero-hint muted">Свайпните карточку или нажмите ‹ ›, чтобы выбрать упражнение</p>
+              <p class="hero-hint muted">‹ Свайпните карточку или используйте стрелки ›</p>
             </section>
 
             <section class="card col-2">

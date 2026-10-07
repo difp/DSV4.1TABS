@@ -199,7 +199,8 @@ body[data-theme="light"] .btn--accent { color: #ffffff; }
 .card__hero-title { margin: 0; font-size: 26px; font-weight: 500; line-height: 1.15; }
 
 /* мягкое индиго-свечение за главной карточкой */
-.card--hero { touch-action: pan-y; }
+.card--hero { touch-action: pan-y; cursor: grab; user-select: none; }
+.card--hero:active { cursor: grabbing; }
 .card--hero::before {
   content: "";
   position: absolute;
@@ -409,10 +410,29 @@ input[type="range"]::-moz-range-thumb {
 @media (max-width: 900px) { .bento { grid-template-columns: repeat(2, 1fr); } .col-6, .col-4, .col-3, .col-2 { grid-column: span 2; } }
 
 /* главная карточка */
-.hero-head { display: flex; align-items: center; gap: var(--space-3); }
-.hero-main { flex: 1; min-width: 0; text-align: center; }
-.hero-nav { flex: none; font-size: 22px; line-height: 1; }
-.hero-hint { margin: var(--space-4) 0 0; font-size: 12px; text-align: center; }
+.hero-head { display: flex; align-items: flex-start; gap: var(--space-3); }
+.hero-slide { flex: 1; min-width: 0; display: flex; flex-direction: column; will-change: transform, opacity; }
+.hero-main { text-align: center; }
+.hero-nav {
+  flex: none; width: 48px; height: 48px; padding: 0;
+  font-size: 24px; line-height: 1;
+  background: var(--surface-2);
+  border: 0.5px solid var(--line-strong);
+  color: var(--text);
+  border-radius: 50%;
+}
+.hero-nav:hover { border-color: var(--indigo); color: var(--indigo-text); background: var(--indigo-tint); }
+.hero-indicator { display: flex; align-items: center; justify-content: center; gap: var(--space-3); margin-top: var(--space-4); }
+.hero-count { font-size: 12px; color: var(--text-2); }
+.hero-dots { display: flex; align-items: center; justify-content: center; flex-wrap: wrap; gap: 6px; max-width: 72%; }
+.hero-dots button {
+  width: 8px; height: 8px; padding: 0; border: 0; border-radius: 50%;
+  background: var(--line-strong); cursor: pointer;
+  transition: transform var(--dur) var(--ease), background var(--dur) var(--ease);
+}
+.hero-dots button:hover { background: var(--indigo-text); }
+.hero-dots button.on { background: var(--indigo); transform: scale(1.5); }
+.hero-hint { margin: var(--space-3) 0 0; font-size: 12px; text-align: center; color: var(--text-2); }
 .hero-actions { display: flex; align-items: center; gap: var(--space-2); }
 .hero-type { display: inline-flex; align-items: center; gap: var(--space-1); font-size: 12px; color: var(--indigo-text); text-transform: none; letter-spacing: 0.08em; }
 .hero-artist { margin: var(--space-1) 0 var(--space-3); color: var(--text-2); }
