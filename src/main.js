@@ -60,6 +60,7 @@ const el = {
   btnCatalogLoad: $('btnCatalogLoad'), catalogFileInput: $('catalogFileInput'), catalogStatus: $('catalogStatus'),
   btnPlay: $('btnPlay'), btnRestart: $('btnRestart'),
   btnLoopA: $('btnLoopA'), btnLoopB: $('btnLoopB'), btnLoopClear: $('btnLoopClear'),
+  btnOrient: $('btnOrient'), btnFinger: $('btnFinger'),
   progressBar: $('progressBar'), loopMarkers: $('loopMarkers'), timeReadout: $('timeReadout'),
   toasts: $('toasts'),
 };
@@ -96,7 +97,7 @@ const state = {
   lastErrors: null,
   swipeHintShown: false,
   settings: Object.assign({
-    rate: 1, metronome: true, countIn: true, showFret: true, showFinger: true,
+    rate: 1, metronome: true, countIn: true, showFret: true, showFinger: true, orientation: 'h',
     guideVol: 70, metroVol: 60, latency: 0, sens: 6, clarity: 0.5,
     chordMode: 'any', sensPreset: 'room', micDeviceId: '', outputDeviceId: '',
     autoplay: false, onboarded: false, recent: [],
@@ -308,6 +309,18 @@ function setBpm(bpm) {
   setRate(clamp(bpm / speedBaseBpm(), 0.25, 1.5));
 }
 
+function toggleOrientation() {
+  state.settings.orientation = state.settings.orientation === 'h' ? 'v' : 'h';
+  saveSettings();
+  applySettingsToUi();
+}
+
+function toggleFinger() {
+  state.settings.showFinger = !state.settings.showFinger;
+  saveSettings();
+  applySettingsToUi();
+}
+
 function applySettingsToUi() {
   const s = state.settings;
   state.rate = s.rate;
@@ -316,6 +329,8 @@ function applySettingsToUi() {
   setSwitch(el.countIn, s.countIn);
   setSwitch(el.showFret, s.showFret);
   setSwitch(el.showFinger, s.showFinger);
+  el.btnOrient.setAttribute('aria-pressed', s.orientation === 'h' ? 'true' : 'false');
+  el.btnFinger.setAttribute('aria-pressed', s.showFinger ? 'true' : 'false');
   el.guideVol.value = String(s.guideVol);
   el.guideVolVal.textContent = s.guideVol + '%';
   el.metroVol.value = String(s.metroVol);
@@ -1130,6 +1145,7 @@ function frameStep() {
     song: state.song, game: state.game, songTime,
     pxPerSec: 230, detected: state.detected,
     showFret: state.settings.showFret, showFinger: state.settings.showFinger,
+    orientation: state.settings.orientation,
     countIn,
   });
 
@@ -1644,6 +1660,9 @@ function bindEvents() {
     }
   });
 
+  el.btnOrient.addEventListener('click', toggleOrientation);
+  el.btnFinger.addEventListener('click', toggleFinger);
+
   // тумблеры
   for (const [node, key] of [[el.metronome, 'metronome'], [el.countIn, 'countIn'], [el.showFret, 'showFret'], [el.showFinger, 'showFinger']]) {
     node.addEventListener('click', () => {
@@ -1805,6 +1824,7 @@ function bindEvents() {
     if (typing) return;
     if (e.code === 'Space') { e.preventDefault(); togglePlay(); }
     else if (e.code === 'KeyR') { e.preventDefault(); restart(); }
+    else if (e.code === 'KeyT') { e.preventDefault(); toggleOrientation(); }
     else if (e.code === 'BracketLeft') { e.preventDefault(); setLoopA(); }
     else if (e.code === 'BracketRight') { e.preventDefault(); setLoopB(); }
     else if (e.code === 'Backslash') { e.preventDefault(); clearLoop(); }

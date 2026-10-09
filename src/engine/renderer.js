@@ -1,4 +1,4 @@
-// Отрисовка "нотной трассы": падающие табы, линия удара, обратная связь.
+// Отрисовка нот: два режима — «падающие» (вертикально) и «табы» (горизонтально, время слева-направо).
 // Стиль — матовый, тёплая палитра, без свечения.
 import { midiToName, assignFret } from './theory.js';
 
@@ -10,7 +10,6 @@ const JUDGE_COLORS = { perfect: '#a5b4fc', good: '#7dd3fc', ok: '#c7d2fe', miss:
 const JUDGE_TEXT = { perfect: 'ИДЕАЛЬНО', good: 'ХОРОШО', ok: 'ОК', miss: 'ПРОМАХ' };
 const INK = '#0b0b18';
 const MONO = 'ui-monospace, Menlo, Consolas, monospace';
-const SANS = 'system-ui, -apple-system, Segoe UI, Roboto, sans-serif';
 
 export class HighwayRenderer {
   constructor(canvas) {
@@ -45,7 +44,85 @@ export class HighwayRenderer {
     }
   }
 
+  _background() {
+    const ctx = this.ctx;
+    const bg = ctx.createLinearGradient(0, 0, 0, this.h);
+    bg.addColorStop(0, '#0c0c17');
+    bg.addColorStop(1, '#07070d');
+    ctx.fillStyle = bg;
+    ctx.fillRect(0, 0, this.w, this.h);
+  }
+
+  _noteState(g, songTime) {
+    const base = g.notes[0] && g.notes[0].dead ? '#4a4a63' : null;
+    let color = base;
+    let alpha = 1;
+    if (g.judged) {
+      const age = songTime - (g.judgedAt || 0);
+      if (g.judge === 'miss') { color = JUDGE_COLORS.miss; alpha = Math.max(0, 1 - age * 0.8); }
+      else { color = JUDGE_COLORS[g.judge] || JUDGE_COLORS.perfect; alpha = Math.max(0, 1 - age * 1.6); }
+    }
+    return { color, alpha };
+  }
+
+  _countInAndJudge(songTime, countIn, game) {
+    const ctx = this.ctx;
+    const { w, h } = this;
+    if (countIn) {
+      const size = Math.min(w, h) * 0.34;
+      ctx.save();
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.font = `700 ${size}px ${MONO}`;
+      ctx.lineWidth = size * 0.07;
+      ctx.strokeStyle = 'rgba(7, 7, 13, 0.85)';
+      ctx.strokeText(String(countIn), w / 2, h * 0.44);
+      ctx.fillStyle = '#f4f4fb';
+      ctx.fillText(String(countIn), w / 2, h * 0.44);
+      ctx.restore();
+    }
+    const lj = game.lastJudge;
+    if (lj && songTime - lj.t < 0.6) {
+      const alpha = Math.max(0, 1 - (songTime - lj.t) / 0.6);
+      ctx.globalAlpha = alpha;
+      ctx.fillStyle = JUDGE_COLORS[lj.judge] || '#f4f4fb';
+      ctx.font = `700 22px ${MONO}`;
+      ctx.textAlign = 'center';
+      ctx.fillText(JUDGE_TEXT[lj.judge] || '', w / 2, h * 0.3);
+      ctx.globalAlpha = 1;
+    }
+  }
+
+  _detectedMarker(detected, song, x, y) {
+    const ctx = this.ctx;
+    if (!detected || !Number.isFinite(detected.midi) || detected.clarity <= 0.45) return;
+    const a = assignFret(Math.round(detected.midi), song.tuning, song.capo || 0);
+    if (!a) return;
+    const color = STRING_COLORS[(a.string - 1) % STRING_COLORS.length];
+    const r = 9 + detected.clarity * 9;
+    ctx.globalAlpha = 0.18;
+    ctx.fillStyle = color;
+    ctx.beginPath();
+    ctx.arc(x, y, r, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.globalAlpha = 0.9;
+    ctx.strokeStyle = color;
+    ctx.lineWidth = 1.5;
+    ctx.stroke();
+    ctx.globalAlpha = 1;
+    ctx.fillStyle = '#f4f4fb';
+    ctx.font = `700 12px ${MONO}`;
+    ctx.textAlign = 'center';
+    ctx.fillText(`${midiToName(detected.midi)} ${a.fret}`, x, y + r + 14);
+  }
+
   render(state) {
+    if (state.orientation === 'v') this.renderVertical(state);
+    else this.renderHorizontal(state);
+  }
+
+  // ---------------- Вертикальный режим: ноты падают сверху вниз ----------------
+  renderVertical(state) {
     const { song, game, songTime, pxPerSec, detected, showFret, showFinger, countIn } = state;
     const ctx = this.ctx;
     const { w, h } = this;
@@ -58,14 +135,8 @@ export class HighwayRenderer {
     const timeToY = (t) => hitLineY - (t - songTime) * pxPerSec;
     const laneCenter = (s) => x0 + (s - 1) * laneW + laneW / 2;
 
-    // фон
-    const bg = ctx.createLinearGradient(0, 0, 0, h);
-    bg.addColorStop(0, '#0c0c17');
-    bg.addColorStop(1, '#07070d');
-    ctx.fillStyle = bg;
-    ctx.fillRect(0, 0, w, h);
+    this._background();
 
-    // трасса
     ctx.save();
     for (let s = 1; s <= strings; s++) {
       const x = x0 + (s - 1) * laneW;
@@ -86,7 +157,6 @@ export class HighwayRenderer {
     ctx.lineTo(x0 + highwayW - 0.5, h);
     ctx.stroke();
 
-    // линии долей / тактов
     if (song.grid) {
       for (const beat of song.grid.beats) {
         const y = timeToY(beat.t);
@@ -101,7 +171,6 @@ export class HighwayRenderer {
     }
     ctx.restore();
 
-    // ноты
     const groups = game.groups;
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
@@ -111,23 +180,12 @@ export class HighwayRenderer {
       const y = timeToY(g.t);
       if (y < -70) break;
       if (y > h + 60) continue;
+      const st = this._noteState(g, songTime);
       for (const note of g.notes) {
         const lane = note.string;
         const cx = laneCenter(lane);
-        const baseColor = note.dead ? '#4a4a63' : STRING_COLORS[(lane - 1) % STRING_COLORS.length];
-
-        let color = baseColor;
-        let alpha = 1;
-        if (g.judged) {
-          const age = songTime - (g.judgedAt || 0);
-          if (g.judge === 'miss') {
-            color = JUDGE_COLORS.miss;
-            alpha = Math.max(0, 1 - age * 0.8);
-          } else {
-            color = JUDGE_COLORS[g.judge] || JUDGE_COLORS.perfect;
-            alpha = Math.max(0, 1 - age * 1.6);
-          }
-        }
+        const color = st.color || (note.dead ? '#4a4a63' : STRING_COLORS[(lane - 1) % STRING_COLORS.length]);
+        const alpha = st.alpha;
         if (alpha <= 0.02) continue;
 
         const tail = Math.min(note.dur || 0.3, 1.6) * pxPerSec;
@@ -161,7 +219,6 @@ export class HighwayRenderer {
     }
     ctx.globalAlpha = 1;
 
-    // линия удара
     ctx.strokeStyle = '#f4f4fb';
     ctx.lineWidth = 2;
     ctx.beginPath();
@@ -169,7 +226,6 @@ export class HighwayRenderer {
     ctx.lineTo(x0 + highwayW, hitLineY + 0.5);
     ctx.stroke();
 
-    // цели на линии удара
     for (let s = 1; s <= strings; s++) {
       const cx = laneCenter(s);
       ctx.globalAlpha = 0.5;
@@ -180,7 +236,6 @@ export class HighwayRenderer {
       ctx.globalAlpha = 1;
     }
 
-    // подписи струн
     ctx.fillStyle = 'rgba(159,161,189,0.95)';
     ctx.font = `600 11px ${MONO}`;
     for (let s = 1; s <= strings; s++) {
@@ -188,54 +243,142 @@ export class HighwayRenderer {
       ctx.fillText(open != null ? midiToName(open, false) : String(s), laneCenter(s), hitLineY + 26);
     }
 
-    // индикатор сыгранной ноты
     if (detected && Number.isFinite(detected.midi) && detected.clarity > 0.45) {
       const a = assignFret(Math.round(detected.midi), song.tuning, song.capo || 0);
-      if (a) {
-        const cx = laneCenter(a.string);
-        const r = 9 + detected.clarity * 9;
-        ctx.globalAlpha = 0.18;
-        ctx.fillStyle = STRING_COLORS[(a.string - 1) % STRING_COLORS.length];
+      if (a) this._detectedMarker(detected, song, laneCenter(a.string), hitLineY);
+    }
+
+    this._countInAndJudge(songTime, countIn, game);
+  }
+
+  // ---------------- Горизонтальный режим: табы, время слева направо ----------------
+  renderHorizontal(state) {
+    const { song, game, songTime, pxPerSec, detected, showFret, showFinger, countIn } = state;
+    const ctx = this.ctx;
+    const { w, h } = this;
+    const strings = song.stringCount || 6;
+
+    const labelW = 46;
+    const hitLineX = labelW + 18;
+    const rowH = Math.min(46, Math.max(22, (h - 48) / strings));
+    const totalH = rowH * strings;
+    const topY = (h - totalH) / 2;
+    // струна N (высокая) сверху, струна 1 (низкая) снизу — как в табулатуре
+    const yFor = (s) => topY + (strings - s) * rowH + rowH / 2;
+    const timeToX = (t) => hitLineX + (t - songTime) * pxPerSec;
+
+    this._background();
+
+    // строки-струны
+    for (let s = 1; s <= strings; s++) {
+      const y = yFor(s);
+      const ry = y - rowH / 2;
+      ctx.fillStyle = s % 2 ? 'rgba(244,244,251,0.015)' : 'rgba(244,244,251,0.035)';
+      ctx.fillRect(0, ry, w, rowH);
+      ctx.strokeStyle = 'rgba(244,244,251,0.22)';
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.moveTo(labelW, y + 0.5);
+      ctx.lineTo(w, y + 0.5);
+      ctx.stroke();
+    }
+
+    // линии долей / тактов
+    if (song.grid) {
+      for (const beat of song.grid.beats) {
+        const x = timeToX(beat.t);
+        if (x < labelW || x > w + 2) continue;
+        ctx.strokeStyle = beat.bar ? 'rgba(244,244,251,0.18)' : 'rgba(244,244,251,0.06)';
+        ctx.lineWidth = 1;
         ctx.beginPath();
-        ctx.arc(cx, hitLineY, r, 0, Math.PI * 2);
-        ctx.fill();
-        ctx.globalAlpha = 0.9;
-        ctx.strokeStyle = STRING_COLORS[(a.string - 1) % STRING_COLORS.length];
-        ctx.lineWidth = 1.5;
+        ctx.moveTo(x + 0.5, topY);
+        ctx.lineTo(x + 0.5, topY + totalH);
         ctx.stroke();
-        ctx.globalAlpha = 1;
-        ctx.fillStyle = '#f4f4fb';
-        ctx.font = `700 12px ${MONO}`;
-        ctx.fillText(`${midiToName(detected.midi)} ${a.fret}`, cx, hitLineY + 46);
       }
     }
 
-    // отсчёт перед стартом — крупно и контрастно (читается с расстояния)
-    if (countIn) {
-      const size = Math.min(w, h) * 0.34;
-      ctx.save();
-      ctx.textAlign = 'center';
-      ctx.textBaseline = 'middle';
-      ctx.font = `700 ${size}px ${MONO}`;
-      ctx.lineWidth = size * 0.07;
-      ctx.strokeStyle = 'rgba(7, 7, 13, 0.85)';
-      ctx.strokeText(String(countIn), w / 2, h * 0.44);
-      ctx.fillStyle = '#f4f4fb';
-      ctx.fillText(String(countIn), w / 2, h * 0.44);
-      ctx.restore();
-    }
+    // ноты
+    const groups = game.groups;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    let i = this._lowerBound(groups, songTime - 1.2);
+    for (; i < groups.length; i++) {
+      const g = groups[i];
+      const x = timeToX(g.t);
+      if (x > w + 80) break;
+      if (x < labelW - 60) continue;
+      const st = this._noteState(g, songTime);
+      for (const note of g.notes) {
+        const lane = note.string;
+        const cy = yFor(lane);
+        const color = st.color || (note.dead ? '#4a4a63' : STRING_COLORS[(lane - 1) % STRING_COLORS.length]);
+        const alpha = st.alpha;
+        if (alpha <= 0.02) continue;
 
-    // всплывающая оценка
-    const lj = game.lastJudge;
-    if (lj && songTime - lj.t < 0.6) {
-      const alpha = Math.max(0, 1 - (songTime - lj.t) / 0.6);
-      ctx.globalAlpha = alpha;
-      ctx.fillStyle = JUDGE_COLORS[lj.judge] || '#f4f4fb';
-      ctx.font = `700 22px ${MONO}`;
-      ctx.textAlign = 'center';
-      ctx.fillText(JUDGE_TEXT[lj.judge] || '', w / 2, h * 0.3);
+        const tail = Math.min(note.dur || 0.3, 1.6) * pxPerSec;
+        ctx.globalAlpha = alpha * 0.32;
+        ctx.fillStyle = color;
+        this._roundRect(ctx, x, cy - rowH * 0.14, tail, rowH * 0.28, 2);
+        ctx.fill();
+
+        const nh = Math.min(30, rowH * 0.62);
+        ctx.globalAlpha = alpha;
+        ctx.fillStyle = color;
+        this._roundRect(ctx, x - nh / 2, cy - nh / 2, nh, nh, 3);
+        ctx.fill();
+        ctx.strokeStyle = 'rgba(0,0,0,0.35)';
+        ctx.lineWidth = 1;
+        ctx.stroke();
+
+        if (showFret) {
+          ctx.fillStyle = note.dead ? '#e8ecff' : INK;
+          ctx.font = `700 ${Math.round(nh * 0.72)}px ${MONO}`;
+          ctx.fillText(note.dead ? '×' : String(note.fret), x, cy + 1);
+        }
+        if (showFinger && !note.dead && note.finger > 0) {
+          ctx.globalAlpha = alpha * 0.95;
+          ctx.fillStyle = '#a5b4fc';
+          ctx.font = `700 ${Math.round(nh * 0.5)}px ${MONO}`;
+          ctx.fillText(String(note.finger), x, cy - nh / 2 - 9);
+          ctx.globalAlpha = 1;
+        }
+      }
+    }
+    ctx.globalAlpha = 1;
+
+    // линия удара (вертикальная) и цели по струнам
+    ctx.strokeStyle = '#f4f4fb';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(hitLineX + 0.5, topY);
+    ctx.lineTo(hitLineX + 0.5, topY + totalH);
+    ctx.stroke();
+
+    for (let s = 1; s <= strings; s++) {
+      const y = yFor(s);
+      ctx.globalAlpha = 0.5;
+      ctx.strokeStyle = STRING_COLORS[(s - 1) % STRING_COLORS.length];
+      ctx.lineWidth = 1.5;
+      this._roundRect(ctx, hitLineX - 13, y - rowH * 0.3, 26, rowH * 0.6, 3);
+      ctx.stroke();
       ctx.globalAlpha = 1;
     }
+
+    // подписи струн слева
+    ctx.fillStyle = 'rgba(159,161,189,0.95)';
+    ctx.font = `600 11px ${MONO}`;
+    ctx.textAlign = 'center';
+    for (let s = 1; s <= strings; s++) {
+      const open = song.tuning[s - 1];
+      ctx.fillText(open != null ? midiToName(open, false) : String(s), labelW / 2, yFor(s));
+    }
+
+    if (detected && Number.isFinite(detected.midi) && detected.clarity > 0.45) {
+      const a = assignFret(Math.round(detected.midi), song.tuning, song.capo || 0);
+      if (a) this._detectedMarker(detected, song, hitLineX, yFor(a.string));
+    }
+
+    this._countInAndJudge(songTime, countIn, game);
   }
 
   _lowerBound(arr, t) {

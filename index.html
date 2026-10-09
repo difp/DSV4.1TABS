@@ -83,6 +83,20 @@
         <button class="btn btn--icon" id="btnLoopB" aria-label="Точка B зацикливания" data-tip="Точка B">B</button>
         <button class="btn btn--icon btn--ghost" id="btnLoopClear" aria-label="Сбросить зацикливание" data-tip="Сбросить A–B">✕</button>
       </div>
+      <div class="playbar__view">
+        <button class="btn btn--icon" id="btnOrient" aria-label="Вид: табы или падающие ноты" aria-pressed="true" data-tip="Вид">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M4 9h13" /><path d="M13 5l4 4-4 4" />
+            <path d="M20 15H7" /><path d="M11 11l-4 4 4 4" />
+          </svg>
+        </button>
+        <button class="btn btn--icon" id="btnFinger" aria-label="Показать аппликатуру" aria-pressed="true" data-tip="Аппликатура">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+            <circle cx="5" cy="12" r="2" /><circle cx="10.3" cy="12" r="2" />
+            <circle cx="15.6" cy="12" r="2" /><circle cx="20.9" cy="12" r="2" />
+          </svg>
+        </button>
+      </div>
       <div class="progress">
         <input type="range" id="progressBar" min="0" max="1000" value="0" aria-label="Позиция воспроизведения" />
         <div class="progress__marks" id="loopMarkers">

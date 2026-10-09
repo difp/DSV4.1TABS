@@ -526,6 +526,7 @@ input[type="range"]::-moz-range-thumb {
 }
 .playbar__group { display: inline-flex; gap: var(--space-2); }
 .playbar__loop { display: inline-flex; gap: var(--space-1); padding-left: var(--space-3); border-left: 0.5px solid var(--line); }
+.playbar__view { display: inline-flex; gap: var(--space-1); padding-left: var(--space-3); border-left: 0.5px solid var(--line); }
 .progress { position: relative; flex: 1; min-width: 80px; display: flex; align-items: center; }
 .progress input { flex: 1; }
 .progress__marks { position: absolute; inset: 0; pointer-events: none; }
@@ -618,6 +619,7 @@ body[data-ui="phone"] .metrics { grid-template-columns: repeat(2, 1fr); }
 body[data-ui="phone"] .playbar { flex-wrap: wrap; row-gap: var(--space-2); }
 body[data-ui="phone"] .playbar .progress { order: 5; flex-basis: 100%; }
 body[data-ui="phone"] .playbar__loop { border-left: 0; padding-left: 0; }
+body[data-ui="phone"] .playbar__view { border-left: 0; padding-left: 0; }
 body[data-ui="phone"] .speed-pop { left: auto; right: 0; width: min(240px, 84vw); }
 
 /* закреплённая кнопка «Играть» с учётом safe-area */
