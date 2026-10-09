@@ -121,6 +121,113 @@ function pentatonic16() {
   return { title: 'Пентатоника 16-ми', artist: 'Упражнение', bpm: 140, notes };
 }
 
+// --- Известные простые произведения (общественное достояние) и паттерны «в стиле» ---
+// Мелодии классики/фольклора — public domain; рок/блюз — оригинальные паттерны.
+function odeToJoy() {
+  const q = [[5, 0], [5, 0], [5, 1], [5, 3], [5, 3], [5, 1], [5, 0], [4, 2], [4, 0], [4, 0], [4, 2], [5, 0], [5, 0], [4, 2], [4, 2]];
+  const notes = [];
+  q.forEach(([s, f], i) => notes.push(N(i, s, f, i === q.length - 1 ? 2 : 0.95)));
+  return { title: 'Ode to Joy', artist: 'Бетховен · PD', bpm: 100, timeSignature: [4, 4], notes };
+}
+
+function greensleeves() {
+  const seq = [
+    [2, 0, 1.5], [2, 3, 0.5], [3, 0, 1],
+    [3, 2, 1.5], [3, 3, 0.5], [3, 2, 1],
+    [3, 0, 1.5], [2, 2, 0.5], [4, 0, 1],
+    [2, 0, 1.5], [2, 2, 0.5], [2, 3, 1],
+    [2, 2, 1.5], [2, 0, 0.5], [2, 0, 1],
+    [2, 0, 3],
+  ];
+  const notes = [];
+  let b = 0;
+  for (const [s, f, d] of seq) { notes.push(N(b, s, f, Math.max(0.4, d * 0.9))); b += d; }
+  return { title: 'Greensleeves', artist: 'Народная · PD', bpm: 110, timeSignature: [3, 4], notes };
+}
+
+function spanishRomance() {
+  const notes = [];
+  let b = 0;
+  const em = [[1, 0], [5, 0], [6, 0], [4, 0], [6, 0], [5, 0]];
+  const b7 = [[2, 2], [5, 0], [6, 2], [4, 2], [6, 2], [5, 0]];
+  for (const bar of [em, em, b7, b7, em, em, b7, b7]) {
+    for (const [s, f] of bar) { notes.push(N(b, s, f, 0.45)); b += 0.5; }
+  }
+  return { title: 'Испанский романс (перебор Em)', artist: 'Классика · PD', bpm: 96, timeSignature: [3, 4], notes };
+}
+
+function houseOfRisingSun() {
+  const notes = [];
+  let b = 0;
+  const am = [[1, 0], [2, 0], [3, 2], [4, 2], [5, 1], [6, 0]];
+  const c = [[2, 3], [3, 2], [4, 0], [5, 1], [6, 0], [4, 0]];
+  const d = [[3, 0], [4, 2], [5, 3], [6, 2], [5, 3], [4, 2]];
+  const f = [[3, 3], [4, 2], [5, 1], [6, 1], [5, 1], [4, 2]];
+  const e = [[1, 0], [2, 2], [3, 2], [4, 1], [5, 0], [6, 0]];
+  for (const bar of [am, c, d, f, am, e, am, e]) {
+    for (const [s, fr] of bar) { notes.push(N(b, s, fr, 0.45)); b += 0.5; }
+  }
+  return { title: 'Дом восходящего солнца (перебор)', artist: 'Народная · PD', bpm: 100, timeSignature: [3, 4], notes };
+}
+
+function laBamba() {
+  const c = [[2, 3], [3, 2], [4, 0], [5, 1], [6, 0], [5, 1], [4, 0], [3, 2]];
+  const f = [[3, 3], [4, 2], [5, 1], [6, 1], [5, 1], [4, 2], [5, 1], [4, 2]];
+  const g = [[1, 3], [2, 2], [3, 0], [4, 0], [5, 0], [6, 3], [5, 0], [4, 0]];
+  const notes = [];
+  let b = 0;
+  for (const bar of [c, f, g, c, f, g]) {
+    for (const [s, fr] of bar) { notes.push(N(b, s, fr, 0.45)); b += 0.5; }
+  }
+  return { title: 'La Bamba', artist: 'Народная · PD', bpm: 120, timeSignature: [4, 4], notes };
+}
+
+function spanishStrum() {
+  const C = [[2, 3], [3, 2], [4, 0], [5, 1], [6, 0]];
+  const F = [[3, 3], [4, 2], [5, 1], [6, 1]];
+  const G = [[1, 3], [2, 2], [3, 0], [4, 0], [5, 0], [6, 3]];
+  const Am = [[1, 0], [2, 0], [3, 2], [4, 2], [5, 1], [6, 0]];
+  const notes = [];
+  let b = 0;
+  for (const ch of [C, F, G, Am, C, F, G, Am]) {
+    for (let k = 0; k < 4; k++) {
+      for (const [s, f] of ch) notes.push(N(b, s, f, 0.9));
+      b += 1;
+    }
+  }
+  return { title: 'Испанский бой C–F–G–Am', artist: 'Народная · PD', bpm: 110, timeSignature: [4, 4], notes };
+}
+
+function bluesShuffle() {
+  const notes = [];
+  let b = 0;
+  const A5 = [2, 0, 3, 2];
+  const D5 = [3, 0, 4, 2];
+  const E5 = [1, 0, 2, 2];
+  const bars = [A5, A5, A5, A5, D5, D5, A5, A5, E5, D5, A5, A5];
+  for (const [rs, rf, fs, ff] of bars) {
+    const pattern = [[rs, rf, 0.66], [fs, ff, 0.33], [rs, rf, 0.66], [fs, ff, 0.33]];
+    for (const [s, f, d] of pattern) { notes.push(N(b, s, f, d * 0.95)); b += d; }
+  }
+  return { title: 'Блюзовый шаффл (12 тактов)', artist: 'Блюз · оригинал', bpm: 100, timeSignature: [4, 4], notes };
+}
+
+function rockRoll() {
+  const A5 = [[2, 0], [3, 2]];
+  const D5 = [[3, 0], [4, 2]];
+  const E5 = [[1, 0], [2, 2]];
+  const notes = [];
+  let b = 0;
+  for (const bar of [A5, A5, D5, D5, A5, A5, E5, E5]) {
+    for (let k = 0; k < 8; k++) {
+      const [s, f] = bar[k % 2];
+      notes.push(N(b, s, f, 0.45));
+      b += 0.5;
+    }
+  }
+  return { title: 'Рок-н-ролл на квинтах', artist: 'Рок · оригинал', bpm: 140, timeSignature: [4, 4], notes };
+}
+
 export const DEMO_SONGS = [
   openStrings(),
   firstFret(),
@@ -135,4 +242,12 @@ export const DEMO_SONGS = [
   fingerstyle(),
   rockRiff(),
   pentatonic16(),
+  odeToJoy(),
+  greensleeves(),
+  spanishRomance(),
+  houseOfRisingSun(),
+  laBamba(),
+  spanishStrum(),
+  bluesShuffle(),
+  rockRoll(),
 ];
