@@ -19,7 +19,7 @@ const el = {
   body: document.body,
   songTitle: $('songTitle'), songMeta: $('songMeta'),
   micStatus: $('micStatus'), micText: $('micText'), micLevelBar: $('micLevelBar'),
-  btnLibrary: $('btnLibrary'), btnProfile: $('btnProfile'), btnMenu: $('btnMenu'), menuPopover: $('menuPopover'),
+  btnLibrary: $('btnLibrary'), btnProfile: $('btnProfile'), btnMenu: $('btnMenu'), menuPopover: $('menuPopover'), btnSound: $('btnSound'),
   menuWizard: $('menuWizard'), menuHome: $('menuHome'), menuAutoplay: $('menuAutoplay'), menuAutoplayVal: $('menuAutoplayVal'),
   menuTheme: $('menuTheme'), menuThemeVal: $('menuThemeVal'), menuDevice: $('menuDevice'), menuDeviceVal: $('menuDeviceVal'),
   stage: $('stage'), score: $('score'), combo: $('combo'), accuracy: $('accuracy'),
@@ -207,7 +207,7 @@ function renderHistoryState(st) {
   }
   if (s.view === 'home') { el.homeOverlay.classList.remove('hidden'); focusFirst(el.homeOverlay); }
   else if (s.view === 'library') { el.libraryOverlay.classList.remove('hidden'); updateHero(); maybeShowSwipeHint(); focusFirst(el.libraryOverlay); }
-  // 'game' — все оверлеи скрыты
+  else if (s.view === 'game') { requestAnimationFrame(() => renderer.resize()); }
 }
 
 function navTo(entry, replace) {
@@ -1083,6 +1083,16 @@ function scheduleAhead() {
 // Игровой цикл
 // ---------------------------------------------------------------------------
 function frame() {
+  // Одна ошибка кадра не должна останавливать отрисовку.
+  try {
+    frameStep();
+  } catch (e) {
+    if (!state.frameErrorLogged) { state.frameErrorLogged = true; console.error('Ошибка кадра:', e); }
+  }
+  requestAnimationFrame(frame);
+}
+
+function frameStep() {
   const nowMs = performance.now();
   const realDt = state.lastFrame ? Math.min(1, (nowMs - state.lastFrame) / 1000) : 0;
   state.lastFrame = nowMs;
@@ -1112,7 +1122,8 @@ function frame() {
   let countIn = null;
   if (state.playing && !state.paused && songTime < -0.001) {
     const beatLen = 60 / (state.song.bpm || 120);
-    countIn = Math.max(1, Math.min(4, 4 - Math.floor((-songTime) / beatLen)));
+    // время, оставшееся до старта, в долях: 4 → 1 (по убыванию)
+    countIn = Math.max(1, Math.min(4, Math.ceil((-songTime) / beatLen)));
   }
 
   renderer.render({
@@ -1125,7 +1136,6 @@ function frame() {
   updateHud(songTime);
   updateMicStatus();
   updateWizardLive();
-  requestAnimationFrame(frame);
 }
 
 function updateHud(songTime) {
@@ -1679,6 +1689,7 @@ function bindEvents() {
 
   // расширенные
   el.btnAdvanced.addEventListener('click', () => { refreshDevices(); openModal('advanced'); });
+  el.btnSound.addEventListener('click', () => { refreshDevices(); openModal('advanced'); });
   el.btnAdvancedClose.addEventListener('click', () => goBack());
   el.btnRefreshDevices.addEventListener('click', refreshDevices);
   el.micSelect.addEventListener('change', async () => {
@@ -1855,7 +1866,7 @@ function init() {
   history.replaceState({ view: 'home' }, '');
   renderHistoryState({ view: 'home' });
 
-  window.__riff = { state, audio, pitch, renderer, play, pause, togglePlay, startFrom, restart, loadRaw, renderProfile, applyLayout, applyTheme, frame, autoCalibrateLatency };
+  window.__riff = { state, audio, pitch, renderer, play, pause, togglePlay, startFrom, restart, loadRaw, renderProfile, applyLayout, applyTheme, frame, autoCalibrateLatency, countInFor: (songTime) => { const beatLen = 60 / (state.song.bpm || 120); return Math.max(1, Math.min(4, Math.ceil((-songTime) / beatLen))); } };
 }
 
 init();
