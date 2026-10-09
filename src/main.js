@@ -61,6 +61,7 @@ const el = {
   btnPlay: $('btnPlay'), btnRestart: $('btnRestart'),
   btnLoopA: $('btnLoopA'), btnLoopB: $('btnLoopB'), btnLoopClear: $('btnLoopClear'),
   btnOrient: $('btnOrient'), btnFinger: $('btnFinger'),
+  loopBadge: $('loopBadge'),
   progressBar: $('progressBar'), loopMarkers: $('loopMarkers'), timeReadout: $('timeReadout'),
   toasts: $('toasts'),
 };
@@ -926,7 +927,12 @@ async function importProfile(file) {
 // ---------------------------------------------------------------------------
 // A/B
 // ---------------------------------------------------------------------------
-function loopActive() { return state.loopA != null && state.loopB != null && state.loopB > state.loopA + 0.2; }
+function loopActive() {
+  if (state.loopA == null || state.loopB == null) return false;
+  if (state.loopB <= state.loopA + 0.2) return false;
+  if (state.song && state.loopB > state.song.duration + 0.05) return false;
+  return true;
+}
 
 function currentTime() {
   if (!state.song) return 0;
@@ -959,6 +965,10 @@ function updateLoopMarkers() {
   const showR = loopActive() && dur > 0;
   range.style.display = showR ? 'block' : 'none';
   if (showR) { range.style.left = (state.loopA / dur) * 100 + '%'; range.style.width = ((state.loopB - state.loopA) / dur) * 100 + '%'; }
+  el.btnLoopA.setAttribute('aria-pressed', showA ? 'true' : 'false');
+  el.btnLoopB.setAttribute('aria-pressed', showB ? 'true' : 'false');
+  el.btnLoopClear.classList.toggle('is-active', showA || showB);
+  if (el.loopBadge) el.loopBadge.classList.toggle('hidden', !showR);
 }
 
 // ---------------------------------------------------------------------------
@@ -1053,6 +1063,7 @@ function togglePlay() { if (!state.song) return; if (!state.playing || state.pau
 function restart() {
   if (!state.song) return;
   if (!el.resultsOverlay.classList.contains('hidden')) goBack();
+  clearLoop();               // «Сначала» не должно зацикливать фрагмент
   state.game.reset();
   startFrom(0);
 }
@@ -1552,6 +1563,9 @@ function toggleMenu(force) {
 function bindEvents() {
   el.btnPlay.addEventListener('click', togglePlay);
   el.btnRestart.addEventListener('click', restart);
+  el.btnLoopA.addEventListener('click', setLoopA);
+  el.btnLoopB.addEventListener('click', setLoopB);
+  el.btnLoopClear.addEventListener('click', clearLoop);
   el.btnAgain.addEventListener('click', restart);
   el.btnLibPlay.addEventListener('click', () => play());
   el.btnLibPlayMobile.addEventListener('click', () => play());

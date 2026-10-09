@@ -260,9 +260,12 @@ export class HighwayRenderer {
 
     const labelW = 46;
     const hitLineX = labelW + 18;
-    const rowH = Math.min(46, Math.max(22, (h - 48) / strings));
+    const topPad = Math.min(140, Math.max(72, h * 0.16));
+    const bottomPad = 24;
+    const usable = Math.max(90, h - topPad - bottomPad);
+    const rowH = Math.min(72, Math.max(22, usable / strings));
     const totalH = rowH * strings;
-    const topY = (h - totalH) / 2;
+    const topY = topPad + Math.max(0, (usable - totalH) / 2);
     // струна N (высокая) сверху, струна 1 (низкая) снизу — как в табулатуре
     const yFor = (s) => topY + (strings - s) * rowH + rowH / 2;
     const timeToX = (t) => hitLineX + (t - songTime) * pxPerSec;
