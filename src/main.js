@@ -490,6 +490,9 @@ function renderList() {
     el.songList.appendChild(row);
   }
   updateHeroIndicator();
+  // выбранная строка всегда должна быть видна в списке
+  const sel = el.songList.querySelector('[aria-selected="true"]');
+  if (sel && sel.scrollIntoView) sel.scrollIntoView({ block: 'nearest' });
 }
 
 async function selectItem(item, autoplay) {

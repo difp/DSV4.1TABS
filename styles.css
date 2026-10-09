@@ -471,9 +471,10 @@ input[type="range"]::-moz-range-thumb {
 .speed-chips { display: flex; gap: var(--space-2); margin: var(--space-3) 0; }
 
 /* быстрый темп в панели */
-.playbar__speedwrap { position: relative; display: inline-flex; }
+.playbar__speedwrap { display: inline-flex; }
 .speed-pop {
-  position: absolute; bottom: calc(100% + 8px); left: 0; width: 240px;
+  position: absolute; left: 50%; transform: translateX(-50%);
+  bottom: calc(100% + 6px); width: min(320px, 100%);
   padding: var(--space-3);
   background: var(--surface); border: 1px solid var(--line);
   border-radius: var(--radius-card); box-shadow: var(--shadow); z-index: 45;
@@ -632,7 +633,7 @@ body[data-ui="phone"] .playbar { flex-wrap: wrap; row-gap: var(--space-2); }
 body[data-ui="phone"] .playbar .progress { order: 5; flex-basis: 100%; }
 body[data-ui="phone"] .playbar__loop { border-left: 0; padding-left: 0; }
 body[data-ui="phone"] .playbar__view { border-left: 0; padding-left: 0; }
-body[data-ui="phone"] .speed-pop { left: auto; right: 0; width: min(240px, 84vw); }
+body[data-ui="phone"] .popover { min-width: 0; width: min(280px, 80vw); }
 
 /* закреплённая кнопка «Играть» с учётом safe-area */
 .sheet__cta {
