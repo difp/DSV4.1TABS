@@ -54,7 +54,7 @@ const el = {
   wizAllow: $('wizAllow'), wizMicState: $('wizMicState'), wizLevelBar: $('wizLevelBar'), wizLevelHint: $('wizLevelHint'),
   wizTuneNote: $('wizTuneNote'), wizCalibrate: $('wizCalibrate'), wizCalState: $('wizCalState'),
   resultsOverlay: $('resultsOverlay'), btnResultsClose: $('btnResultsClose'), resultsTitle: $('resultsTitle'),
-  resultGrid: $('resultGrid'), resultErrStrings: $('resultErrStrings'), resultErrFrets: $('resultErrFrets'),
+  resultGrid: $('resultGrid'), resultErrors: $('resultErrors'),
   btnResultsLibrary: $('btnResultsLibrary'), btnAgain: $('btnAgain'), btnPracticeWeak: $('btnPracticeWeak'),
   catalogOverlay: $('catalogOverlay'), btnCatalogClose: $('btnCatalogClose'), catalogUrl: $('catalogUrl'),
   btnCatalogLoad: $('btnCatalogLoad'), catalogFileInput: $('catalogFileInput'), catalogStatus: $('catalogStatus'),
@@ -1266,16 +1266,22 @@ function showResults() {
   const grade = acc >= 98 ? 'S' : acc >= 92 ? 'A' : acc >= 82 ? 'B' : acc >= 70 ? 'C' : acc >= 55 ? 'D' : 'E';
   el.resultsTitle.textContent = 'Результат — ' + state.song.title;
   el.resultGrid.innerHTML = [
+    ['Оценка', grade],
     ['Точность', acc + '%'],
+    ['Промахи', String(g.misses)],
     ['Серия', String(g.maxCombo)],
     ['Очки', String(g.score)],
-    ['Попаданий', String(g.hits)],
-    ['Промахов', String(g.misses)],
-    ['Оценка', grade],
+    ['Попадания', String(g.hits)],
   ].map(([k, v]) => `<div class="m"><b>${v}</b><span>${k}</span></div>`).join('');
-  renderErrBars(el.resultErrStrings, g.missByString, (k) => 'Струна ' + k);
-  renderErrBars(el.resultErrFrets, g.missByFret, (k) => 'Лад ' + k);
-  const hasErrors = g.misses > 0 && (Object.keys(g.missByFret).length || Object.keys(g.missByString).length);
+
+  const byString = Object.entries(g.missByString).sort((a, b) => b[1] - a[1]).slice(0, 6)
+    .map(([k, v]) => `струна ${k}×${v}`).join(' · ');
+  const byFret = Object.entries(g.missByFret).sort((a, b) => b[1] - a[1]).slice(0, 6)
+    .map(([k, v]) => `лад ${k}×${v}`).join(' · ');
+  const parts = [byString, byFret].filter(Boolean);
+  el.resultErrors.textContent = parts.length ? 'Ошибки: ' + parts.join(' · ') : 'Без ошибок';
+
+  const hasErrors = g.misses > 0 && parts.length > 0;
   el.btnPracticeWeak.disabled = !hasErrors;
   openModal('results');
 }

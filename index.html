@@ -408,12 +408,9 @@
           <button class="btn btn--icon btn--ghost" id="btnResultsClose" aria-label="Закрыть" data-tip="Закрыть">✕</button>
         </div>
         <div class="sheet__body">
-          <div class="metrics" id="resultGrid"></div>
-          <h2 class="card__title" style="margin-top:var(--space-6)">Ошибки по струнам</h2>
-          <div class="errbars" id="resultErrStrings"></div>
-          <h2 class="card__title" style="margin-top:var(--space-6)">Ошибки по ладам</h2>
-          <div class="errbars" id="resultErrFrets"></div>
-          <div class="hero-bottom" style="margin-top:var(--space-6)">
+          <div class="metrics metrics--row" id="resultGrid"></div>
+          <p class="result-errors" id="resultErrors"></p>
+          <div class="hero-bottom" style="margin-top:var(--space-4)">
             <button class="btn btn--ghost" id="btnResultsLibrary">К библиотеке</button>
             <div style="display:flex;gap:var(--space-2)">
               <button class="btn" id="btnAgain">Повторить</button>

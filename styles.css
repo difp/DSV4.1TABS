@@ -546,6 +546,11 @@ input[type="range"]::-moz-range-thumb {
 .metrics .m { background: var(--surface); padding: var(--space-4); text-align: center; }
 .metrics .m b { display: block; font-family: var(--mono); font-size: 26px; font-weight: 500; }
 .metrics .m span { font-size: 12px; color: var(--text-2); text-transform: none; letter-spacing: 0.08em; }
+.metrics--row { grid-template-columns: repeat(6, 1fr); }
+.metrics--row .m { padding: var(--space-3) var(--space-2); }
+.metrics--row .m b { font-size: 20px; }
+.result-errors { margin: var(--space-3) 0 0; color: var(--text-2); font-size: 13px; line-height: 1.5; }
+@media (max-width: 700px) { .metrics--row { grid-template-columns: repeat(3, 1fr); } }
 
 .errbars { display: flex; flex-direction: column; gap: var(--space-2); margin-top: var(--space-2); }
 .errbar { display: grid; grid-template-columns: 76px 1fr 44px; align-items: center; gap: var(--space-3); font-size: 13px; }
