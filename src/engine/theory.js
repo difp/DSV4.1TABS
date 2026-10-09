@@ -74,6 +74,31 @@ export function assignFret(pitch, tuning, capo = 0, maxFret = 24) {
   return best;
 }
 
+// Аппликатура левой руки: 0 — открытая струна, 1..4 — указательный..мизинец.
+// Позиция (лад указательного пальца) двигается минимально; работает как эвристика
+// «один палец на лад», которой учат новичков.
+export function assignFingers(notes) {
+  let base = 1;
+  let started = false;
+  let lastT = -Infinity;
+  for (const n of notes) {
+    if (n.dead) { n.finger = 0; continue; }
+    if (!Number.isFinite(n.fret) || n.fret <= 0) { n.finger = 0; started = false; lastT = n.t; continue; }
+    const phraseBreak = n.t - lastT > 1.5;
+    if (!started || phraseBreak) {
+      base = Math.max(1, n.fret);
+      started = true;
+    } else if (n.fret < base) {
+      base = Math.max(1, n.fret);
+    } else if (n.fret > base + 3) {
+      base = Math.max(1, n.fret - 3);
+    }
+    n.finger = Math.max(1, Math.min(4, n.fret - base + 1));
+    lastT = n.t;
+  }
+  return notes;
+}
+
 // ---------------------------------------------------------------------------
 // Темпо-карта: ступенчатая (между событиями темп постоянен).
 // События задаются в четвертных долях: { q, bpm }.
@@ -174,6 +199,7 @@ export function buildSong(raw, trackIndex = 0) {
     });
   }
   notes.sort((a, b) => a.t - b.t || a.string - b.string);
+  assignFingers(notes);
 
   let duration = 0;
   for (const n of notes) duration = Math.max(duration, n.t + n.dur);

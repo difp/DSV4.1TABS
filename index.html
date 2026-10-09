@@ -57,6 +57,21 @@
         <button class="btn btn--action" id="btnPlay" disabled>Играть</button>
         <button class="btn" id="btnRestart" disabled>Сначала</button>
       </div>
+      <div class="playbar__speedwrap">
+        <button class="btn" id="btnSpeedQuick" aria-haspopup="dialog" aria-expanded="false" aria-label="Изменить темп" title="Изменить темп"><span class="mono" id="speedQuickVal">100%</span></button>
+        <div class="speed-pop hidden" id="speedPop" role="dialog" aria-label="Темп">
+          <div class="speed-pop__head">
+            <span class="mono" id="speedPopBpm">— BPM</span>
+            <span class="mono muted" id="speedPopPct">100%</span>
+          </div>
+          <input type="range" id="speedPopRange" min="25" max="150" step="1" value="90" aria-label="Темп, ударов в минуту" />
+          <div class="speed-pop__chips">
+            <button class="chip" data-speed="50">50%</button>
+            <button class="chip" data-speed="75">75%</button>
+            <button class="chip" data-speed="100">100%</button>
+          </div>
+        </div>
+      </div>
       <div class="playbar__loop" role="group" aria-label="Зацикливание A–B">
         <button class="btn btn--icon" id="btnLoopA" aria-label="Точка A зацикливания" data-tip="Точка A">A</button>
         <button class="btn btn--icon" id="btnLoopB" aria-label="Точка B зацикливания" data-tip="Точка B">B</button>
@@ -169,15 +184,15 @@
             </section>
 
             <section class="card col-2">
-              <h2 class="card__title">Скорость</h2>
-              <div class="speed-big" id="speedBig">100%</div>
+              <h2 class="card__title">Темп</h2>
+              <div class="speed-big" id="speedBpm">90<span class="speed-big__u">BPM</span></div>
               <div class="speed-chips" id="speedChips">
                 <button class="chip" data-speed="50" aria-pressed="false">50%</button>
                 <button class="chip" data-speed="75" aria-pressed="false">75%</button>
                 <button class="chip" data-speed="100" aria-pressed="true">100%</button>
               </div>
-              <input type="range" id="speed" min="25" max="150" step="5" value="100" aria-label="Скорость воспроизведения" />
-              <div class="field__row"><span class="field__label">25–150%</span><span class="field__value" id="speedVal">100%</span></div>
+              <input type="range" id="speed" min="25" max="150" step="1" value="90" aria-label="Темп, ударов в минуту" />
+              <div class="field__row"><span class="field__label" id="speedRange">—</span><span class="field__value" id="speedVal">100%</span></div>
             </section>
 
             <section class="card col-2">
@@ -185,6 +200,7 @@
               <div class="switch-row"><span>Метроном</span><button class="switch" id="metronome" role="switch" aria-checked="true" aria-label="Метроном"></button></div>
               <div class="switch-row"><span>Отсчёт</span><button class="switch" id="countIn" role="switch" aria-checked="true" aria-label="Отсчёт перед стартом"></button></div>
               <div class="switch-row"><span>Номера ладов</span><button class="switch" id="showFret" role="switch" aria-checked="true" aria-label="Показывать номера ладов"></button></div>
+              <div class="switch-row"><span>Пальцы левой руки</span><button class="switch" id="showFinger" role="switch" aria-checked="true" aria-label="Показывать аппликатуру"></button></div>
             </section>
 
             <section class="card col-2">

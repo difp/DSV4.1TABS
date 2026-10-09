@@ -458,9 +458,22 @@ input[type="range"]::-moz-range-thumb {
 /* превью табулатуры */
 .tab-preview { width: 100%; height: 84px; border-radius: var(--radius-ctl); background: var(--surface-2); border: 0.5px solid var(--line); display: block; }
 
-/* скорость */
-.speed-big { font-family: var(--mono); font-size: 40px; font-weight: 500; line-height: 1; }
+/* темп */
+.speed-big { display: flex; align-items: baseline; gap: 6px; font-family: var(--mono); font-size: 40px; font-weight: 500; line-height: 1; }
+.speed-big__u { font-size: 14px; font-weight: 500; color: var(--text-2); }
 .speed-chips { display: flex; gap: var(--space-2); margin: var(--space-3) 0; }
+
+/* быстрый темп в панели */
+.playbar__speedwrap { position: relative; display: inline-flex; }
+.speed-pop {
+  position: absolute; bottom: calc(100% + 8px); left: 0; width: 240px;
+  padding: var(--space-3);
+  background: var(--surface); border: 1px solid var(--line);
+  border-radius: var(--radius-card); box-shadow: var(--shadow); z-index: 45;
+}
+.speed-pop__head { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: var(--space-2); }
+.speed-pop__head .mono:first-child { font-size: 15px; }
+.speed-pop__chips { display: flex; gap: var(--space-2); margin-top: var(--space-2); }
 
 /* список песен */
 .list { display: flex; flex-direction: column; gap: 2px; max-height: 340px; overflow: auto; margin-top: var(--space-3); }
@@ -605,6 +618,7 @@ body[data-ui="phone"] .metrics { grid-template-columns: repeat(2, 1fr); }
 body[data-ui="phone"] .playbar { flex-wrap: wrap; row-gap: var(--space-2); }
 body[data-ui="phone"] .playbar .progress { order: 5; flex-basis: 100%; }
 body[data-ui="phone"] .playbar__loop { border-left: 0; padding-left: 0; }
+body[data-ui="phone"] .speed-pop { left: auto; right: 0; width: min(240px, 84vw); }
 
 /* закреплённая кнопка «Играть» с учётом safe-area */
 .sheet__cta {

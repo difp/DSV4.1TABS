@@ -32,12 +32,13 @@ const el = {
   heroBpm: $('heroBpm'), heroDur: $('heroDur'), heroNotes: $('heroNotes'), heroTuning: $('heroTuning'),
   heroBest: $('heroBest'), heroDifficulty: $('heroDifficulty'), tabPreview: $('tabPreview'),
   btnLibPlay: $('btnLibPlay'), btnLibPlayMobile: $('btnLibPlayMobile'),
-  speedBig: $('speedBig'), speedChips: $('speedChips'), speed: $('speed'), speedVal: $('speedVal'),
+  speedBpm: $('speedBpm'), speedChips: $('speedChips'), speed: $('speed'), speedVal: $('speedVal'), speedRange: $('speedRange'),
+  btnSpeedQuick: $('btnSpeedQuick'), speedQuickVal: $('speedQuickVal'), speedPop: $('speedPop'), speedPopBpm: $('speedPopBpm'), speedPopPct: $('speedPopPct'), speedPopRange: $('speedPopRange'),
   searchInput: $('searchInput'), filterChips: $('filterChips'), songList: $('songList'),
   trackPicker: $('trackPicker'), trackSelect: $('trackSelect'),
   tipText: $('tipText'), btnTipApply: $('btnTipApply'),
   dropZone: $('dropZone'), fileInput: $('fileInput'), btnCatalogLink: $('btnCatalogLink'),
-  metronome: $('metronome'), countIn: $('countIn'), showFret: $('showFret'),
+  metronome: $('metronome'), countIn: $('countIn'), showFret: $('showFret'), showFinger: $('showFinger'),
   btnAdvanced: $('btnAdvanced'),
   profileOverlay: $('profileOverlay'), btnProfileClose: $('btnProfileClose'), profileName: $('profileName'),
   profileStats: $('profileStats'), profileErrStrings: $('profileErrStrings'), profileSongs: $('profileSongs'),
@@ -95,7 +96,7 @@ const state = {
   lastErrors: null,
   swipeHintShown: false,
   settings: Object.assign({
-    rate: 1, metronome: true, countIn: true, showFret: true,
+    rate: 1, metronome: true, countIn: true, showFret: true, showFinger: true,
     guideVol: 70, metroVol: 60, latency: 0, sens: 6, clarity: 0.5,
     chordMode: 'any', sensPreset: 'room', micDeviceId: '', outputDeviceId: '',
     autoplay: false, onboarded: false, recent: [],
@@ -150,6 +151,19 @@ function reducedMotion() {
   return !!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
 }
 
+// Не даём экрану гаснуть, пока идёт упражнение (Screen Wake Lock API).
+let wakeLock = null;
+async function requestWakeLock() {
+  try {
+    if (!('wakeLock' in navigator) || wakeLock) return;
+    wakeLock = await navigator.wakeLock.request('screen');
+    wakeLock.addEventListener('release', () => { wakeLock = null; });
+  } catch { /* не поддерживается или нет разрешения */ }
+}
+function releaseWakeLock() {
+  if (wakeLock) { try { wakeLock.release(); } catch { /* noop */ } wakeLock = null; }
+}
+
 function rmsOf(buf) {
   let sum = 0;
   for (let i = 0; i < buf.length; i++) sum += buf[i] * buf[i];
@@ -157,49 +171,78 @@ function rmsOf(buf) {
 }
 
 // ---------------------------------------------------------------------------
-// Оверлеи: открытие/закрытие, Esc, фокус
+// Экраны и история: «Назад» браузера ходит по экранам, а не закрывает сайт
 // ---------------------------------------------------------------------------
 const OVERLAYS = () => [el.homeOverlay, el.libraryOverlay, el.profileOverlay, el.advancedOverlay, el.wizardOverlay, el.resultsOverlay, el.catalogOverlay];
+const OVERLAY_BY_ID = {
+  home: () => el.homeOverlay,
+  library: () => el.libraryOverlay,
+  profile: () => el.profileOverlay,
+  advanced: () => el.advancedOverlay,
+  wizard: () => el.wizardOverlay,
+  results: () => el.resultsOverlay,
+  catalog: () => el.catalogOverlay,
+};
 
 function visibleOverlay() {
   return OVERLAYS().find((o) => !o.classList.contains('hidden')) || null;
 }
 
-let lastTrigger = null;
-
-function openOverlay(node, trigger) {
-  lastTrigger = trigger || (document.activeElement instanceof HTMLElement ? document.activeElement : null);
-  node.classList.remove('hidden');
-  if (node === el.libraryOverlay) { updateHero(); maybeShowSwipeHint(); }
-  const focusable = node.querySelector('button:not([disabled]), [href], input, select, textarea, [tabindex]:not([tabindex="-1"])');
-  if (focusable) setTimeout(() => focusable.focus(), 0);
+function hideAllOverlays() {
+  for (const n of OVERLAYS()) n.classList.add('hidden');
 }
 
-function closeOverlay(node) {
-  node.classList.add('hidden');
-  if (lastTrigger && document.contains(lastTrigger) && lastTrigger.focus) lastTrigger.focus();
+function focusFirst(node) {
+  const f = node.querySelector('button:not([disabled]), [href], input:not([disabled]), select, textarea, [tabindex]:not([tabindex="-1"])');
+  if (f) setTimeout(() => { try { f.focus(); } catch { /* noop */ } }, 0);
 }
 
-function overlayKeydown(e) {
-  const ov = visibleOverlay();
-  if (!ov) return;
-  if (e.key === 'Escape') {
-    e.preventDefault();
-    if (ov === el.wizardOverlay) { finishWizard(); } else { closeOverlay(ov); }
+function renderHistoryState(st) {
+  const s = (st && st.view) ? st : { view: 'home' };
+  hideAllOverlays();
+  if (s.modal) {
+    const node = OVERLAY_BY_ID[s.modal] && OVERLAY_BY_ID[s.modal]();
+    if (node) { node.classList.remove('hidden'); focusFirst(node); }
     return;
   }
-  if (e.key === 'Tab') {
-    const nodes = [...ov.querySelectorAll('button:not([disabled]), [href], input:not([disabled]), select, textarea, [tabindex]:not([tabindex="-1"])')]
-      .filter((n) => n.offsetParent !== null || n === document.activeElement);
-    if (!nodes.length) return;
-    const first = nodes[0], last = nodes[nodes.length - 1];
-    if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
-    else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
-  }
+  if (s.view === 'home') { el.homeOverlay.classList.remove('hidden'); focusFirst(el.homeOverlay); }
+  else if (s.view === 'library') { el.libraryOverlay.classList.remove('hidden'); updateHero(); maybeShowSwipeHint(); focusFirst(el.libraryOverlay); }
+  // 'game' — все оверлеи скрыты
+}
+
+function navTo(entry, replace) {
+  if (replace) history.replaceState(entry, '');
+  else history.pushState(entry, '');
+  renderHistoryState(entry);
+}
+
+function goHome() { navTo({ view: 'home' }); }
+function goLibrary() { navTo({ view: 'library' }); }
+function goGame() { navTo({ view: 'game' }); }
+function openModal(id) {
+  const base = (history.state && history.state.view) || 'game';
+  navTo({ view: base, modal: id });
+}
+function goBack() { history.back(); }
+
+function overlayKeydown(e) {
+  if (e.key !== 'Tab') return;
+  const ov = visibleOverlay();
+  if (!ov) return;
+  const nodes = [...ov.querySelectorAll('button:not([disabled]), [href], input:not([disabled]), select, textarea, [tabindex]:not([tabindex="-1"])')]
+    .filter((n) => n.offsetParent !== null || n === document.activeElement);
+  if (!nodes.length) return;
+  const first = nodes[0], last = nodes[nodes.length - 1];
+  if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
+  else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
 }
 
 function bindOverlayDismiss(node) {
-  node.addEventListener('mousedown', (e) => { if (e.target === node) closeOverlay(node); });
+  node.addEventListener('mousedown', (e) => {
+    if (e.target !== node) return;
+    if (node === el.homeOverlay) return; // главная по фону не закрывается
+    goBack();
+  });
 }
 
 // ---------------------------------------------------------------------------
@@ -236,16 +279,43 @@ function updateSpeedChips(rate) {
   }
 }
 
+function speedBaseBpm() { return (state.song && state.song.bpm) || 120; }
+
+// Темп показываем в BPM, а скорость — в процентах: это одно и то же число.
+function updateSpeedUi() {
+  const base = speedBaseBpm();
+  const rate = state.settings.rate;
+  const pct = Math.round(rate * 100);
+  const bpm = Math.round(base * rate);
+  const minBpm = Math.max(20, Math.round(base * 0.25));
+  const maxBpm = Math.round(base * 1.5);
+  el.speed.min = String(minBpm);
+  el.speed.max = String(maxBpm);
+  el.speed.value = String(bpm);
+  el.speedRange.textContent = `${minBpm}–${maxBpm} BPM`;
+  el.speedVal.textContent = `${pct}%`;
+  el.speedBpm.innerHTML = `${bpm}<span class="speed-big__u">BPM</span>`;
+  el.speedQuickVal.textContent = `${pct}%`;
+  el.speedPopBpm.textContent = `${bpm} BPM`;
+  el.speedPopPct.textContent = `${pct}%`;
+  el.speedPopRange.min = String(minBpm);
+  el.speedPopRange.max = String(maxBpm);
+  el.speedPopRange.value = String(bpm);
+  updateSpeedChips(rate);
+}
+
+function setBpm(bpm) {
+  setRate(clamp(bpm / speedBaseBpm(), 0.25, 1.5));
+}
+
 function applySettingsToUi() {
   const s = state.settings;
   state.rate = s.rate;
-  el.speed.value = String(Math.round(s.rate * 100));
-  el.speedVal.textContent = Math.round(s.rate * 100) + '%';
-  el.speedBig.textContent = Math.round(s.rate * 100) + '%';
-  updateSpeedChips(s.rate);
+  updateSpeedUi();
   setSwitch(el.metronome, s.metronome);
   setSwitch(el.countIn, s.countIn);
   setSwitch(el.showFret, s.showFret);
+  setSwitch(el.showFinger, s.showFinger);
   el.guideVol.value = String(s.guideVol);
   el.guideVolVal.textContent = s.guideVol + '%';
   el.metroVol.value = String(s.metroVol);
@@ -426,7 +496,7 @@ async function selectItem(item, autoplay) {
   loadRaw(item.raw);
   renderList();
   updateHero();
-  if (autoplay) { closeOverlay(el.libraryOverlay); play(); }
+  if (autoplay) play();
 }
 
 function currentItem() {
@@ -639,7 +709,7 @@ function applyTip() {
     updateHero();
   }
   setRate(speed / 100);
-  closeOverlay(el.libraryOverlay);
+  goGame();
   toast(`Совет применён: ${raw.title}, ${speed}%`, 'ok');
 }
 
@@ -686,6 +756,7 @@ function applySongUi() {
   el.btnRestart.disabled = false;
   el.progressBar.value = 0;
   el.timeReadout.textContent = `0:00 / ${fmtTime(song.duration)}`;
+  updateSpeedUi();
   updateLoopMarkers();
   updateHud();
 }
@@ -724,7 +795,7 @@ async function loadFile(file) {
     loadRaw(raw);
     renderList();
     updateHero();
-    closeOverlay(el.libraryOverlay);
+    goGame();
     toast(`Открыто: ${raw.title}`, 'ok');
   } catch (e) {
     console.error(e);
@@ -744,7 +815,7 @@ async function loadCatalogUrl() {
     renderTip();
     el.catalogStatus.textContent = `Загружено: ${cat.songs.length} песен`;
     toast('Каталог загружен', 'ok');
-    closeOverlay(el.catalogOverlay);
+    goBack();
   } catch (e) {
     el.catalogStatus.textContent = '';
     toast('Каталог: ' + e.message, 'err', 6000);
@@ -761,7 +832,7 @@ async function loadCatalogFile(file) {
     renderTip();
     el.catalogStatus.textContent = `Загружено: ${cat.songs.length} песен`;
     toast('Каталог загружен', 'ok');
-    closeOverlay(el.catalogOverlay);
+    goBack();
   } catch (e) {
     el.catalogStatus.textContent = '';
     toast('Каталог: ' + e.message, 'err', 6000);
@@ -886,10 +957,7 @@ function computeSongTime() {
 
 function setRate(rate) {
   state.settings.rate = rate; saveSettings();
-  el.speed.value = String(Math.round(rate * 100));
-  el.speedVal.textContent = Math.round(rate * 100) + '%';
-  el.speedBig.textContent = Math.round(rate * 100) + '%';
-  updateSpeedChips(rate);
+  updateSpeedUi();
   if (state.playing && !state.paused) {
     const cur = computeSongTime();
     state.rate = rate;
@@ -904,6 +972,7 @@ function setRate(rate) {
 
 function resetPlayback() {
   audio.stopAll();
+  releaseWakeLock();
   flushPractice();
   state.playing = false; state.paused = false;
   state.startSong = 0; state.pauseSong = 0;
@@ -921,8 +990,7 @@ async function play() {
   await audio.ensure();
   audio.setGuideVolume(state.settings.guideVol / 100);
   audio.setMetroVolume(state.settings.metroVol / 100);
-  closeOverlay(el.libraryOverlay);
-  closeOverlay(el.resultsOverlay);
+  if (visibleOverlay()) goGame();
   if (state.playing && !state.paused) return;
   if (state.playing && state.paused) {
     state.paused = false;
@@ -955,20 +1023,21 @@ function startFrom(pos, noCountIn) {
     for (let k = 0; k < 4; k++) audio.click(t0 + (k * beat) / state.rate, k === 0);
   }
   state.startCtx = audio.now + lead;
+  requestWakeLock();
   updatePlayButton();
 }
 
 function pause() {
   if (!state.playing || state.paused) return;
   state.pauseSong = computeSongTime();
-  state.paused = true; audio.stopAll(); flushPractice(); updatePlayButton();
+  state.paused = true; audio.stopAll(); flushPractice(); releaseWakeLock(); updatePlayButton();
 }
 
 function togglePlay() { if (!state.song) return; if (!state.playing || state.paused) play(); else pause(); }
 
 function restart() {
   if (!state.song) return;
-  closeOverlay(el.resultsOverlay);
+  if (!el.resultsOverlay.classList.contains('hidden')) goBack();
   state.game.reset();
   startFrom(0);
 }
@@ -1048,7 +1117,8 @@ function frame() {
 
   renderer.render({
     song: state.song, game: state.game, songTime,
-    pxPerSec: 230, detected: state.detected, showFret: state.settings.showFret,
+    pxPerSec: 230, detected: state.detected,
+    showFret: state.settings.showFret, showFinger: state.settings.showFinger,
     countIn,
   });
 
@@ -1087,7 +1157,7 @@ function updateHud(songTime) {
     const jt = t - state.latencySec;
     const ng = nearestGroup(jt);
     if (ng && Math.abs(ng.t - jt) <= 0.7) {
-      fb = 'Ждём: ' + ng.notes.map((n) => `${midiToName(n.midi)} (лад ${n.fret})`).join(' · ');
+      fb = 'Ждём: ' + ng.notes.map((n) => `${midiToName(n.midi)} (лад ${n.fret}${n.finger > 0 ? ', палец ' + n.finger : ''})`).join(' · ');
       if (d && Number.isFinite(d.midi) && d.clarity > 0.45) {
         const cents = Math.round((d.midi - Math.round(d.midi)) * 100);
         const ok = (d.heard && ng.notes.some((n) => d.heard.has(Math.round(n.midi))))
@@ -1136,7 +1206,7 @@ function onFinish() {
   state.playing = false; state.paused = false;
   state.startSong = Math.max(0, Math.min(t, state.song.duration));
   state.pauseSong = state.startSong;
-  audio.stopAll(); flushPractice();
+  audio.stopAll(); releaseWakeLock(); flushPractice();
 
   const g = state.game;
   const song = state.song;
@@ -1170,7 +1240,7 @@ function showResults() {
   renderErrBars(el.resultErrFrets, g.missByFret, (k) => 'Лад ' + k);
   const hasErrors = g.misses > 0 && (Object.keys(g.missByFret).length || Object.keys(g.missByString).length);
   el.btnPracticeWeak.disabled = !hasErrors;
-  openOverlay(el.resultsOverlay);
+  openModal('results');
 }
 
 function practiceWeak() {
@@ -1185,7 +1255,7 @@ function practiceWeak() {
   const b = clamp(note.t + 3.0, 0, state.song.duration);
   state.loopA = a; state.loopB = b;
   setRate(0.75);
-  closeOverlay(el.resultsOverlay);
+  if (!el.resultsOverlay.classList.contains('hidden')) goBack();
   startFrom(a, true);
   updateLoopMarkers();
   toast(`Отработка: лад ${targetFret != null ? targetFret : '—'}, струна ${targetStr != null ? targetStr : '—'} · 75%`, 'ok', 5000);
@@ -1418,15 +1488,14 @@ function openWizard() {
   state.wizardStep = 1;
   renderWizard();
   el.wizCalState.textContent = '';
-  openOverlay(el.wizardOverlay);
+  openModal('wizard');
 }
 
 function finishWizard() {
   state.wizardActive = false;
   state.settings.onboarded = true;
   saveSettings();
-  closeOverlay(el.wizardOverlay);
-  if (el.libraryOverlay.classList.contains('hidden') && !state.playing) openOverlay(el.libraryOverlay, el.btnLibrary);
+  goLibrary();
 }
 
 async function wizardNext() {
@@ -1458,21 +1527,19 @@ function bindEvents() {
   el.btnPlay.addEventListener('click', togglePlay);
   el.btnRestart.addEventListener('click', restart);
   el.btnAgain.addEventListener('click', restart);
-  el.btnLibPlay.addEventListener('click', () => { closeOverlay(el.libraryOverlay); play(); });
-  el.btnLibPlayMobile.addEventListener('click', () => { closeOverlay(el.libraryOverlay); play(); });
-  el.btnLibrary.addEventListener('click', () => openOverlay(el.libraryOverlay, el.btnLibrary));
-  document.querySelector('.brand').addEventListener('click', () => openOverlay(el.homeOverlay, null));
+  el.btnLibPlay.addEventListener('click', () => play());
+  el.btnLibPlayMobile.addEventListener('click', () => play());
+  el.btnLibrary.addEventListener('click', () => goLibrary());
+  document.querySelector('.brand').addEventListener('click', () => goHome());
   el.btnHomeStart.addEventListener('click', () => {
-    closeOverlay(el.homeOverlay);
     if (!state.settings.onboarded) openWizard();
-    else openOverlay(el.libraryOverlay, el.btnLibrary);
+    else goLibrary();
   });
   el.btnHomeProfile.addEventListener('click', () => {
-    closeOverlay(el.homeOverlay);
     renderProfile();
-    openOverlay(el.profileOverlay, el.btnProfile);
+    openModal('profile');
   });
-  el.btnCloseLibrary.addEventListener('click', () => closeOverlay(el.libraryOverlay));
+  el.btnCloseLibrary.addEventListener('click', () => goBack());
   el.btnPrevSong.addEventListener('click', () => stepSelection(-1));
   el.btnNextSong.addEventListener('click', () => stepSelection(1));
   el.btnToggleList.addEventListener('click', () => {
@@ -1509,15 +1576,15 @@ function bindEvents() {
   el.heroCard.addEventListener('pointerup', (e) => { if (drag && e.pointerId === drag.id) endDrag(true); });
   el.heroCard.addEventListener('pointercancel', () => endDrag(false));
   el.heroCard.addEventListener('lostpointercapture', () => endDrag(true));
-  el.btnResultsLibrary.addEventListener('click', () => { closeOverlay(el.resultsOverlay); resetPlayback(); openOverlay(el.libraryOverlay, el.btnLibrary); });
-  el.btnResultsClose.addEventListener('click', () => closeOverlay(el.resultsOverlay));
+  el.btnResultsLibrary.addEventListener('click', () => { resetPlayback(); goLibrary(); });
+  el.btnResultsClose.addEventListener('click', () => goBack());
   el.btnPracticeWeak.addEventListener('click', practiceWeak);
 
   // меню
   el.btnMenu.addEventListener('click', () => toggleMenu());
   document.addEventListener('click', (e) => { if (!el.menuPopover.contains(e.target) && !el.btnMenu.contains(e.target)) toggleMenu(false); });
-  el.menuWizard.addEventListener('click', () => { toggleMenu(false); closeOverlay(el.libraryOverlay); openWizard(); });
-  el.menuHome.addEventListener('click', () => { toggleMenu(false); closeOverlay(el.libraryOverlay); openOverlay(el.homeOverlay, null); });
+  el.menuWizard.addEventListener('click', () => { toggleMenu(false); openWizard(); });
+  el.menuHome.addEventListener('click', () => { toggleMenu(false); goHome(); });
   el.menuAutoplay.addEventListener('click', () => {
     state.settings.autoplay = !state.settings.autoplay; saveSettings(); applySettingsToUi();
     toast(state.settings.autoplay ? 'Автоигра включена' : 'Автоигра выключена');
@@ -1544,15 +1611,31 @@ function bindEvents() {
     renderList();
   });
 
-  // скорость
-  el.speed.addEventListener('input', () => setRate(Number(el.speed.value) / 100));
+  // темп (BPM) и скорость (%)
+  el.speed.addEventListener('input', () => setBpm(Number(el.speed.value)));
   el.speedChips.addEventListener('click', (e) => {
     const b = e.target.closest('.chip'); if (!b) return;
     setRate(Number(b.dataset.speed) / 100);
   });
+  el.speedPopRange.addEventListener('input', () => setBpm(Number(el.speedPopRange.value)));
+  el.speedPop.querySelectorAll('.chip').forEach((c) => {
+    c.addEventListener('click', () => setRate(Number(c.dataset.speed) / 100));
+  });
+  el.btnSpeedQuick.addEventListener('click', (e) => {
+    e.stopPropagation();
+    const open = el.speedPop.classList.toggle('hidden') === false;
+    el.btnSpeedQuick.setAttribute('aria-expanded', open ? 'true' : 'false');
+  });
+  document.addEventListener('click', (e) => {
+    if (el.speedPop.classList.contains('hidden')) return;
+    if (!el.speedPop.contains(e.target) && !el.btnSpeedQuick.contains(e.target)) {
+      el.speedPop.classList.add('hidden');
+      el.btnSpeedQuick.setAttribute('aria-expanded', 'false');
+    }
+  });
 
   // тумблеры
-  for (const [node, key] of [[el.metronome, 'metronome'], [el.countIn, 'countIn'], [el.showFret, 'showFret']]) {
+  for (const [node, key] of [[el.metronome, 'metronome'], [el.countIn, 'countIn'], [el.showFret, 'showFret'], [el.showFinger, 'showFinger']]) {
     node.addEventListener('click', () => {
       state.settings[key] = !state.settings[key];
       saveSettings(); applySettingsToUi();
@@ -1568,8 +1651,8 @@ function bindEvents() {
     if (f) loadFile(f);
   });
   el.fileInput.addEventListener('change', (e) => { const f = e.target.files && e.target.files[0]; if (f) loadFile(f); e.target.value = ''; });
-  el.btnCatalogLink.addEventListener('click', () => openOverlay(el.catalogOverlay, el.btnCatalogLink));
-  el.btnCatalogClose.addEventListener('click', () => closeOverlay(el.catalogOverlay));
+  el.btnCatalogLink.addEventListener('click', () => openModal('catalog'));
+  el.btnCatalogClose.addEventListener('click', () => goBack());
   el.btnCatalogLoad.addEventListener('click', loadCatalogUrl);
   el.catalogUrl.addEventListener('keydown', (e) => { if (e.key === 'Enter') loadCatalogUrl(); });
   el.catalogFileInput.addEventListener('change', (e) => { const f = e.target.files && e.target.files[0]; if (f) loadCatalogFile(f); e.target.value = ''; });
@@ -1587,16 +1670,16 @@ function bindEvents() {
   });
 
   // профиль
-  el.btnProfile.addEventListener('click', () => { renderProfile(); openOverlay(el.profileOverlay, el.btnProfile); });
-  el.btnProfileClose.addEventListener('click', () => closeOverlay(el.profileOverlay));
+  el.btnProfile.addEventListener('click', () => { renderProfile(); openModal('profile'); });
+  el.btnProfileClose.addEventListener('click', () => goBack());
   el.profileName.addEventListener('input', () => { state.profile.name = el.profileName.value; saveProfile(state.profile); });
   el.btnProfileReset.addEventListener('click', () => { state.profile = resetProfile(); renderProfile(); renderTip(); renderList(); toast('Статистика сброшена'); });
   el.btnProfileExport.addEventListener('click', exportProfile);
   el.profileImport.addEventListener('change', (e) => { const f = e.target.files && e.target.files[0]; if (f) importProfile(f); e.target.value = ''; });
 
   // расширенные
-  el.btnAdvanced.addEventListener('click', () => { openOverlay(el.advancedOverlay, el.btnAdvanced); refreshDevices(); });
-  el.btnAdvancedClose.addEventListener('click', () => closeOverlay(el.advancedOverlay));
+  el.btnAdvanced.addEventListener('click', () => { refreshDevices(); openModal('advanced'); });
+  el.btnAdvancedClose.addEventListener('click', () => goBack());
   el.btnRefreshDevices.addEventListener('click', refreshDevices);
   el.micSelect.addEventListener('change', async () => {
     state.settings.micDeviceId = el.micSelect.value;
@@ -1618,7 +1701,7 @@ function bindEvents() {
       toast('Вывод переключён', 'ok');
     } catch (e) { toast('Вывод: ' + e.message, 'err', 6000); }
   });
-  el.btnOpenWizard.addEventListener('click', () => { closeOverlay(el.advancedOverlay); openWizard(); });
+  el.btnOpenWizard.addEventListener('click', () => openWizard());
   el.guideVol.addEventListener('input', () => { state.settings.guideVol = Number(el.guideVol.value); el.guideVolVal.textContent = el.guideVol.value + '%'; saveSettings(); audio.setGuideVolume(state.settings.guideVol / 100); });
   el.metroVol.addEventListener('input', () => { state.settings.metroVol = Number(el.metroVol.value); el.metroVolVal.textContent = el.metroVol.value + '%'; saveSettings(); audio.setMetroVolume(state.settings.metroVol / 100); });
   el.latency.addEventListener('input', () => { state.settings.latency = Number(el.latency.value); state.latencySec = state.settings.latency / 1000; el.latencyVal.textContent = el.latency.value + ' мс'; saveSettings(); });
@@ -1702,7 +1785,11 @@ function bindEvents() {
   // клавиатура
   document.addEventListener('keydown', (e) => {
     const typing = e.target && /input|select|textarea/i.test(e.target.tagName);
-    if (e.key === 'Escape') { const ov = visibleOverlay(); if (ov) { if (ov === el.wizardOverlay) finishWizard(); else closeOverlay(ov); } return; }
+    if (e.key === 'Escape') {
+      const ov = visibleOverlay();
+      if (ov && ov !== el.homeOverlay) { if (ov === el.wizardOverlay) finishWizard(); else goBack(); }
+      return;
+    }
     overlayKeydown(e);
     if (typing) return;
     if (e.code === 'Space') { e.preventDefault(); togglePlay(); }
@@ -1710,13 +1797,27 @@ function bindEvents() {
     else if (e.code === 'BracketLeft') { e.preventDefault(); setLoopA(); }
     else if (e.code === 'BracketRight') { e.preventDefault(); setLoopB(); }
     else if (e.code === 'Backslash') { e.preventDefault(); clearLoop(); }
+    else if (e.code === 'Minus' || e.code === 'NumpadSubtract' || e.code === 'Comma') { e.preventDefault(); setRate(clamp(state.settings.rate - 0.05, 0.25, 1.5)); }
+    else if (e.code === 'Equal' || e.code === 'NumpadAdd' || e.code === 'Period') { e.preventDefault(); setRate(clamp(state.settings.rate + 0.05, 0.25, 1.5)); }
     else if (e.code === 'ArrowLeft') { e.preventDefault(); if (!el.libraryOverlay.classList.contains('hidden')) stepSelection(-1); else seekBy(-5); }
     else if (e.code === 'ArrowRight') { e.preventDefault(); if (!el.libraryOverlay.classList.contains('hidden')) stepSelection(1); else seekBy(5); }
   });
 
   window.addEventListener('resize', () => { applyLayout(); if (state.song) drawTabPreview(state.song); });
+  window.addEventListener('popstate', (e) => {
+    if (!e.state) {
+      // браузер хочет уйти с сайта — остаёмся на главной
+      history.pushState({ view: 'home' }, '');
+      renderHistoryState({ view: 'home' });
+      return;
+    }
+    renderHistoryState(e.state);
+  });
   window.addEventListener('pagehide', () => { flushPractice(); saveProfile(state.profile); });
-  document.addEventListener('visibilitychange', () => { if (document.hidden) { flushPractice(); saveProfile(state.profile); } });
+  document.addEventListener('visibilitychange', () => {
+    if (document.hidden) { flushPractice(); saveProfile(state.profile); }
+    else if (state.playing && !state.paused) requestWakeLock();
+  });
 
   for (const node of OVERLAYS()) bindOverlayDismiss(node);
 }
@@ -1751,7 +1852,8 @@ function init() {
   if (params.get('demo') === '1') { state.settings.autoplay = true; applySettingsToUi(); }
 
   // сначала — главная страница
-  openOverlay(el.homeOverlay, null);
+  history.replaceState({ view: 'home' }, '');
+  renderHistoryState({ view: 'home' });
 
   window.__riff = { state, audio, pitch, renderer, play, pause, togglePlay, startFrom, restart, loadRaw, renderProfile, applyLayout, applyTheme, frame, autoCalibrateLatency };
 }

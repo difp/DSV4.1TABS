@@ -46,7 +46,7 @@ export class HighwayRenderer {
   }
 
   render(state) {
-    const { song, game, songTime, pxPerSec, detected, showFret, countIn } = state;
+    const { song, game, songTime, pxPerSec, detected, showFret, showFinger, countIn } = state;
     const ctx = this.ctx;
     const { w, h } = this;
     const strings = song.stringCount || 6;
@@ -149,6 +149,13 @@ export class HighwayRenderer {
           ctx.fillStyle = note.dead ? '#e8ecff' : INK;
           ctx.font = `700 ${Math.round(nh * 0.72)}px ${MONO}`;
           ctx.fillText(note.dead ? '×' : String(note.fret), cx, y + 1);
+        }
+        if (showFinger && !note.dead && note.finger > 0) {
+          ctx.globalAlpha = alpha * 0.95;
+          ctx.fillStyle = '#a5b4fc';
+          ctx.font = `700 ${Math.round(nh * 0.44)}px ${MONO}`;
+          ctx.fillText(String(note.finger), cx, y - nh / 2 - 10);
+          ctx.globalAlpha = 1;
         }
       }
     }
