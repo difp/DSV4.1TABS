@@ -34,7 +34,7 @@ const el = {
   speedBpm: $('speedBpm'), speedChips: $('speedChips'), speed: $('speed'), speedVal: $('speedVal'), speedRange: $('speedRange'),
   btnSpeedQuick: $('btnSpeedQuick'), speedQuickVal: $('speedQuickVal'), speedPop: $('speedPop'), speedPopBpm: $('speedPopBpm'), speedPopPct: $('speedPopPct'), speedPopRange: $('speedPopRange'),
   tipText: $('tipText'), btnTipApply: $('btnTipApply'),
-  themeSeg: $('themeSeg'), layoutSeg: $('layoutSeg'),
+  layoutSeg: $('layoutSeg'),
   metronome: $('metronome'), countIn: $('countIn'), showFret: $('showFret'), showFinger: $('showFinger'), autoplaySwitch: $('autoplaySwitch'),
   btnSoundHome: $('btnSoundHome'), btnWizardHome: $('btnWizardHome'), homeGitHub: $('homeGitHub'),
   categories: $('categories'),
@@ -82,7 +82,6 @@ const state = {
   schedulePtr: 0, metroPtr: 0, seeking: false,
   trackIndex: 0,
   layoutPref: localStorage.getItem('riffhero.layout') || 'auto',
-  theme: localStorage.getItem('riffhero.theme') || 'dark',
   loopA: null, loopB: null,
   library: { builtin: [], catalog: null },
   items: [],
@@ -181,12 +180,7 @@ function bindModalDismiss(node) { node.addEventListener('mousedown', (e) => { if
 // Тема и раскладка (строго по выбору, без авто)
 // ---------------------------------------------------------------------------
 function resolveLayout() { if (state.layoutPref === 'desktop' || state.layoutPref === 'phone') return state.layoutPref; return window.innerWidth < 820 ? 'phone' : 'desktop'; }
-function applyTheme() {
-  document.body.dataset.theme = state.theme;
-  for (const b of el.themeSeg.querySelectorAll('button')) b.classList.toggle('active', b.dataset.theme === state.theme);
-  const meta = document.querySelector('meta[name="theme-color"]');
-  if (meta) meta.setAttribute('content', state.theme === 'light' ? '#ededed' : '#0b0b0b');
-}
+function applyTheme() { document.body.dataset.theme = 'light'; }
 function applyLayout() {
   document.body.dataset.ui = resolveLayout();
   for (const b of el.layoutSeg.querySelectorAll('button')) b.classList.toggle('active', b.dataset.layout === state.layoutPref);
@@ -1060,7 +1054,6 @@ function bindEvents() {
   el.btnFinger.addEventListener('click', toggleFinger);
 
   // тема и раскладка
-  el.themeSeg.addEventListener('click', (e) => { const b = e.target.closest('button[data-theme]'); if (!b) return; state.theme = b.dataset.theme; localStorage.setItem('riffhero.theme', state.theme); applyTheme(); });
   el.layoutSeg.addEventListener('click', (e) => { const b = e.target.closest('button[data-layout]'); if (!b) return; state.layoutPref = b.dataset.layout; localStorage.setItem('riffhero.layout', state.layoutPref); applyLayout(); });
 
   // тумблеры

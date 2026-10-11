@@ -1,39 +1,33 @@
-/* RiffHero — дизайн-система.
-   Тёмная тема по умолчанию; акценты: белый (главное действие) и индиго.
-   Все цвета — в токенах. Светлая тема — тот же набор токенов. */
+/* RiffHero — дизайн-система (единая светлая тема).
+   Акценты: индиго и тёмная кнопка главного действия. Все цвета — в токенах. */
 
 :root {
-  /* поверхности и текст — нейтральные, без синевы */
-  --bg: #0b0b0b;
-  --surface: #161616;
-  --surface-2: #202020;
-  --surface-sel: #1f1f2e;
-  --line: #2c2c2c;
-  --line-strong: #5558c0;
-  --text: #f3f3f3;
-  --text-2: #a3a3a3;
+  --bg: #ededed;
+  --surface: #ffffff;
+  --surface-2: #f4f4f5;
+  --surface-sel: #e9e9f7;
+  --line: #dcdcdc;
+  --line-strong: #4f52c9;
+  --text: #141414;
+  --text-2: #5c5c5c;
 
-  /* индиго */
   --indigo: #6366f1;
   --indigo-strong: #4f52c9;
-  --indigo-text: #a5b4fc;
-  --indigo-tint: #1c1d45;
-  --indigo-line: #4f52c9;
+  --indigo-text: #4438ca;
+  --indigo-tint: #eceeff;
+  --indigo-line: #c7c9f5;
 
-  /* главное действие */
-  --action-bg: #ffffff;
-  --action-fg: #0b0b18;
-  --action-bg-hover: #e9e9f5;
+  --action-bg: #141414;
+  --action-fg: #ffffff;
+  --action-bg-hover: #2a2a2a;
 
-  /* статусы (всегда с иконкой и текстом) */
-  --error: #f0857a;
-  --success: #7fd8a8;
+  --error: #b4342a;
+  --success: #1f7a4d;
 
-  /* прочее */
   --focus: var(--indigo);
-  --shadow: 0 30px 80px rgba(0, 0, 0, 0.62);
-  --card-shadow: 0 1px 0 rgba(255, 255, 255, 0.05) inset, 0 10px 26px rgba(0, 0, 0, 0.38);
-  --scrim: rgba(8, 8, 8, 0.76);
+  --shadow: 0 24px 60px rgba(30, 30, 60, 0.16);
+  --card-shadow: 0 1px 0 rgba(255, 255, 255, 0.9) inset, 0 8px 22px rgba(30, 30, 60, 0.10);
+  --scrim: rgba(20, 20, 20, 0.45);
   --radius-card: 16px;
   --radius-ctl: 10px;
   --dur: 200ms;
@@ -48,46 +42,16 @@
   --font: system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
   --mono: ui-monospace, "SFMono-Regular", Menlo, Consolas, "Liberation Mono", monospace;
 
-  --stage-text: #f4f4fb;
-  --stage-text-2: #9fa1bd;
-  --stage-line: #2a2a2a;
-  --backdrop: #050505;
+  --stage-text: #1c1c22;
+  --stage-text-2: #5a5a63;
+  --stage-line: #c9ccd4;
+  --backdrop: #e2e2e2;
 
   /* безопасные зоны устройства (fallback 0) */
   --sat: env(safe-area-inset-top, 0px);
   --sab: env(safe-area-inset-bottom, 0px);
   --sal: env(safe-area-inset-left, 0px);
   --sar: env(safe-area-inset-right, 0px);
-}
-
-/* Светлая тема — та же система токенов; «белая» кнопка становится тёмной. */
-body[data-theme="light"] {
-  --bg: #ededed;
-  --surface: #ffffff;
-  --surface-2: #f4f4f4;
-  --surface-sel: #e9e9f7;
-  --line: #dcdcdc;
-  --line-strong: #4f52c9;
-  --text: #141414;
-  --text-2: #5c5c5c;
-
-  --indigo: #5b5ee8;
-  --indigo-strong: #4f52c9;
-  --indigo-text: #4438ca;
-  --indigo-tint: #eceeff;
-  --indigo-line: #c7c9f5;
-
-  --action-bg: #141422;
-  --action-fg: #ffffff;
-  --action-bg-hover: #272741;
-
-  --error: #b4342a;
-  --success: #1f7a4d;
-
-  --shadow: 0 24px 60px rgba(30, 30, 60, 0.18);
-  --card-shadow: 0 1px 0 rgba(255, 255, 255, 0.9) inset, 0 8px 22px rgba(30, 30, 60, 0.1);
-  --scrim: rgba(20, 20, 20, 0.45);
-  --backdrop: #e2e2e2;
 }
 
 * { box-sizing: border-box; }
@@ -151,7 +115,6 @@ html, body {
   color: #ffffff;
   border-color: var(--indigo);
 }
-body[data-theme="light"] .btn--accent { color: #ffffff; }
 .btn--accent:hover { background: var(--indigo-strong); border-color: var(--indigo-strong); }
 
 .btn--ghost { background: transparent; }
@@ -355,7 +318,7 @@ input[type="range"]::-moz-range-thumb {
 .hud::before {
   content: "";
   position: absolute; top: 0; left: 0; right: 0; height: 104px;
-  background: linear-gradient(180deg, rgba(7, 7, 13, 0.7), transparent);
+  background: linear-gradient(180deg, rgba(237, 237, 237, 0.85), transparent);
   pointer-events: none;
 }
 .hud > * { position: relative; }

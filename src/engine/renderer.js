@@ -3,10 +3,10 @@
 import { midiToName, assignFret } from './theory.js';
 
 const STRING_COLORS = [
-  '#8b93ff', '#6ee7f0', '#a5b4fc', '#f0abfc', '#93c5fd',
+  '#8b93ff', '#6ee7f0', '#4f52c9', '#f0abfc', '#93c5fd',
   '#c4b5fd', '#7dd3fc', '#e9d5ff', '#67e8f9', '#c7d2fe',
 ];
-const JUDGE_COLORS = { perfect: '#a5b4fc', good: '#7dd3fc', ok: '#c7d2fe', miss: '#f0857a' };
+const JUDGE_COLORS = { perfect: '#4f52c9', good: '#2f7fb0', ok: '#a9841f', miss: '#c0392b' };
 const JUDGE_TEXT = { perfect: 'ИДЕАЛЬНО', good: 'ХОРОШО', ok: 'ОК', miss: 'ПРОМАХ' };
 const INK = '#0b0b18';
 const MONO = 'ui-monospace, Menlo, Consolas, monospace';
@@ -47,14 +47,14 @@ export class HighwayRenderer {
   _background() {
     const ctx = this.ctx;
     const bg = ctx.createLinearGradient(0, 0, 0, this.h);
-    bg.addColorStop(0, '#131313');
-    bg.addColorStop(1, '#0a0a0a');
+    bg.addColorStop(0, '#f3f4f7');
+    bg.addColorStop(1, '#e7e8ee');
     ctx.fillStyle = bg;
     ctx.fillRect(0, 0, this.w, this.h);
   }
 
   _noteState(g, songTime) {
-    const base = g.notes[0] && g.notes[0].dead ? '#4a4a63' : null;
+    const base = g.notes[0] && g.notes[0].dead ? '#9a9aa6' : null;
     let color = base;
     let alpha = 1;
     if (g.judged) {
@@ -75,9 +75,9 @@ export class HighwayRenderer {
       ctx.textBaseline = 'middle';
       ctx.font = `700 ${size}px ${MONO}`;
       ctx.lineWidth = size * 0.07;
-      ctx.strokeStyle = 'rgba(7, 7, 13, 0.85)';
+      ctx.strokeStyle = 'rgba(255, 255, 255, 0.9)';
       ctx.strokeText(String(countIn), w / 2, h * 0.44);
-      ctx.fillStyle = '#f4f4fb';
+      ctx.fillStyle = '#1c1c22';
       ctx.fillText(String(countIn), w / 2, h * 0.44);
       ctx.restore();
     }
@@ -85,7 +85,7 @@ export class HighwayRenderer {
     if (lj && songTime - lj.t < 0.6) {
       const alpha = Math.max(0, 1 - (songTime - lj.t) / 0.6);
       ctx.globalAlpha = alpha;
-      ctx.fillStyle = JUDGE_COLORS[lj.judge] || '#f4f4fb';
+      ctx.fillStyle = JUDGE_COLORS[lj.judge] || '#1c1c22';
       ctx.font = `700 22px ${MONO}`;
       ctx.textAlign = 'center';
       ctx.fillText(JUDGE_TEXT[lj.judge] || '', w / 2, h * 0.3);
@@ -110,7 +110,7 @@ export class HighwayRenderer {
     ctx.lineWidth = 1.5;
     ctx.stroke();
     ctx.globalAlpha = 1;
-    ctx.fillStyle = '#f4f4fb';
+    ctx.fillStyle = '#1c1c22';
     ctx.font = `700 12px ${MONO}`;
     ctx.textAlign = 'center';
     ctx.fillText(`${midiToName(detected.midi)} ${a.fret}`, x, y + r + 14);
@@ -140,16 +140,16 @@ export class HighwayRenderer {
     ctx.save();
     for (let s = 1; s <= strings; s++) {
       const x = x0 + (s - 1) * laneW;
-      ctx.fillStyle = s % 2 ? 'rgba(244,244,251,0.02)' : 'rgba(244,244,251,0.045)';
+      ctx.fillStyle = s % 2 ? 'rgba(0,0,0,0.02)' : 'rgba(0,0,0,0.045)';
       ctx.fillRect(x, 0, laneW, h);
-      ctx.strokeStyle = 'rgba(244,244,251,0.09)';
+      ctx.strokeStyle = 'rgba(0,0,0,0.09)';
       ctx.lineWidth = 1;
       ctx.beginPath();
       ctx.moveTo(x + 0.5, 0);
       ctx.lineTo(x + 0.5, h);
       ctx.stroke();
     }
-    ctx.strokeStyle = 'rgba(244,244,251,0.18)';
+    ctx.strokeStyle = 'rgba(0,0,0,0.18)';
     ctx.beginPath();
     ctx.moveTo(x0 + 0.5, 0);
     ctx.lineTo(x0 + 0.5, h);
@@ -161,7 +161,7 @@ export class HighwayRenderer {
       for (const beat of song.grid.beats) {
         const y = timeToY(beat.t);
         if (y < -2 || y > h + 2) continue;
-        ctx.strokeStyle = beat.bar ? 'rgba(244,244,251,0.18)' : 'rgba(244,244,251,0.06)';
+        ctx.strokeStyle = beat.bar ? 'rgba(0,0,0,0.18)' : 'rgba(0,0,0,0.06)';
         ctx.lineWidth = 1;
         ctx.beginPath();
         ctx.moveTo(x0, y + 0.5);
@@ -184,7 +184,7 @@ export class HighwayRenderer {
       for (const note of g.notes) {
         const lane = note.string;
         const cx = laneCenter(lane);
-        const color = st.color || (note.dead ? '#4a4a63' : STRING_COLORS[(lane - 1) % STRING_COLORS.length]);
+        const color = st.color || (note.dead ? '#9a9aa6' : STRING_COLORS[(lane - 1) % STRING_COLORS.length]);
         const alpha = st.alpha;
         if (alpha <= 0.02) continue;
 
@@ -210,7 +210,7 @@ export class HighwayRenderer {
         }
         if (showFinger && !note.dead && note.finger > 0) {
           ctx.globalAlpha = alpha * 0.95;
-          ctx.fillStyle = '#a5b4fc';
+          ctx.fillStyle = '#4f52c9';
           ctx.font = `700 ${Math.round(nh * 0.44)}px ${MONO}`;
           ctx.fillText(String(note.finger), cx, y - nh / 2 - 10);
           ctx.globalAlpha = 1;
@@ -219,7 +219,7 @@ export class HighwayRenderer {
     }
     ctx.globalAlpha = 1;
 
-    ctx.strokeStyle = '#f4f4fb';
+    ctx.strokeStyle = '#1c1c22';
     ctx.lineWidth = 2;
     ctx.beginPath();
     ctx.moveTo(x0, hitLineY + 0.5);
@@ -236,7 +236,7 @@ export class HighwayRenderer {
       ctx.globalAlpha = 1;
     }
 
-    ctx.fillStyle = 'rgba(159,161,189,0.95)';
+    ctx.fillStyle = 'rgba(90,90,99,0.95)';
     ctx.font = `600 11px ${MONO}`;
     for (let s = 1; s <= strings; s++) {
       const open = song.tuning[s - 1];
@@ -276,9 +276,9 @@ export class HighwayRenderer {
     for (let s = 1; s <= strings; s++) {
       const y = yFor(s);
       const ry = y - rowH / 2;
-      ctx.fillStyle = s % 2 ? 'rgba(244,244,251,0.015)' : 'rgba(244,244,251,0.035)';
+      ctx.fillStyle = s % 2 ? 'rgba(0,0,0,0.015)' : 'rgba(0,0,0,0.035)';
       ctx.fillRect(0, ry, w, rowH);
-      ctx.strokeStyle = 'rgba(244,244,251,0.22)';
+      ctx.strokeStyle = 'rgba(0,0,0,0.22)';
       ctx.lineWidth = 1;
       ctx.beginPath();
       ctx.moveTo(labelW, y + 0.5);
@@ -291,7 +291,7 @@ export class HighwayRenderer {
       for (const beat of song.grid.beats) {
         const x = timeToX(beat.t);
         if (x < labelW || x > w + 2) continue;
-        ctx.strokeStyle = beat.bar ? 'rgba(244,244,251,0.18)' : 'rgba(244,244,251,0.06)';
+        ctx.strokeStyle = beat.bar ? 'rgba(0,0,0,0.18)' : 'rgba(0,0,0,0.06)';
         ctx.lineWidth = 1;
         ctx.beginPath();
         ctx.moveTo(x + 0.5, topY);
@@ -314,7 +314,7 @@ export class HighwayRenderer {
       for (const note of g.notes) {
         const lane = note.string;
         const cy = yFor(lane);
-        const color = st.color || (note.dead ? '#4a4a63' : STRING_COLORS[(lane - 1) % STRING_COLORS.length]);
+        const color = st.color || (note.dead ? '#9a9aa6' : STRING_COLORS[(lane - 1) % STRING_COLORS.length]);
         const alpha = st.alpha;
         if (alpha <= 0.02) continue;
 
@@ -340,7 +340,7 @@ export class HighwayRenderer {
         }
         if (showFinger && !note.dead && note.finger > 0) {
           ctx.globalAlpha = alpha * 0.95;
-          ctx.fillStyle = '#a5b4fc';
+          ctx.fillStyle = '#4f52c9';
           ctx.font = `700 ${Math.round(nh * 0.5)}px ${MONO}`;
           ctx.fillText(String(note.finger), x, cy - nh / 2 - 9);
           ctx.globalAlpha = 1;
@@ -350,7 +350,7 @@ export class HighwayRenderer {
     ctx.globalAlpha = 1;
 
     // линия удара (вертикальная) и цели по струнам
-    ctx.strokeStyle = '#f4f4fb';
+    ctx.strokeStyle = '#1c1c22';
     ctx.lineWidth = 2;
     ctx.beginPath();
     ctx.moveTo(hitLineX + 0.5, topY);
@@ -368,7 +368,7 @@ export class HighwayRenderer {
     }
 
     // подписи струн слева
-    ctx.fillStyle = 'rgba(159,161,189,0.95)';
+    ctx.fillStyle = 'rgba(90,90,99,0.95)';
     ctx.font = `600 11px ${MONO}`;
     ctx.textAlign = 'center';
     for (let s = 1; s <= strings; s++) {
