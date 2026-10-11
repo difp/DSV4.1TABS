@@ -47,8 +47,8 @@ export class HighwayRenderer {
   _background() {
     const ctx = this.ctx;
     const bg = ctx.createLinearGradient(0, 0, 0, this.h);
-    bg.addColorStop(0, '#0c0c17');
-    bg.addColorStop(1, '#07070d');
+    bg.addColorStop(0, '#131313');
+    bg.addColorStop(1, '#0a0a0a');
     ctx.fillStyle = bg;
     ctx.fillRect(0, 0, this.w, this.h);
   }

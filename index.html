@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-  <meta name="theme-color" content="#07070d" />
+  <meta name="theme-color" content="#0b0b0b" />
   <title>RiffHero — тренажёр гитары</title>
   <link rel="stylesheet" href="styles.css" />
 </head>
@@ -21,8 +21,6 @@
           <span class="mic__text" id="micText">Микрофон выключен</span>
           <span class="mic__level" aria-hidden="true"><i id="micLevelBar"></i></span>
         </button>
-        <button class="btn" id="btnLibrary">Песни</button>
-        <button class="btn" id="btnProfile">Профиль</button>
         <button class="btn btn--icon" id="btnSound" aria-label="Звук и устройства" data-tip="Звук">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true">
             <line x1="4" y1="7" x2="20" y2="7" /><circle cx="9" cy="7" r="2.4" fill="var(--surface)" />
@@ -32,18 +30,22 @@
         <div class="menu">
           <button class="btn btn--icon" id="btnMenu" aria-haspopup="menu" aria-expanded="false" aria-label="Ещё" data-tip="Ещё">⋯</button>
           <div class="popover hidden" id="menuPopover" role="menu" aria-label="Дополнительно">
-            <button class="popover__item" role="menuitem" id="menuWizard">Мастер настройки</button>
-            <button class="popover__item" role="menuitem" id="menuHome">О проекте</button>
             <button class="popover__item" role="menuitem" id="menuAutoplay">Автоигра <span class="popover__value" id="menuAutoplayVal">выкл</span></button>
+            <button class="popover__item" role="menuitem" id="menuWizard">Мастер настройки</button>
             <div class="popover__sep" role="separator"></div>
-            <button class="popover__item" role="menuitem" id="menuTheme">Тема <span class="popover__value" id="menuThemeVal">тёмная</span></button>
-            <button class="popover__item" role="menuitem" id="menuDevice">Устройство <span class="popover__value" id="menuDeviceVal">авто</span></button>
+            <button class="popover__item" role="menuitem" id="menuAbout">О проекте</button>
           </div>
         </div>
       </div>
     </header>
 
-    <main class="stage">
+    <nav class="tabbar" id="tabbar" aria-label="Разделы">
+      <button class="tab is-active" id="tabHome" data-view="home">Главная</button>
+      <button class="tab" id="tabLibrary" data-view="library">Занятия</button>
+      <button class="tab" id="tabProfile" data-view="profile">Профиль</button>
+    </nav>
+
+    <main class="area">
       <canvas id="stage"></canvas>
       <div class="hud">
         <div class="hud__stats">
@@ -57,116 +59,13 @@
           <div class="loop-badge hidden" id="loopBadge">A–B</div>
         </div>
       </div>
-    </main>
 
-    <footer class="playbar">
-      <div class="playbar__group">
-        <button class="btn btn--action" id="btnPlay" disabled>Играть</button>
-        <button class="btn" id="btnRestart" disabled>Сначала</button>
-      </div>
-      <div class="playbar__speedwrap">
-        <button class="btn" id="btnSpeedQuick" aria-haspopup="dialog" aria-expanded="false" aria-label="Изменить темп" title="Изменить темп"><span class="mono" id="speedQuickVal">100%</span></button>
-        <div class="speed-pop hidden" id="speedPop" role="dialog" aria-label="Темп">
-          <div class="speed-pop__head">
-            <span class="mono" id="speedPopBpm">— BPM</span>
-            <span class="mono muted" id="speedPopPct">100%</span>
-          </div>
-          <input type="range" id="speedPopRange" min="25" max="150" step="1" value="90" aria-label="Темп, ударов в минуту" />
-          <div class="speed-pop__chips">
-            <button class="chip" data-speed="50">50%</button>
-            <button class="chip" data-speed="75">75%</button>
-            <button class="chip" data-speed="100">100%</button>
-          </div>
-        </div>
-      </div>
-      <div class="playbar__loop" role="group" aria-label="Зацикливание A–B">
-        <button class="btn btn--icon" id="btnLoopA" aria-label="Точка A зацикливания" data-tip="Точка A">A</button>
-        <button class="btn btn--icon" id="btnLoopB" aria-label="Точка B зацикливания" data-tip="Точка B">B</button>
-        <button class="btn btn--icon btn--ghost" id="btnLoopClear" aria-label="Сбросить зацикливание" data-tip="Сбросить A–B">✕</button>
-      </div>
-      <div class="playbar__view">
-        <button class="btn btn--icon" id="btnOrient" aria-label="Вид: табы или падающие ноты" aria-pressed="true" data-tip="Вид">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-            <path d="M4 9h13" /><path d="M13 5l4 4-4 4" />
-            <path d="M20 15H7" /><path d="M11 11l-4 4 4 4" />
-          </svg>
-        </button>
-        <button class="btn btn--icon" id="btnFinger" aria-label="Показать аппликатуру" aria-pressed="true" data-tip="Аппликатура">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-            <circle cx="5" cy="12" r="2" /><circle cx="10.3" cy="12" r="2" />
-            <circle cx="15.6" cy="12" r="2" /><circle cx="20.9" cy="12" r="2" />
-          </svg>
-        </button>
-      </div>
-      <div class="progress">
-        <input type="range" id="progressBar" min="0" max="1000" value="0" aria-label="Позиция воспроизведения" />
-        <div class="progress__marks" id="loopMarkers">
-          <span class="range"></span>
-          <span class="pt lm-a"></span>
-          <span class="pt lm-b"></span>
-        </div>
-      </div>
-      <span class="time" id="timeReadout">0:00 / 0:00</span>
-    </footer>
-
-    <!-- ===================== Главная ===================== -->
-    <div class="overlay overlay--center" id="homeOverlay" role="dialog" aria-modal="true" aria-labelledby="homeTitle">
-      <div class="sheet home">
-        <div class="sheet__body">
-          <div class="home__hero">
-            <div class="brand home__brand">RIFF<b>HERO</b></div>
-            <h1 class="home__title" id="homeTitle">Тренажёр гитары, который слышит вас</h1>
-            <p class="home__tagline">Ноты падают по трассе — микрофон слушает и считает попадания</p>
-          </div>
-
-          <p class="home__lead">RiffHero — лёгкий браузерный тренажёр в духе Rocksmith. Играйте встроенные упражнения или загружайте свои табы, а приложение в реальном времени распознаёт ноты через микрофон, начисляет очки и показывает, что услышало.</p>
-
-          <div class="home__grid">
-            <div class="home__card">
-              <h3>Что умеет</h3>
-              <p>21 произведение — упражнения и простые известные мелодии (классика, фольклор, блюз и рок) с уровнями 1–5. Плюс импорт Guitar Pro и MIDI, распознавание по микрофону, режимы аккордов, профиль со статистикой и «совет на сегодня», темы и свайп-выбор.</p>
-            </div>
-            <div class="home__card">
-              <h3>Как это сделано</h3>
-              <p>Проект собран «вайбкодингом» — короткими итерациями в паре с ИИ: от дизайн-системы и адаптива до распознавания звука. Без сборки и без зависимостей: браузер загружает нативные ES-модули напрямую.</p>
-            </div>
-            <div class="home__card home__card--wide">
-              <h3>Технологии</h3>
-              <div class="chips">
-                <span>Web Audio API</span>
-                <span>YIN</span>
-                <span>Гоерцель</span>
-                <span>Canvas 2D</span>
-                <span>localStorage</span>
-                <span>ES-модули</span>
-                <span>GitHub Pages</span>
-                <span>0 зависимостей</span>
-              </div>
-            </div>
-          </div>
-
-          <div class="home__actions">
-            <button class="btn btn--action" id="btnHomeStart">Начать</button>
-            <button class="btn" id="btnHomeProfile">Профиль</button>
-            <a class="btn" id="btnHomeGithub" href="https://github.com/difp/DSV4.1TABS" target="_blank" rel="noopener">GitHub</a>
-          </div>
-          <p class="home__note">Классика и фольклор — общественное достояние, рок- и блюз-паттерны — оригинальные. Форматы .gp3/.gp4/.gp5 не поддерживаются. После загрузки работает офлайн.</p>
-        </div>
-      </div>
-    </div>
-
-    <!-- ===================== Библиотека ===================== -->
-    <div class="overlay hidden" id="libraryOverlay" role="dialog" aria-modal="true" aria-labelledby="libraryTitle">
-      <div class="sheet">
-        <div class="sheet__head">
-          <h1 class="sheet__title" id="libraryTitle">Упражнения</h1>
-          <button class="btn btn--icon btn--ghost" id="btnCloseLibrary" aria-label="Закрыть" data-tip="Закрыть">✕</button>
-        </div>
-        <div class="sheet__body">
+      <!-- ===================== Главная ===================== -->
+      <section class="screen" id="screenHome">
+        <div class="screen__body">
           <div class="bento">
-            <section class="card card--hero col-6" id="heroCard">
+            <section class="card card--hero col-4" id="heroCard">
               <div class="hero-head">
-                <button class="btn btn--icon hero-nav" id="btnPrevSong" aria-label="Предыдущее упражнение" data-tip="Предыдущее">‹</button>
                 <div class="hero-slide" id="heroSlide">
                   <div class="hero-main">
                     <div class="hero-type" id="heroType">Упражнение</div>
@@ -190,18 +89,13 @@
                       <div class="dots" id="heroDifficulty" aria-label="Сложность"></div>
                     </div>
                     <div class="hero-actions">
-                      <button class="btn btn--ghost btn--sm" id="btnToggleList" aria-expanded="false">Список</button>
-                      <button class="btn btn--accent" id="btnLibPlay">Играть</button>
+                      <a class="btn btn--ghost btn--sm hidden" id="heroYt" target="_blank" rel="noopener">Видео</a>
+                      <button class="btn btn--ghost btn--sm" id="btnGoLibrary">Выбрать занятие</button>
+                      <button class="btn btn--accent" id="btnPlaySelected">Играть</button>
                     </div>
                   </div>
                 </div>
-                <button class="btn btn--icon hero-nav" id="btnNextSong" aria-label="Следующее упражнение" data-tip="Следующее">›</button>
               </div>
-              <div class="hero-indicator">
-                <span class="mono hero-count" id="heroCount">1 / 1</span>
-                <div class="hero-dots" id="heroDots" role="group" aria-label="Быстрый выбор упражнения"></div>
-              </div>
-              <p class="hero-hint muted">‹ Свайпните карточку или используйте стрелки ›</p>
             </section>
 
             <section class="card col-2">
@@ -216,82 +110,154 @@
               <div class="field__row"><span class="field__label" id="speedRange">—</span><span class="field__value" id="speedVal">100%</span></div>
             </section>
 
-            <section class="card col-2">
-              <h2 class="card__title">Во время игры</h2>
-              <div class="switch-row"><span>Метроном</span><button class="switch" id="metronome" role="switch" aria-checked="true" aria-label="Метроном"></button></div>
-              <div class="switch-row"><span>Отсчёт</span><button class="switch" id="countIn" role="switch" aria-checked="true" aria-label="Отсчёт перед стартом"></button></div>
-              <div class="switch-row"><span>Номера ладов</span><button class="switch" id="showFret" role="switch" aria-checked="true" aria-label="Показывать номера ладов"></button></div>
-              <div class="switch-row"><span>Пальцы левой руки</span><button class="switch" id="showFinger" role="switch" aria-checked="true" aria-label="Показывать аппликатуру"></button></div>
-            </section>
-
-            <section class="card col-2">
-              <h2 class="card__title">Добавить</h2>
-              <label class="dropzone" id="dropZone">
-                <input type="file" id="fileInput" accept=".gp,.gpx,.gp3,.gp4,.gp5,.mid,.midi,.json" aria-label="Открыть файл песни" />
-                <span>Файл .gp .gpx .mid .json</span>
-              </label>
-              <button class="linklike" id="btnCatalogLink">Добавить каталог по ссылке</button>
-              <button class="btn btn--ghost btn--sm" id="btnAdvanced" style="width:100%">Микрофон и звук</button>
-            </section>
-
             <section class="card col-6" id="tipCard">
               <h2 class="card__title">Совет на сегодня</h2>
               <p class="tip__text" id="tipText">—</p>
               <button class="btn btn--accent btn--sm" id="btnTipApply">Применить</button>
             </section>
 
-            <section class="card col-6 hidden" id="listCard">
-              <h2 class="card__title">Все упражнения</h2>
-              <input type="search" id="searchInput" placeholder="Поиск" aria-label="Поиск" />
-              <div class="filters" id="filterChips" style="margin-top:var(--space-3)">
-                <button class="chip is-active" data-filter="all" aria-pressed="true">Все</button>
-                <button class="chip" data-filter="exercise" aria-pressed="false">Упражнения</button>
-                <button class="chip" data-filter="song" aria-pressed="false">Песни</button>
-                <button class="chip" data-filter="recent" aria-pressed="false">Недавние</button>
+            <section class="card col-3">
+              <h2 class="card__title">Оформление и режим</h2>
+              <div class="field">
+                <div class="field__row"><span class="field__label">Тема</span></div>
+                <div class="seg" id="themeSeg">
+                  <button data-theme="dark">Тёмная</button>
+                  <button data-theme="light">Светлая</button>
+                </div>
               </div>
-              <div class="list" id="songList" role="listbox" aria-label="Список"></div>
+              <div class="field">
+                <div class="field__row"><span class="field__label">Устройство</span></div>
+                <div class="seg" id="layoutSeg">
+                  <button data-layout="auto">Авто</button>
+                  <button data-layout="desktop">ПК</button>
+                  <button data-layout="phone">Телефон</button>
+                </div>
+              </div>
+              <div class="switch-row"><span>Метроном</span><button class="switch" id="metronome" role="switch" aria-checked="true" aria-label="Метроном"></button></div>
+              <div class="switch-row"><span>Отсчёт</span><button class="switch" id="countIn" role="switch" aria-checked="true" aria-label="Отсчёт перед стартом"></button></div>
+              <div class="switch-row"><span>Номера ладов</span><button class="switch" id="showFret" role="switch" aria-checked="true" aria-label="Показывать номера ладов"></button></div>
+              <div class="switch-row"><span>Пальцы левой руки</span><button class="switch" id="showFinger" role="switch" aria-checked="true" aria-label="Показывать аппликатуру"></button></div>
+              <div class="switch-row"><span>Автоигра</span><button class="switch" id="autoplaySwitch" role="switch" aria-checked="false" aria-label="Автоигра"></button></div>
+            </section>
+
+            <section class="card col-3">
+              <h2 class="card__title">О проекте</h2>
+              <p class="muted" style="margin-top:0">RiffHero — лёгкий тренажёр в духе Rocksmith. Собран «вайбкодингом»: короткими итерациями в паре с ИИ, без сборки и зависимостей.</p>
+              <div class="chips">
+                <span>Web Audio</span><span>YIN</span><span>Гоерцель</span><span>Canvas</span><span>0 зависимостей</span>
+              </div>
+              <div class="hero-actions" style="margin-top:var(--space-3)">
+                <a class="btn btn--sm" id="homeGitHub" href="https://github.com/difp/DSV4.1TABS" target="_blank" rel="noopener">GitHub</a>
+                <button class="btn btn--sm" id="btnSoundHome">Звук и устройства</button>
+                <button class="btn btn--sm" id="btnWizardHome">Мастер настройки</button>
+              </div>
+              <p class="muted small" style="margin-top:var(--space-3)">Классика и фольклор — общественное достояние, рок- и блюз-паттерны — оригинальные.</p>
+            </section>
+          </div>
+        </div>
+      </section>
+
+      <!-- ===================== Занятия ===================== -->
+      <section class="screen hidden" id="screenLibrary">
+        <div class="screen__body">
+          <div class="cats" id="categories"></div>
+          <div class="bento" style="margin-top:var(--space-4)">
+            <section class="card col-3">
+              <h2 class="card__title">Добавить файл</h2>
+              <label class="dropzone" id="dropZone">
+                <input type="file" id="fileInput" accept=".gp,.gpx,.gp3,.gp4,.gp5,.mid,.midi,.json" aria-label="Открыть файл песни" />
+                <span>Перетащите .gp .gpx .mid .json</span>
+              </label>
+              <button class="linklike" id="btnCatalogLink">Добавить каталог по ссылке</button>
               <div class="track-picker hidden" id="trackPicker" style="margin-top:var(--space-3)">
                 <label class="field__label" for="trackSelect">Дорожка</label>
                 <select id="trackSelect" aria-label="Дорожка"></select>
               </div>
             </section>
+            <section class="card col-3">
+              <h2 class="card__title">Аккорды по ссылке из YouTube</h2>
+              <p class="muted" style="margin-top:0">Вставьте ссылку на видео — найдём название и откроем аккорды.</p>
+              <input type="url" id="ytUrl" placeholder="https://youtu.be/…" aria-label="Ссылка на YouTube" />
+              <button class="btn btn--accent btn--sm" id="btnYoutube" style="margin-top:var(--space-2)">Найти аккорды</button>
+            </section>
           </div>
         </div>
-        <div class="sheet__cta">
-          <button class="btn btn--action" id="btnLibPlayMobile" style="flex:1">Играть</button>
+      </section>
+
+      <!-- ===================== Профиль ===================== -->
+      <section class="screen hidden" id="screenProfile">
+        <div class="screen__body">
+          <div class="bento">
+            <section class="card col-6">
+              <h2 class="card__title">Профиль</h2>
+              <label class="field__label" for="profileName">Имя</label>
+              <input type="text" id="profileName" maxlength="24" placeholder="Имя игрока" />
+              <div class="metrics" id="profileStats" style="margin-top:var(--space-4)"></div>
+            </section>
+            <section class="card col-3">
+              <h2 class="card__title">Ошибки по струнам</h2>
+              <div class="errbars" id="profileErrStrings"></div>
+            </section>
+            <section class="card col-3">
+              <h2 class="card__title">Песни</h2>
+              <div class="table" id="profileSongs"></div>
+            </section>
+            <section class="card col-6">
+              <div class="hero-actions">
+                <button class="btn btn--ghost btn--sm" id="btnProfileReset">Сбросить</button>
+                <button class="btn btn--sm" id="btnProfileExport">Выгрузить</button>
+                <label class="btn btn--sm">Загрузить<input type="file" id="profileImport" accept=".json" hidden aria-label="Загрузить профиль из файла" /></label>
+              </div>
+            </section>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <footer class="playbar">
+      <div class="playbar__group">
+        <button class="btn btn--action" id="btnPlay" disabled>Играть</button>
+        <button class="btn" id="btnRestart" disabled>Сначала</button>
+      </div>
+      <div class="playbar__loop" role="group" aria-label="Зацикливание A–B">
+        <button class="btn btn--icon" id="btnLoopA" aria-label="Точка A зацикливания" data-tip="Точка A">A</button>
+        <button class="btn btn--icon" id="btnLoopB" aria-label="Точка B зацикливания" data-tip="Точка B">B</button>
+        <button class="btn btn--icon btn--ghost" id="btnLoopClear" aria-label="Сбросить зацикливание" data-tip="Сбросить A–B">✕</button>
+      </div>
+      <div class="playbar__view">
+        <button class="btn btn--icon" id="btnOrient" aria-label="Вид: табы или падающие ноты" aria-pressed="true" data-tip="Вид">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M4 9h13" /><path d="M13 5l4 4-4 4" /><path d="M20 15H7" /><path d="M11 11l-4 4 4 4" />
+          </svg>
+        </button>
+        <button class="btn btn--icon" id="btnFinger" aria-label="Показать аппликатуру" aria-pressed="true" data-tip="Аппликатура">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+            <circle cx="5" cy="12" r="2" /><circle cx="10.3" cy="12" r="2" /><circle cx="15.6" cy="12" r="2" /><circle cx="20.9" cy="12" r="2" />
+          </svg>
+        </button>
+      </div>
+      <div class="playbar__speedwrap">
+        <button class="btn" id="btnSpeedQuick" aria-haspopup="dialog" aria-expanded="false" aria-label="Изменить темп" title="Изменить темп"><span class="mono" id="speedQuickVal">100%</span></button>
+        <div class="speed-pop hidden" id="speedPop" role="dialog" aria-label="Темп">
+          <div class="speed-pop__head"><span class="mono" id="speedPopBpm">— BPM</span><span class="mono muted" id="speedPopPct">100%</span></div>
+          <input type="range" id="speedPopRange" min="25" max="150" step="1" value="90" aria-label="Темп, ударов в минуту" />
+          <div class="speed-pop__chips">
+            <button class="chip" data-speed="50">50%</button>
+            <button class="chip" data-speed="75">75%</button>
+            <button class="chip" data-speed="100">100%</button>
+          </div>
         </div>
       </div>
-    </div>
-
-    <!-- ===================== Профиль ===================== -->
-    <div class="overlay overlay--center hidden" id="profileOverlay" role="dialog" aria-modal="true" aria-labelledby="profileTitle">
-      <div class="sheet" style="width:min(720px,100%)">
-        <div class="sheet__head">
-          <h1 class="sheet__title" id="profileTitle">Профиль</h1>
-          <button class="btn btn--icon btn--ghost" id="btnProfileClose" aria-label="Закрыть профиль" data-tip="Закрыть">✕</button>
-        </div>
-        <div class="sheet__body">
-          <div class="field">
-            <label class="field__label" for="profileName">Имя</label>
-            <input type="text" id="profileName" maxlength="24" placeholder="Имя игрока" />
-          </div>
-          <div class="metrics" id="profileStats"></div>
-          <h2 class="card__title" style="margin-top:var(--space-6)">Ошибки по струнам</h2>
-          <div class="errbars" id="profileErrStrings"></div>
-          <h2 class="card__title" style="margin-top:var(--space-6)">Песни</h2>
-          <div class="table" id="profileSongs"></div>
-          <div class="hero-bottom" style="margin-top:var(--space-4)">
-            <button class="btn btn--ghost" id="btnProfileReset">Сбросить</button>
-            <div style="display:flex;gap:var(--space-2)">
-              <button class="btn" id="btnProfileExport">Выгрузить</button>
-              <label class="btn">Загрузить<input type="file" id="profileImport" accept=".json" hidden aria-label="Загрузить профиль из файла" /></label>
-            </div>
-          </div>
+      <div class="progress">
+        <input type="range" id="progressBar" min="0" max="1000" value="0" aria-label="Позиция воспроизведения" />
+        <div class="progress__marks" id="loopMarkers">
+          <span class="range"></span><span class="pt lm-a"></span><span class="pt lm-b"></span>
         </div>
       </div>
-    </div>
+      <span class="time" id="timeReadout">0:00 / 0:00</span>
+    </footer>
 
-    <!-- ===================== Микрофон и звук ===================== -->
+    <!-- ===================== Звук и устройства ===================== -->
     <div class="overlay overlay--center hidden" id="advancedOverlay" role="dialog" aria-modal="true" aria-labelledby="advancedTitle">
       <div class="sheet" style="width:min(520px,100%)">
         <div class="sheet__head">
@@ -300,33 +266,18 @@
         </div>
         <div class="sheet__body">
           <h2 class="card__title">Устройства</h2>
-          <div class="field">
-            <div class="field__row"><span class="field__label">Микрофон</span></div>
-            <select id="micSelect" aria-label="Микрофон"></select>
-          </div>
-          <div class="field">
-            <div class="field__row"><span class="field__label">Вывод (наушники)</span></div>
-            <select id="outputSelect" aria-label="Устройство вывода"></select>
-          </div>
+          <div class="field"><div class="field__row"><span class="field__label">Микрофон</span></div><select id="micSelect" aria-label="Микрофон"></select></div>
+          <div class="field"><div class="field__row"><span class="field__label">Вывод (наушники)</span></div><select id="outputSelect" aria-label="Устройство вывода"></select></div>
           <button class="btn btn--sm" id="btnRefreshDevices">Обновить список</button>
           <p class="muted small" id="deviceHint"></p>
 
           <h2 class="card__title" style="margin-top:var(--space-6)">Задержка и чувствительность</h2>
-          <div class="field">
-            <div class="field__row"><span class="field__label">Громкость табулатуры</span><span class="field__value" id="guideVolVal">70%</span></div>
-            <input type="range" id="guideVol" min="0" max="100" step="5" value="70" aria-label="Громкость табулатуры" />
-          </div>
-          <div class="field">
-            <div class="field__row"><span class="field__label">Громкость метронома</span><span class="field__value" id="metroVolVal">60%</span></div>
-            <input type="range" id="metroVol" min="0" max="100" step="5" value="60" aria-label="Громкость метронома" />
-          </div>
+          <div class="field"><div class="field__row"><span class="field__label">Громкость табулатуры</span><span class="field__value" id="guideVolVal">70%</span></div><input type="range" id="guideVol" min="0" max="100" step="5" value="70" aria-label="Громкость табулатуры" /></div>
+          <div class="field"><div class="field__row"><span class="field__label">Громкость метронома</span><span class="field__value" id="metroVolVal">60%</span></div><input type="range" id="metroVol" min="0" max="100" step="5" value="60" aria-label="Громкость метронома" /></div>
           <div class="field">
             <div class="field__row"><span class="field__label">Задержка звука</span><span class="field__value" id="latencyVal">0 мс</span></div>
             <input type="range" id="latency" min="-150" max="300" step="5" value="0" aria-label="Задержка звука" />
-            <div class="verify-actions">
-              <button class="btn btn--sm" id="btnAutoLatency">Подобрать</button>
-              <button class="btn btn--sm" id="btnVerifyLatency">Проверить</button>
-            </div>
+            <div class="verify-actions"><button class="btn btn--sm" id="btnAutoLatency">Подобрать</button><button class="btn btn--sm" id="btnVerifyLatency">Проверить</button></div>
             <div class="verify" id="latencyVerify" aria-live="polite"></div>
           </div>
           <div class="field">
@@ -334,22 +285,14 @@
             <input type="range" id="sens" min="2" max="50" step="1" value="6" aria-label="Чувствительность микрофона" />
             <button class="btn btn--sm" id="btnAutoSens" style="margin-top:var(--space-2)">Подобрать автоматически</button>
           </div>
-          <div class="field">
-            <div class="field__row"><span class="field__label">Пресет чувствительности</span></div>
+          <div class="field"><div class="field__row"><span class="field__label">Пресет чувствительности</span></div>
             <select id="sensPreset" aria-label="Пресет чувствительности">
-              <option value="quiet">Тихий микрофон</option>
-              <option value="room">Комната</option>
-              <option value="amp">Усилитель или интерфейс</option>
-              <option value="noisy">Шумно</option>
-              <option value="custom">Вручную</option>
+              <option value="quiet">Тихий микрофон</option><option value="room">Комната</option><option value="amp">Усилитель или интерфейс</option><option value="noisy">Шумно</option><option value="custom">Вручную</option>
             </select>
           </div>
-          <div class="field">
-            <div class="field__row"><span class="field__label">Аккорды</span></div>
+          <div class="field"><div class="field__row"><span class="field__label">Аккорды</span></div>
             <select id="chordMode" aria-label="Режим распознавания аккордов">
-              <option value="any">Любая нота аккорда</option>
-              <option value="root">Только корневая нота</option>
-              <option value="all">Все ноты аккорда</option>
+              <option value="any">Любая нота аккорда</option><option value="root">Только корневая нота</option><option value="all">Все ноты аккорда</option>
             </select>
           </div>
           <button class="btn btn--ghost" id="btnOpenWizard" style="width:100%">Мастер настройки</button>
@@ -366,21 +309,18 @@
         </div>
         <div class="sheet__body">
           <div class="steps" aria-hidden="true"><i class="on"></i><i></i><i></i></div>
-
           <div class="wizard__pane" id="wizPane1">
             <h2 class="card__title">Доступ к микрофону</h2>
             <p class="muted">Разрешите доступ, чтобы приложение слышало гитару и засчитывало ноты.</p>
             <button class="btn btn--accent" id="wizAllow">Разрешить доступ</button>
             <p class="muted" id="wizMicState"></p>
           </div>
-
           <div class="wizard__pane hidden" id="wizPane2">
             <h2 class="card__title">Индикатор уровня</h2>
             <p class="muted">Сыграйте что-нибудь — полоса должна реагировать.</p>
             <div class="level"><i id="wizLevelBar"></i></div>
             <p class="muted" id="wizLevelHint">Тишина</p>
           </div>
-
           <div class="wizard__pane hidden" id="wizPane3">
             <h2 class="card__title">Проверка строя</h2>
             <p class="muted">Сыграйте открытую струну, затем подберите задержку звука.</p>
@@ -388,13 +328,9 @@
             <button class="btn btn--sm" id="wizCalibrate">Подобрать задержку автоматически</button>
             <p class="muted" id="wizCalState"></p>
           </div>
-
           <div class="wizard__foot">
             <button class="btn btn--ghost" id="wizPrev">Назад</button>
-            <div style="display:flex;gap:var(--space-2)">
-              <button class="btn btn--ghost" id="wizSkip2">Пропустить</button>
-              <button class="btn btn--action" id="wizNext">Далее</button>
-            </div>
+            <div style="display:flex;gap:var(--space-2)"><button class="btn btn--ghost" id="wizSkip2">Пропустить</button><button class="btn btn--action" id="wizNext">Далее</button></div>
           </div>
         </div>
       </div>
@@ -411,11 +347,8 @@
           <div class="metrics metrics--row" id="resultGrid"></div>
           <p class="result-errors" id="resultErrors"></p>
           <div class="hero-bottom" style="margin-top:var(--space-4)">
-            <button class="btn btn--ghost" id="btnResultsLibrary">К библиотеке</button>
-            <div style="display:flex;gap:var(--space-2)">
-              <button class="btn" id="btnAgain">Повторить</button>
-              <button class="btn btn--action" id="btnPracticeWeak">Отработать слабое место</button>
-            </div>
+            <button class="btn btn--ghost" id="btnResultsLibrary">К занятиям</button>
+            <div style="display:flex;gap:var(--space-2)"><button class="btn" id="btnAgain">Повторить</button><button class="btn btn--action" id="btnPracticeWeak">Отработать слабое место</button></div>
           </div>
         </div>
       </div>
@@ -429,15 +362,33 @@
           <button class="btn btn--icon btn--ghost" id="btnCatalogClose" aria-label="Закрыть" data-tip="Закрыть">✕</button>
         </div>
         <div class="sheet__body">
-          <div class="field">
-            <label class="field__label" for="catalogUrl">Ссылка на JSON-каталог</label>
-            <input type="url" id="catalogUrl" placeholder="https://…/catalog.json" />
-          </div>
+          <div class="field"><label class="field__label" for="catalogUrl">Ссылка на JSON-каталог</label><input type="url" id="catalogUrl" placeholder="https://…/catalog.json" /></div>
           <div style="display:flex;gap:var(--space-2);flex-wrap:wrap">
             <button class="btn btn--accent" id="btnCatalogLoad">Загрузить</button>
             <label class="btn">Каталог из файла<input type="file" id="catalogFileInput" accept=".json" hidden aria-label="Загрузить каталог из файла" /></label>
           </div>
           <p class="muted" id="catalogStatus"></p>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===================== Аккорды по YouTube ===================== -->
+    <div class="overlay overlay--center hidden" id="youtubeOverlay" role="dialog" aria-modal="true" aria-labelledby="youtubeTitle">
+      <div class="sheet" style="width:min(480px,100%)">
+        <div class="sheet__head">
+          <h1 class="sheet__title" id="youtubeTitle">Аккорды по ссылке</h1>
+          <button class="btn btn--icon btn--ghost" id="btnYoutubeClose" aria-label="Закрыть" data-tip="Закрыть">✕</button>
+        </div>
+        <div class="sheet__body">
+          <div class="field"><label class="field__label" for="ytUrl2">Ссылка на YouTube</label><input type="url" id="ytUrl2" placeholder="https://youtu.be/…" /></div>
+          <div id="ytPreview" class="yt-preview muted">Вставьте ссылку и нажмите «Определить».</div>
+          <div style="display:flex;gap:var(--space-2);flex-wrap:wrap;margin-top:var(--space-3)">
+            <button class="btn btn--accent" id="btnYtResolve">Определить</button>
+            <a class="btn" id="ytOpenChords" href="#" target="_blank" rel="noopener" hidden>Открыть аккорды</a>
+            <a class="btn" id="ytOpenVideo" href="#" target="_blank" rel="noopener" hidden>Открыть видео</a>
+            <button class="btn" id="btnYtAttach" hidden>Прикрепить к песне</button>
+          </div>
+          <p class="muted small" id="ytStatus"></p>
         </div>
       </div>
     </div>

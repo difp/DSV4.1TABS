@@ -3,15 +3,15 @@
    Все цвета — в токенах. Светлая тема — тот же набор токенов. */
 
 :root {
-  /* поверхности и текст */
-  --bg: #05050a;
-  --surface: #14141f;
-  --surface-2: #1d1d2c;
-  --surface-sel: #1b1b46;
-  --line: #2c2c47;
+  /* поверхности и текст — нейтральные, без синевы */
+  --bg: #0b0b0b;
+  --surface: #161616;
+  --surface-2: #202020;
+  --surface-sel: #1f1f2e;
+  --line: #2c2c2c;
   --line-strong: #5558c0;
-  --text: #f5f5fb;
-  --text-2: #a6a8c4;
+  --text: #f3f3f3;
+  --text-2: #a3a3a3;
 
   /* индиго */
   --indigo: #6366f1;
@@ -33,7 +33,7 @@
   --focus: var(--indigo);
   --shadow: 0 30px 80px rgba(0, 0, 0, 0.62);
   --card-shadow: 0 1px 0 rgba(255, 255, 255, 0.05) inset, 0 10px 26px rgba(0, 0, 0, 0.38);
-  --scrim: rgba(5, 5, 10, 0.76);
+  --scrim: rgba(8, 8, 8, 0.76);
   --radius-card: 16px;
   --radius-ctl: 10px;
   --dur: 200ms;
@@ -50,8 +50,8 @@
 
   --stage-text: #f4f4fb;
   --stage-text-2: #9fa1bd;
-  --stage-line: #2a2a45;
-  --backdrop: #030308;
+  --stage-line: #2a2a2a;
+  --backdrop: #050505;
 
   /* безопасные зоны устройства (fallback 0) */
   --sat: env(safe-area-inset-top, 0px);
@@ -62,14 +62,14 @@
 
 /* Светлая тема — та же система токенов; «белая» кнопка становится тёмной. */
 body[data-theme="light"] {
-  --bg: #e9ebf2;
+  --bg: #ededed;
   --surface: #ffffff;
-  --surface-2: #f3f4f9;
-  --surface-sel: #e6e9ff;
-  --line: #d3d6e2;
+  --surface-2: #f4f4f4;
+  --surface-sel: #e9e9f7;
+  --line: #dcdcdc;
   --line-strong: #4f52c9;
-  --text: #141422;
-  --text-2: #565873;
+  --text: #141414;
+  --text-2: #5c5c5c;
 
   --indigo: #5b5ee8;
   --indigo-strong: #4f52c9;
@@ -86,8 +86,8 @@ body[data-theme="light"] {
 
   --shadow: 0 24px 60px rgba(30, 30, 60, 0.18);
   --card-shadow: 0 1px 0 rgba(255, 255, 255, 0.9) inset, 0 8px 22px rgba(30, 30, 60, 0.1);
-  --scrim: rgba(20, 20, 40, 0.45);
-  --backdrop: #dfe2ec;
+  --scrim: rgba(20, 20, 20, 0.45);
+  --backdrop: #e2e2e2;
 }
 
 * { box-sizing: border-box; }
@@ -688,6 +688,37 @@ body.is-playing .hud { padding-top: max(var(--space-4), var(--sat)); }
 .home__actions { display: flex; gap: var(--space-2); justify-content: center; flex-wrap: wrap; margin: var(--space-6) 0 var(--space-3); }
 .home__note { margin: 0; text-align: center; color: var(--text-2); font-size: 12px; }
 a.btn { text-decoration: none; }
+
+/* ------------------------- Вкладки, экраны, категории ------------------------- */
+.tabbar {
+  display: flex; gap: var(--space-1);
+  padding: var(--space-2) max(var(--space-4), var(--sar)) var(--space-2) max(var(--space-4), var(--sal));
+  background: var(--bg); border-bottom: 1px solid var(--line); z-index: 25;
+}
+.tab { flex: 1; min-height: 44px; border: 1px solid transparent; border-radius: var(--radius-ctl); background: transparent; color: var(--text-2); font: inherit; font-weight: 500; cursor: pointer; }
+.tab:hover { color: var(--text); }
+.tab.is-active { background: var(--surface-2); color: var(--text); border-color: var(--line); }
+
+.area { position: relative; flex: 1; min-height: 0; }
+.screen { position: absolute; inset: 0; z-index: 15; overflow: auto; background: var(--bg); }
+.screen__body { max-width: 1080px; margin: 0 auto; padding: var(--space-4); }
+.screen__body .bento { margin-top: 0; }
+body.is-playing .screen, body.is-playing .tabbar { display: none; }
+
+.cats { display: flex; flex-direction: column; gap: var(--space-4); }
+.cat__head { display: flex; align-items: center; justify-content: space-between; gap: var(--space-3); margin-bottom: var(--space-3); }
+.cat__title { font-weight: 500; font-size: 15px; }
+.cat__nav { display: inline-flex; gap: var(--space-1); }
+.cat__rail { display: flex; gap: var(--space-3); overflow-x: auto; scroll-snap-type: x proximity; padding-bottom: var(--space-2); scrollbar-width: thin; }
+.exc-card { flex: 0 0 auto; width: 176px; scroll-snap-align: start; text-align: left; background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius-card); padding: var(--space-3); color: var(--text); cursor: pointer; display: flex; flex-direction: column; gap: var(--space-2); box-shadow: var(--card-shadow); }
+.exc-card:hover { border-color: var(--line-strong); }
+.exc-card.is-selected { border-color: var(--indigo); background: var(--surface-sel); }
+.exc-card__title { font-size: 13px; font-weight: 500; line-height: 1.3; }
+.exc-card__meta { display: flex; align-items: center; justify-content: space-between; gap: var(--space-2); font-family: var(--mono); font-size: 11px; color: var(--text-2); }
+.exc-card .dots i { width: 6px; height: 6px; }
+@media (max-width: 700px) { .exc-card { width: 78%; } }
+
+.yt-preview { margin-top: var(--space-3); font-size: 13px; line-height: 1.5; }
 
 /* ------------------------- Предпочтения ------------------------- */
 @media (prefers-reduced-transparency: reduce) {
