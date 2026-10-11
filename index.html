@@ -90,6 +90,7 @@
                     </div>
                     <div class="hero-actions">
                       <a class="btn btn--ghost btn--sm hidden" id="heroYt" target="_blank" rel="noopener">Видео</a>
+                      <button class="btn btn--ghost btn--sm" id="btnViewHero">Аккорды</button>
                       <button class="btn btn--ghost btn--sm" id="btnGoLibrary">Выбрать занятие</button>
                       <button class="btn btn--accent" id="btnPlaySelected">Играть</button>
                     </div>
@@ -225,6 +226,11 @@
         <button class="btn btn--icon btn--ghost" id="btnLoopClear" aria-label="Сбросить зацикливание" data-tip="Сбросить A–B">✕</button>
       </div>
       <div class="playbar__view">
+        <button class="btn btn--icon" id="btnView" aria-label="Просмотр аккордов и нот" data-tip="Просмотр">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true">
+            <path d="M2 12s3.6-6 10-6 10 6 10 6-3.6 6-10 6-10-6-10-6z" /><circle cx="12" cy="12" r="3" />
+          </svg>
+        </button>
         <button class="btn btn--icon" id="btnOrient" aria-label="Вид: табы или падающие ноты" aria-pressed="true" data-tip="Вид">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
             <path d="M4 9h13" /><path d="M13 5l4 4-4 4" /><path d="M20 15H7" /><path d="M11 11l-4 4 4 4" />
@@ -389,6 +395,29 @@
             <button class="btn" id="btnYtAttach" hidden>Прикрепить к песне</button>
           </div>
           <p class="muted small" id="ytStatus"></p>
+          <div class="field" style="margin-top:var(--space-4)">
+            <label class="field__label" for="ytChords">Аккорды песни (через пробел)</label>
+            <input type="text" id="ytChords" placeholder="Am F C G" aria-label="Аккорды" />
+          </div>
+          <button class="btn btn--accent" id="btnYtCreate">Создать упражнение</button>
+          <p class="muted small" id="ytCreateStatus"></p>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===================== Просмотр аккордов и нот ===================== -->
+    <div class="overlay overlay--center hidden" id="viewOverlay" role="dialog" aria-modal="true" aria-labelledby="viewTitle">
+      <div class="sheet" style="width:min(760px,100%)">
+        <div class="sheet__head">
+          <h1 class="sheet__title" id="viewTitle">Просмотр</h1>
+          <button class="btn btn--icon btn--ghost" id="btnViewClose" aria-label="Закрыть" data-tip="Закрыть">✕</button>
+        </div>
+        <div class="sheet__body">
+          <div class="filters" id="viewTabs">
+            <button class="chip is-active" data-view="chords" aria-pressed="true">Аккорды</button>
+            <button class="chip" data-view="notes" aria-pressed="false">Ноты</button>
+          </div>
+          <div id="viewBody" class="viewer"></div>
         </div>
       </div>
     </div>

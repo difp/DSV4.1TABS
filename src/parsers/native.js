@@ -29,6 +29,7 @@ export function parseNative(input) {
     const out = { t, dur };
     if (n.string != null) out.string = Number(n.string);
     if (n.fret != null) out.fret = Number(n.fret);
+    if (n.finger != null) out.finger = Number(n.finger);
     if (n.midi != null) out.midi = Number(n.midi);
     if (n.dead) out.dead = true;
     if (n.velocity != null) out.velocity = Number(n.velocity);

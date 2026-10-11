@@ -82,6 +82,7 @@ export function assignFingers(notes) {
   let started = false;
   let lastT = -Infinity;
   for (const n of notes) {
+    if (Number.isFinite(n.finger) && n.finger >= 0) { lastT = n.t; if (n.fret > 0) started = true; continue; }
     if (n.dead) { n.finger = 0; continue; }
     if (!Number.isFinite(n.fret) || n.fret <= 0) { n.finger = 0; started = false; lastT = n.t; continue; }
     const phraseBreak = n.t - lastT > 1.5;
@@ -194,6 +195,7 @@ export function buildSong(raw, trackIndex = 0) {
       midi,
       string: string || 1,
       fret: fret == null ? 0 : fret,
+      finger: (n.finger != null && Number.isFinite(n.finger)) ? n.finger : undefined,
       dead: !!n.dead,
       velocity: n.velocity == null ? 0.8 : n.velocity,
     });

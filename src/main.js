@@ -57,6 +57,8 @@ const el = {
   resultGrid: $('resultGrid'), resultErrors: $('resultErrors'), btnResultsLibrary: $('btnResultsLibrary'), btnAgain: $('btnAgain'), btnPracticeWeak: $('btnPracticeWeak'),
   catalogOverlay: $('catalogOverlay'), btnCatalogClose: $('btnCatalogClose'), catalogUrl: $('catalogUrl'), btnCatalogLoad: $('btnCatalogLoad'), catalogFileInput: $('catalogFileInput'), catalogStatus: $('catalogStatus'),
   youtubeOverlay: $('youtubeOverlay'), btnYoutubeClose: $('btnYoutubeClose'), ytUrl2: $('ytUrl2'), ytPreview: $('ytPreview'), btnYtResolve: $('btnYtResolve'), ytOpenChords: $('ytOpenChords'), ytOpenVideo: $('ytOpenVideo'), btnYtAttach: $('btnYtAttach'), ytStatus: $('ytStatus'),
+  ytChords: $('ytChords'), btnYtCreate: $('btnYtCreate'), ytCreateStatus: $('ytCreateStatus'),
+  btnView: $('btnView'), btnViewHero: $('btnViewHero'), viewOverlay: $('viewOverlay'), btnViewClose: $('btnViewClose'), viewTabs: $('viewTabs'), viewBody: $('viewBody'),
   btnPlay: $('btnPlay'), btnRestart: $('btnRestart'),
   btnLoopA: $('btnLoopA'), btnLoopB: $('btnLoopB'), btnLoopClear: $('btnLoopClear'),
   btnOrient: $('btnOrient'), btnFinger: $('btnFinger'), loopBadge: $('loopBadge'),
@@ -127,8 +129,8 @@ function releaseWakeLock() { if (wakeLock) { try { wakeLock.release(); } catch {
 // ---------------------------------------------------------------------------
 // Экраны, вкладки и история
 // ---------------------------------------------------------------------------
-const MODALS = () => [el.advancedOverlay, el.wizardOverlay, el.resultsOverlay, el.catalogOverlay, el.youtubeOverlay];
-const MODAL_BY_ID = { advanced: () => el.advancedOverlay, wizard: () => el.wizardOverlay, results: () => el.resultsOverlay, catalog: () => el.catalogOverlay, youtube: () => el.youtubeOverlay };
+const MODALS = () => [el.advancedOverlay, el.wizardOverlay, el.resultsOverlay, el.catalogOverlay, el.youtubeOverlay, el.viewOverlay];
+const MODAL_BY_ID = { advanced: () => el.advancedOverlay, wizard: () => el.wizardOverlay, results: () => el.resultsOverlay, catalog: () => el.catalogOverlay, youtube: () => el.youtubeOverlay, view: () => el.viewOverlay };
 const SCREENS = ['home', 'library', 'profile', 'game'];
 
 function hideAllModals() { for (const n of MODALS()) n.classList.add('hidden'); }
@@ -887,22 +889,152 @@ async function doYoutubeResolve(inputEl) {
   if (!youtubeId(url)) { el.ytPreview.textContent = 'Не похоже на ссылку YouTube.'; return; }
   el.ytPreview.textContent = 'Определяю название…';
   const title = await resolveYoutube(url);
-  const query = title || 'гитара';
+  el.ytPreview.dataset.title = title || '';
   el.ytPreview.innerHTML = title ? `Найдено: <b>${escapeHtml(title)}</b>` : 'Название определить не удалось — откроем поиск по ссылке.';
-  el.ytOpenChords.href = chordsSearchUrl(title || url);
-  el.ytOpenChords.hidden = false;
+  el.ytOpenChords.href = chordsSearchUrl(title || url); el.ytOpenChords.hidden = false;
   el.ytOpenVideo.href = url; el.ytOpenVideo.hidden = false;
-  el.btnYtAttach.hidden = false;
-  el.btnYtAttach.dataset.url = url;
+  el.btnYtAttach.hidden = false; el.btnYtAttach.dataset.url = url;
   el.ytStatus.textContent = '';
-  return { url, title, query };
+  // подсказать аккорды, если название похоже на известную прогрессию
+  if (!el.ytChords.value) el.ytChords.value = 'Am F C G';
+  return { url, title };
 }
 function attachYoutube(url) {
   const item = currentItem();
   if (!item) { toast('Сначала выберите занятие', 'err'); return; }
   state.settings.youtube[item.id] = url; saveSettings(); updateHero();
-  toast('Ссылка прикреплена к «' + item.title + '»', 'ok');
-  goBack();
+  toast('Ссылка прикреплена к «' + item.title + '»', 'ok'); goBack();
+}
+
+// ---------- Аккорды: справочник форм и генерация упражнения ----------
+const CHORD_SHAPES = {
+  C: [null, 3, 2, 0, 1, 0], C7: [null, 3, 2, 3, 1, 0], Cmaj7: [null, 3, 2, 0, 0, 0], Cm: [null, 3, 5, 5, 4, 3],
+  D: [null, null, 0, 2, 3, 2], Dm: [null, null, 0, 2, 3, 1], D7: [null, null, 0, 2, 1, 2], Dm7: [null, null, 0, 2, 1, 1],
+  E: [0, 2, 2, 1, 0, 0], Em: [0, 2, 2, 0, 0, 0], E7: [0, 2, 0, 1, 0, 0],
+  F: [1, 3, 3, 2, 1, 1], Fm: [1, 3, 3, 1, 1, 1], Fmaj7: [null, null, 3, 2, 1, 0],
+  G: [3, 2, 0, 0, 0, 3], G7: [3, 2, 0, 0, 0, 1], Gm: [3, 5, 5, 3, 3, 3],
+  A: [null, 0, 2, 2, 2, 0], Am: [null, 0, 2, 2, 1, 0], A7: [null, 0, 2, 0, 2, 0], Am7: [null, 0, 2, 0, 1, 0],
+  B: [null, 2, 4, 4, 4, 2], Bm: [null, 2, 4, 4, 3, 2], B7: [null, 2, 1, 2, 0, 2], Bb: [null, 1, 3, 3, 3, 1],
+  'F#m': [2, 4, 4, 2, 2, 2], 'C#m': [null, 4, 6, 6, 5, 4], 'G#m': [4, 6, 6, 4, 4, 4],
+};
+function normalizeChord(name) {
+  const m = String(name || '').trim();
+  const cap = m.charAt(0).toUpperCase() + m.slice(1);
+  if (CHORD_SHAPES[m]) return m;
+  if (CHORD_SHAPES[cap]) return cap;
+  return null;
+}
+function fingersForShape(frets) {
+  const uniq = [...new Set(frets.filter((f) => f != null && f > 0))].sort((a, b) => a - b);
+  const map = new Map(); uniq.forEach((f, i) => map.set(f, Math.min(4, i + 1)));
+  return frets.map((f) => (f == null || f === 0 ? 0 : map.get(f)));
+}
+function makeChordExercise(title, chordNames) {
+  const bpm = 90; const notes = []; let beat = 0;
+  for (const cname of chordNames) {
+    const shape = CHORD_SHAPES[cname]; if (!shape) continue;
+    const fingers = fingersForShape(shape);
+    for (let k = 0; k < 4; k++) {
+      for (let i = 0; i < 6; i++) { const fr = shape[i]; if (fr == null) continue; notes.push({ beat, string: i + 1, fret: fr, dur: 0.9, finger: fingers[i] }); }
+      beat += 1;
+    }
+  }
+  return { title, artist: 'По ссылке', bpm, tuning: ['E2', 'A2', 'D3', 'G3', 'B3', 'E4'], timeSignature: [4, 4], notes };
+}
+function createExerciseFromChords() {
+  const names = (el.ytChords.value || '').split(/[\s,|/]+/).map((s) => normalizeChord(s)).filter(Boolean);
+  if (!names.length) { el.ytCreateStatus.textContent = 'Введите аккорды, например: Am F C G'; return; }
+  const title = (el.ytPreview.dataset.title || '').trim() || 'Упражнение по песне';
+  const raw = parseNative(makeChordExercise(title, names));
+  state.library.builtin.unshift(raw);
+  buildItems();
+  const item = state.items.find((i) => i.raw === raw);
+  if (item) {
+    item.difficulty = difficultyForRaw(raw);
+    const url = el.btnYtAttach.dataset.url;
+    if (url) { state.settings.youtube[item.id] = url; saveSettings(); }
+    state.selectedId = item.id; loadRaw(raw);
+  }
+  el.ytCreateStatus.textContent = 'Готово: ' + names.join(' – ');
+  toast('Упражнение создано: ' + title, 'ok');
+  goView('library');
+}
+
+// ---------- Просмотр аккордов и нот (без таймлайна) ----------
+function songGroups(song) {
+  const groups = []; let cur = null;
+  for (const n of song.notes) { if (!cur || n.t - cur.t > 0.035) { cur = { t: n.t, notes: [] }; groups.push(cur); } cur.notes.push(n); }
+  return groups;
+}
+function chordName(midis) {
+  if (!midis || !midis.length) return '';
+  const ms = midis.map((m) => Math.round(m));
+  const pcs = [...new Set(ms.map((m) => ((m % 12) + 12) % 12))];
+  const names = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
+  let best = null;
+  for (const root of pcs) {
+    const rel = new Set(pcs.map((p) => (p - root + 12) % 12));
+    let q = '', rank = 0;
+    if (rel.has(0) && rel.has(4) && rel.has(7) && rel.has(11)) { q = 'maj7'; rank = 4; }
+    else if (rel.has(0) && rel.has(4) && rel.has(10)) { q = '7'; rank = 4; }
+    else if (rel.has(0) && rel.has(3) && rel.has(10)) { q = 'm7'; rank = 4; }
+    else if (rel.has(0) && rel.has(4) && rel.has(7)) { q = ''; rank = 3; }
+    else if (rel.has(0) && rel.has(3) && rel.has(7)) { q = 'm'; rank = 3; }
+    else if (rel.has(0) && rel.has(7)) { q = '5'; rank = 1; }
+    else if (rel.has(0) && rel.has(4)) { q = ''; rank = 1; }
+    else if (rel.has(0) && rel.has(3)) { q = 'm'; rank = 1; }
+    if (best === null || rank > best.rank) best = { root, q, rank };
+  }
+  return names[best.root] + best.q;
+}
+function diagramSVG(notes) {
+  const frets = [null, null, null, null, null, null];
+  for (const n of notes) if (n.string >= 1 && n.string <= 6) frets[n.string - 1] = n.fret;
+  const fingers = fingersForShape(frets.filter((f) => f != null));
+  const fretted = frets.filter((f) => f != null && f > 0);
+  const base = fretted.length ? Math.max(1, Math.min(...fretted)) : 1;
+  const span = 4, W = 118, H = 138, padX = 16, padY = 26, gapX = (W - 2 * padX) / 5, gapY = (H - padY - 16) / span;
+  let s = `<svg viewBox="0 0 ${W} ${H}" class="diagram" role="img">`;
+  for (let i = 0; i < 6; i++) { const x = padX + i * gapX; s += `<line x1="${x}" y1="${padY}" x2="${x}" y2="${H - 16}" stroke="currentColor" stroke-opacity="0.4"/>`; }
+  for (let f = 0; f <= span; f++) { const y = padY + f * gapY; s += `<line x1="${padX}" y1="${y}" x2="${W - padX}" y2="${y}" stroke="currentColor" stroke-opacity="0.4"/>`; }
+  if (base > 1) s += `<text x="3" y="${padY + gapY * 0.7}" font-size="9" fill="currentColor">${base}</text>`;
+  for (let i = 0; i < 6; i++) {
+    const fr = frets[i]; const x = padX + i * gapX;
+    if (fr == null) { s += `<text x="${x}" y="${padY - 9}" font-size="10" text-anchor="middle" fill="currentColor" opacity="0.7">×</text>`; continue; }
+    if (fr === 0) { s += `<circle cx="${x}" cy="${padY - 12}" r="4" fill="none" stroke="currentColor" stroke-width="1.5"/>`; continue; }
+    const rel = fr - base; if (rel < 0 || rel >= span) continue;
+    const y = padY + rel * gapY + gapY / 2;
+    s += `<circle cx="${x}" cy="${y}" r="7" fill="var(--indigo)"/>`;
+    const fg = fingers[i]; if (fg) s += `<text x="${x}" y="${y + 3}" font-size="9" text-anchor="middle" fill="#fff">${fg}</text>`;
+  }
+  return s + '</svg>';
+}
+function renderViewer(mode) {
+  const song = state.song;
+  if (!song) { el.viewBody.innerHTML = '<p class="muted">Нет выбранной песни.</p>'; return; }
+  if (mode === 'notes') {
+    let html = '<div class="note-table"><div class="tr head"><span>#</span><span>Время</span><span>Стр.</span><span>Лад</span><span>Палец</span><span>Нота</span></div>';
+    const list = song.notes.slice(0, 500);
+    html += list.map((n, i) => `<div class="tr"><span>${i + 1}</span><span>${fmtTime(n.t)}</span><span>${n.string}</span><span>${n.fret}</span><span>${n.finger > 0 ? n.finger : '—'}</span><span>${midiToName(n.midi)}</span></div>`).join('');
+    html += `</div><p class="muted small">${song.notes.length > list.length ? 'Показаны первые ' + list.length + ' из ' + song.notes.length : 'Всего нот: ' + song.notes.length}</p>`;
+    el.viewBody.innerHTML = html;
+    return;
+  }
+  const groups = songGroups(song).filter((g) => g.notes.length >= 2);
+  if (!groups.length) { el.viewBody.innerHTML = '<p class="muted">В этом упражнении нет аккордов — откройте вкладку «Ноты» или играйте по трассе.</p>'; return; }
+  const seen = new Map();
+  for (const g of groups) { const key = g.notes.map((n) => n.string + ':' + n.fret).sort().join(','); if (!seen.has(key)) seen.set(key, g); }
+  const names = [...seen.values()].map((g) => chordName(g.notes.map((n) => n.midi)));
+  let html = '<div class="chord-seq">' + names.map((n) => `<span>${n}</span>`).join('<i>→</i>') + '</div>';
+  html += '<div class="chord-grid">';
+  for (const g of seen.values()) { html += `<figure class="chord"><figcaption>${chordName(g.notes.map((n) => n.midi))}</figcaption>${diagramSVG(g.notes)}</figure>`; }
+  html += '</div>';
+  el.viewBody.innerHTML = html;
+}
+function openViewer(mode = 'chords') {
+  renderViewer(mode);
+  for (const b of el.viewTabs.querySelectorAll('.chip')) { const on = b.dataset.view === mode; b.setAttribute('aria-pressed', on ? 'true' : 'false'); b.classList.toggle('is-active', on); }
+  openModal('view');
 }
 
 // ---------------------------------------------------------------------------
@@ -982,6 +1114,15 @@ function bindEvents() {
   el.btnYoutubeClose.addEventListener('click', () => goBack());
   el.btnYtResolve.addEventListener('click', () => doYoutubeResolve(el.ytUrl2));
   el.btnYtAttach.addEventListener('click', () => { const url = el.btnYtAttach.dataset.url; if (url) attachYoutube(url); });
+  el.btnYtCreate.addEventListener('click', createExerciseFromChords);
+  el.btnView.addEventListener('click', () => openViewer('chords'));
+  el.btnViewHero.addEventListener('click', () => openViewer('chords'));
+  el.btnViewClose.addEventListener('click', () => goBack());
+  el.viewTabs.addEventListener('click', (e) => {
+    const b = e.target.closest('.chip'); if (!b) return;
+    renderViewer(b.dataset.view);
+    for (const c of el.viewTabs.querySelectorAll('.chip')) { const on = c === b; c.setAttribute('aria-pressed', on ? 'true' : 'false'); c.classList.toggle('is-active', on); }
+  });
 
   // профиль
   el.profileName.addEventListener('input', () => { state.profile.name = el.profileName.value; saveProfile(state.profile); });
