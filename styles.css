@@ -744,6 +744,15 @@ body.is-playing .screen, body.is-playing .tabbar { display: none; }
 .note-table .tr > span:first-child { font-family: var(--mono); color: var(--text-2); }
 
 /* destructive-action confirmation */
+/* Flash the About card when it is opened from the menu. */
+/* Подсветка блока «О проекте» при переходе из меню. */
+.card--flash { animation: cardflash 1.4s var(--ease); }
+@keyframes cardflash {
+  0% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--indigo) 55%, transparent); border-color: var(--indigo); }
+  35% { box-shadow: 0 0 0 5px color-mix(in srgb, var(--indigo) 30%, transparent); border-color: var(--indigo); }
+  100% { box-shadow: var(--card-shadow); }
+}
+
 /* подтверждение разрушительного действия */
 .btn[data-confirm="1"] { border-color: var(--error); color: var(--error); background: color-mix(in srgb, var(--error) 8%, transparent); }
 .btn[data-confirm="1"]:hover { border-color: var(--error); background: color-mix(in srgb, var(--error) 14%, transparent); }

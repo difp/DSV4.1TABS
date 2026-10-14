@@ -39,7 +39,7 @@ const el = {
   speedBpm: $('speedBpm'), speedChips: $('speedChips'), speed: $('speed'), speedVal: $('speedVal'), speedRange: $('speedRange'),
   btnSpeedQuick: $('btnSpeedQuick'), speedQuickVal: $('speedQuickVal'), speedPop: $('speedPop'), speedPopBpm: $('speedPopBpm'), speedPopPct: $('speedPopPct'), speedPopRange: $('speedPopRange'),
   tipText: $('tipText'), btnTipApply: $('btnTipApply'),
-  recentCard: $('recentCard'), recentList: $('recentList'),
+  recentCard: $('recentCard'), recentList: $('recentList'), aboutCard: $('aboutCard'),
   layoutSeg: $('layoutSeg'),
   metronome: $('metronome'), countIn: $('countIn'), showFret: $('showFret'), showFinger: $('showFinger'), autoplaySwitch: $('autoplaySwitch'),
   btnSoundHome: $('btnSoundHome'), btnWizardHome: $('btnWizardHome'), homeGitHub: $('homeGitHub'),
@@ -1429,7 +1429,17 @@ function bindEvents() {
   el.menuHelp.addEventListener('click', () => { el.menuPopover.classList.add('hidden'); openModal('help'); });
   el.menuTheme.addEventListener('click', cycleTheme);
   el.menuLang.addEventListener('click', cycleLang);
-  el.menuAbout.addEventListener('click', () => { el.menuPopover.classList.add('hidden'); goView('home'); });
+  el.menuAbout.addEventListener('click', () => {
+    el.menuPopover.classList.add('hidden');
+    goView('home');
+    requestAnimationFrame(() => {
+      const card = el.aboutCard;
+      if (!card) return;
+      card.scrollIntoView({ behavior: reducedMotion() ? 'auto' : 'smooth', block: 'center' });
+      card.classList.add('card--flash');
+      setTimeout(() => card.classList.remove('card--flash'), 1400);
+    });
+  });
   el.btnHelpClose.addEventListener('click', () => goBack());
 
   // microphone / sound
