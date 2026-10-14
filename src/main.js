@@ -417,7 +417,10 @@ function makeRail(list) {
     card.innerHTML = `<div class="exc-card__title">${escapeHtml(item.title)}</div>`
       + `<div class="exc-card__meta"><span>${item.raw ? t('{n} нот', { n: item.noteCount }) : t('каталог')}</span><span>${item.difficulty ? difficultyDots(item.difficulty) : ''}</span></div>`
       + `<div class="exc-card__meta"><span>${best != null ? Math.round(best * 100) + '%' : ''}</span><span class="muted">${escapeHtml(item.artist || '')}</span></div>`;
-    card.addEventListener('click', () => selectItem(item, false));
+    card.addEventListener('click', () => {
+      const already = item.id === state.selectedId;
+      selectItem(item, already);
+    });
     card.addEventListener('dblclick', () => selectItem(item, true));
     rail.appendChild(card);
   }
@@ -464,13 +467,22 @@ function renderCategories() {
   applyDom(el.categories);
 }
 
+function updateCategorySelection() {
+  const cards = el.categories.querySelectorAll('.exc-card');
+  for (const card of cards) card.classList.toggle('is-selected', card.dataset.id === state.selectedId);
+  const sel = el.categories.querySelector('.exc-card.is-selected');
+  if (sel && sel.scrollIntoView) sel.scrollIntoView({ block: 'nearest', inline: 'nearest' });
+}
+
 async function selectItem(item, autoplay) {
+  let loaded = false;
   if (!item.raw) {
     try {
       item.raw = await resolveEntry(item.entry, state.library.catalog.baseUrl);
       item.noteCount = (item.raw.tracks[pickDefaultTrack(item.raw)].notes || []).length;
       item.artist = item.raw.artist || item.artist;
       item.difficulty = difficultyForRaw(item.raw);
+      loaded = true;
     } catch (e) { toast(t('Не удалось загрузить: ') + e.message, 'err', 6000); return; }
   }
   state.selectedId = item.id;
@@ -478,7 +490,11 @@ async function selectItem(item, autoplay) {
   rec.unshift(item.id); state.settings.recent = rec.slice(0, 20); saveSettings();
   loadRaw(item.raw);
   updateHero();
-  if (!el.screenLibrary.classList.contains('hidden')) renderCategories();
+  // Update selection in place so the clicked card keeps its DOM node (double-click must work).
+  // Обновляем выделение на месте, чтобы узел карточки не подменялся (иначе ломается двойной клик).
+  if (!el.screenLibrary.classList.contains('hidden')) {
+    if (loaded) renderCategories(); else updateCategorySelection();
+  }
   if (autoplay) { goView('game'); play(); }
 }
 
