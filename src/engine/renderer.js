@@ -51,9 +51,12 @@ export class HighwayRenderer {
 
   resize() {
     const rect = this.canvas.getBoundingClientRect();
+    if (rect.width < 2 || rect.height < 2) return;
     this.dpr = Math.min(2, window.devicePixelRatio || 1);
-    this.w = Math.max(320, Math.floor(rect.width));
-    this.h = Math.max(240, Math.floor(rect.height));
+    // Match the backing store exactly to the CSS box so the canvas is never stretched.
+    // Точное совпадение буфера с CSS-размером, чтобы канвас никогда не растягивался.
+    this.w = Math.max(1, Math.floor(rect.width));
+    this.h = Math.max(1, Math.floor(rect.height));
     this.canvas.width = Math.floor(this.w * this.dpr);
     this.canvas.height = Math.floor(this.h * this.dpr);
     this.ctx.setTransform(this.dpr, 0, 0, this.dpr, 0, 0);

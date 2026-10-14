@@ -637,7 +637,7 @@ body[data-ui="phone"] #app { width: 100%; height: 100dvh; background: var(--bg);
 }
 body[data-ui="phone"] .topbar { flex-wrap: wrap; row-gap: var(--space-2); gap: var(--space-2); padding: max(var(--space-3), var(--sat)) max(var(--space-3), var(--sar)) var(--space-3) max(var(--space-3), var(--sal)); }
 body[data-ui="phone"] .now-playing { flex-basis: 100%; order: 3; }
-body[data-ui="phone"] .topbar__actions { flex-wrap: wrap; gap: var(--space-1); }
+body[data-ui="phone"] .topbar__actions { flex-wrap: wrap; gap: var(--space-1); margin-left: auto; }
 body[data-ui="phone"] .mic__text { display: none; }
 body[data-ui="phone"] .brand { display: none; }
 body[data-ui="phone"] .hud { padding: var(--space-3); }
@@ -662,7 +662,7 @@ body[data-ui="phone"] .playbar { flex-wrap: wrap; row-gap: var(--space-2); }
 body[data-ui="phone"] .playbar .progress { order: 5; flex-basis: 100%; }
 body[data-ui="phone"] .playbar__loop { border-left: 0; padding-left: 0; }
 body[data-ui="phone"] .playbar__view { border-left: 0; padding-left: 0; }
-body[data-ui="phone"] .popover { min-width: 0; width: min(280px, 80vw); }
+body[data-ui="phone"] .popover { left: auto; right: 0; min-width: 0; width: min(300px, calc(100vw - 24px)); max-width: calc(100vw - 24px); }
 
 /* all controls at least 44×44 on a phone */
 /* все элементы управления — не меньше 44×44 на телефоне */

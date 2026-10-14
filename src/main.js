@@ -79,6 +79,15 @@ const pitch = new PitchDetector(44100);
 const spectral = new SpectralAnalyzer(44100);
 const renderer = new HighwayRenderer(el.stage);
 
+// Re-fit the canvas to its CSS box after any layout change (tabbar, dvh, URL bar, rotation).
+// Пере-подгоняем канвас под CSS-размер после любых изменений раскладки (панель, dvh, адресная строка, поворот).
+let resizeQueued = false;
+function scheduleResize() {
+  if (resizeQueued) return;
+  resizeQueued = true;
+  requestAnimationFrame(() => { resizeQueued = false; renderer.resize(); if (state.song) drawTabPreview(state.song); });
+}
+
 const SETTINGS_KEY = 'riffhero.settings.v1';
 function loadStoredSettings() { try { return JSON.parse(localStorage.getItem(SETTINGS_KEY)) || {}; } catch { return {}; } }
 
@@ -872,6 +881,7 @@ function setPlayingFlag(playingNow) {
     // Завершение/пауза: вернуть вкладку и экран, даже если остаёмся в окне игры.
     showScreen(currentView());
   }
+  scheduleResize();
 }
 function resetPlayback() {
   audio.stopAll(); releaseWakeLock(); flushPractice();
@@ -1553,7 +1563,11 @@ function bindEvents() {
     else if (e.code === 'ArrowRight') { e.preventDefault(); if (inLibrary || inHome) stepSelection(1); else seekBy(5); }
   });
 
-  window.addEventListener('resize', () => { applyLayout(); if (state.song) drawTabPreview(state.song); });
+  window.addEventListener('resize', () => { applyLayout(); scheduleResize(); });
+  if (typeof ResizeObserver !== 'undefined') {
+    const ro = new ResizeObserver(() => scheduleResize());
+    ro.observe(el.stage);
+  }
   window.addEventListener('popstate', (e) => { if (!e.state) { history.pushState({ view: 'home' }, ''); renderHistoryState({ view: 'home' }); return; } renderHistoryState(e.state); });
   window.addEventListener('pagehide', () => { flushPractice(); saveProfile(state.profile); });
   document.addEventListener('visibilitychange', () => { if (document.hidden) { flushPractice(); saveProfile(state.profile); } else if (state.playing && !state.paused) requestWakeLock(); });
