@@ -1,4 +1,5 @@
 // Профиль и статистика. Всё хранится локально в браузере (localStorage).
+import { t } from './i18n.js';
 const KEY = 'riffhero.profile.v1';
 const DAY = 86400000;
 
@@ -100,7 +101,7 @@ export function fmtDuration(sec) {
   sec = Math.max(0, Math.floor(sec || 0));
   const h = Math.floor(sec / 3600);
   const m = Math.floor((sec % 3600) / 60);
-  if (h > 0) return `${h} ч ${m} мин`;
-  if (m > 0) return `${m} мин`;
-  return `${sec} с`;
+  if (h > 0) return t('{h} ч {m} мин', { h, m });
+  if (m > 0) return t('{m} мин', { m });
+  return t('{n} с', { n: sec });
 }

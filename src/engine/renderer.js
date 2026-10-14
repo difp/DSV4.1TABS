@@ -7,9 +7,32 @@ const STRING_COLORS = [
   '#c4b5fd', '#7dd3fc', '#e9d5ff', '#67e8f9', '#c7d2fe',
 ];
 const JUDGE_COLORS = { perfect: '#4f52c9', good: '#2f7fb0', ok: '#a9841f', miss: '#c0392b' };
+const JUDGE_COLORS_DARK = { perfect: '#a5b4fc', good: '#7dd3fc', ok: '#fcd34d', miss: '#fca5a5' };
 const JUDGE_TEXT = { perfect: 'ИДЕАЛЬНО', good: 'ХОРОШО', ok: 'ОК', miss: 'ПРОМАХ' };
 const INK = '#0b0b18';
 const MONO = 'ui-monospace, Menlo, Consolas, monospace';
+
+// Палитры игровой сцены под светлую и тёмную темы.
+const THEME = {
+  light: {
+    bgTop: '#f3f4f7', bgBottom: '#e7e8ee',
+    laneA: 'rgba(0,0,0,0.02)', laneB: 'rgba(0,0,0,0.045)', laneLine: 'rgba(0,0,0,0.09)', laneEdge: 'rgba(0,0,0,0.18)',
+    hLaneA: 'rgba(0,0,0,0.015)', hLaneB: 'rgba(0,0,0,0.035)', hStringLine: 'rgba(0,0,0,0.22)',
+    beat: 'rgba(0,0,0,0.06)', beatBar: 'rgba(0,0,0,0.18)',
+    noteEdge: 'rgba(0,0,0,0.35)', hitLine: '#1c1c22', label: 'rgba(90,90,99,0.95)',
+    countInStroke: 'rgba(255,255,255,0.9)', countInFill: '#1c1c22',
+    judge: JUDGE_COLORS, judgeFallback: '#1c1c22', finger: '#4f52c9',
+  },
+  dark: {
+    bgTop: '#191920', bgBottom: '#0e0e12',
+    laneA: 'rgba(255,255,255,0.02)', laneB: 'rgba(255,255,255,0.05)', laneLine: 'rgba(255,255,255,0.08)', laneEdge: 'rgba(255,255,255,0.18)',
+    hLaneA: 'rgba(255,255,255,0.015)', hLaneB: 'rgba(255,255,255,0.04)', hStringLine: 'rgba(255,255,255,0.2)',
+    beat: 'rgba(255,255,255,0.06)', beatBar: 'rgba(255,255,255,0.16)',
+    noteEdge: 'rgba(0,0,0,0.45)', hitLine: '#f2f2f5', label: 'rgba(190,190,200,0.9)',
+    countInStroke: 'rgba(0,0,0,0.75)', countInFill: '#f2f2f5',
+    judge: JUDGE_COLORS_DARK, judgeFallback: '#f2f2f5', finger: '#4f52c9',
+  },
+};
 
 export class HighwayRenderer {
   constructor(canvas) {
@@ -18,7 +41,10 @@ export class HighwayRenderer {
     this.w = 320;
     this.h = 240;
     this.dpr = 1;
+    this.theme = 'light';
   }
+
+  _pal() { return THEME[this.theme] || THEME.light; }
 
   resize() {
     const rect = this.canvas.getBoundingClientRect();
@@ -46,27 +72,30 @@ export class HighwayRenderer {
 
   _background() {
     const ctx = this.ctx;
+    const pal = this._pal();
     const bg = ctx.createLinearGradient(0, 0, 0, this.h);
-    bg.addColorStop(0, '#f3f4f7');
-    bg.addColorStop(1, '#e7e8ee');
+    bg.addColorStop(0, pal.bgTop);
+    bg.addColorStop(1, pal.bgBottom);
     ctx.fillStyle = bg;
     ctx.fillRect(0, 0, this.w, this.h);
   }
 
   _noteState(g, songTime) {
+    const pal = this._pal();
     const base = g.notes[0] && g.notes[0].dead ? '#9a9aa6' : null;
     let color = base;
     let alpha = 1;
     if (g.judged) {
       const age = songTime - (g.judgedAt || 0);
-      if (g.judge === 'miss') { color = JUDGE_COLORS.miss; alpha = Math.max(0, 1 - age * 0.8); }
-      else { color = JUDGE_COLORS[g.judge] || JUDGE_COLORS.perfect; alpha = Math.max(0, 1 - age * 1.6); }
+      if (g.judge === 'miss') { color = pal.judge.miss; alpha = Math.max(0, 1 - age * 0.8); }
+      else { color = pal.judge[g.judge] || pal.judge.perfect; alpha = Math.max(0, 1 - age * 1.6); }
     }
     return { color, alpha };
   }
 
   _countInAndJudge(songTime, countIn, game) {
     const ctx = this.ctx;
+    const pal = this._pal();
     const { w, h } = this;
     if (countIn) {
       const size = Math.min(w, h) * 0.34;
@@ -75,9 +104,9 @@ export class HighwayRenderer {
       ctx.textBaseline = 'middle';
       ctx.font = `700 ${size}px ${MONO}`;
       ctx.lineWidth = size * 0.07;
-      ctx.strokeStyle = 'rgba(255, 255, 255, 0.9)';
+      ctx.strokeStyle = pal.countInStroke;
       ctx.strokeText(String(countIn), w / 2, h * 0.44);
-      ctx.fillStyle = '#1c1c22';
+      ctx.fillStyle = pal.countInFill;
       ctx.fillText(String(countIn), w / 2, h * 0.44);
       ctx.restore();
     }
@@ -85,10 +114,11 @@ export class HighwayRenderer {
     if (lj && songTime - lj.t < 0.6) {
       const alpha = Math.max(0, 1 - (songTime - lj.t) / 0.6);
       ctx.globalAlpha = alpha;
-      ctx.fillStyle = JUDGE_COLORS[lj.judge] || '#1c1c22';
+      ctx.fillStyle = pal.judge[lj.judge] || pal.judgeFallback;
       ctx.font = `700 22px ${MONO}`;
       ctx.textAlign = 'center';
-      ctx.fillText(JUDGE_TEXT[lj.judge] || '', w / 2, h * 0.3);
+      const jt = this.judgeText || JUDGE_TEXT;
+      ctx.fillText(jt[lj.judge] || '', w / 2, h * 0.3);
       ctx.globalAlpha = 1;
     }
   }
@@ -110,13 +140,15 @@ export class HighwayRenderer {
     ctx.lineWidth = 1.5;
     ctx.stroke();
     ctx.globalAlpha = 1;
-    ctx.fillStyle = '#1c1c22';
+    ctx.fillStyle = this._pal().judgeFallback;
     ctx.font = `700 12px ${MONO}`;
     ctx.textAlign = 'center';
     ctx.fillText(`${midiToName(detected.midi)} ${a.fret}`, x, y + r + 14);
   }
 
   render(state) {
+    this.theme = state.theme === 'dark' ? 'dark' : 'light';
+    this.judgeText = state.judgeText || null;
     if (state.orientation === 'v') this.renderVertical(state);
     else this.renderHorizontal(state);
   }
@@ -127,6 +159,7 @@ export class HighwayRenderer {
     const ctx = this.ctx;
     const { w, h } = this;
     const strings = song.stringCount || 6;
+    const pal = this._pal();
 
     const laneW = Math.min(88, Math.max(44, (w * 0.62) / strings));
     const highwayW = laneW * strings;
@@ -140,16 +173,16 @@ export class HighwayRenderer {
     ctx.save();
     for (let s = 1; s <= strings; s++) {
       const x = x0 + (s - 1) * laneW;
-      ctx.fillStyle = s % 2 ? 'rgba(0,0,0,0.02)' : 'rgba(0,0,0,0.045)';
+      ctx.fillStyle = s % 2 ? pal.laneA : pal.laneB;
       ctx.fillRect(x, 0, laneW, h);
-      ctx.strokeStyle = 'rgba(0,0,0,0.09)';
+      ctx.strokeStyle = pal.laneLine;
       ctx.lineWidth = 1;
       ctx.beginPath();
       ctx.moveTo(x + 0.5, 0);
       ctx.lineTo(x + 0.5, h);
       ctx.stroke();
     }
-    ctx.strokeStyle = 'rgba(0,0,0,0.18)';
+    ctx.strokeStyle = pal.laneEdge;
     ctx.beginPath();
     ctx.moveTo(x0 + 0.5, 0);
     ctx.lineTo(x0 + 0.5, h);
@@ -161,7 +194,7 @@ export class HighwayRenderer {
       for (const beat of song.grid.beats) {
         const y = timeToY(beat.t);
         if (y < -2 || y > h + 2) continue;
-        ctx.strokeStyle = beat.bar ? 'rgba(0,0,0,0.18)' : 'rgba(0,0,0,0.06)';
+        ctx.strokeStyle = beat.bar ? pal.beatBar : pal.beat;
         ctx.lineWidth = 1;
         ctx.beginPath();
         ctx.moveTo(x0, y + 0.5);
@@ -199,7 +232,7 @@ export class HighwayRenderer {
         ctx.fillStyle = color;
         this._roundRect(ctx, cx - laneW * 0.39, y - nh / 2, laneW * 0.78, nh, 3);
         ctx.fill();
-        ctx.strokeStyle = 'rgba(0,0,0,0.35)';
+        ctx.strokeStyle = pal.noteEdge;
         ctx.lineWidth = 1;
         ctx.stroke();
 
@@ -210,7 +243,7 @@ export class HighwayRenderer {
         }
         if (showFinger && !note.dead && note.finger > 0) {
           ctx.globalAlpha = alpha * 0.95;
-          ctx.fillStyle = '#4f52c9';
+          ctx.fillStyle = pal.finger;
           ctx.font = `700 ${Math.round(nh * 0.44)}px ${MONO}`;
           ctx.fillText(String(note.finger), cx, y - nh / 2 - 10);
           ctx.globalAlpha = 1;
@@ -219,7 +252,7 @@ export class HighwayRenderer {
     }
     ctx.globalAlpha = 1;
 
-    ctx.strokeStyle = '#1c1c22';
+    ctx.strokeStyle = pal.hitLine;
     ctx.lineWidth = 2;
     ctx.beginPath();
     ctx.moveTo(x0, hitLineY + 0.5);
@@ -236,7 +269,7 @@ export class HighwayRenderer {
       ctx.globalAlpha = 1;
     }
 
-    ctx.fillStyle = 'rgba(90,90,99,0.95)';
+    ctx.fillStyle = pal.label;
     ctx.font = `600 11px ${MONO}`;
     for (let s = 1; s <= strings; s++) {
       const open = song.tuning[s - 1];
@@ -257,6 +290,7 @@ export class HighwayRenderer {
     const ctx = this.ctx;
     const { w, h } = this;
     const strings = song.stringCount || 6;
+    const pal = this._pal();
 
     const labelW = 46;
     const hitLineX = labelW + 18;
@@ -276,9 +310,9 @@ export class HighwayRenderer {
     for (let s = 1; s <= strings; s++) {
       const y = yFor(s);
       const ry = y - rowH / 2;
-      ctx.fillStyle = s % 2 ? 'rgba(0,0,0,0.015)' : 'rgba(0,0,0,0.035)';
+      ctx.fillStyle = s % 2 ? pal.hLaneA : pal.hLaneB;
       ctx.fillRect(0, ry, w, rowH);
-      ctx.strokeStyle = 'rgba(0,0,0,0.22)';
+      ctx.strokeStyle = pal.hStringLine;
       ctx.lineWidth = 1;
       ctx.beginPath();
       ctx.moveTo(labelW, y + 0.5);
@@ -291,7 +325,7 @@ export class HighwayRenderer {
       for (const beat of song.grid.beats) {
         const x = timeToX(beat.t);
         if (x < labelW || x > w + 2) continue;
-        ctx.strokeStyle = beat.bar ? 'rgba(0,0,0,0.18)' : 'rgba(0,0,0,0.06)';
+        ctx.strokeStyle = beat.bar ? pal.beatBar : pal.beat;
         ctx.lineWidth = 1;
         ctx.beginPath();
         ctx.moveTo(x + 0.5, topY);
@@ -329,7 +363,7 @@ export class HighwayRenderer {
         ctx.fillStyle = color;
         this._roundRect(ctx, x - nh / 2, cy - nh / 2, nh, nh, 3);
         ctx.fill();
-        ctx.strokeStyle = 'rgba(0,0,0,0.35)';
+        ctx.strokeStyle = pal.noteEdge;
         ctx.lineWidth = 1;
         ctx.stroke();
 
@@ -340,7 +374,7 @@ export class HighwayRenderer {
         }
         if (showFinger && !note.dead && note.finger > 0) {
           ctx.globalAlpha = alpha * 0.95;
-          ctx.fillStyle = '#4f52c9';
+          ctx.fillStyle = pal.finger;
           ctx.font = `700 ${Math.round(nh * 0.5)}px ${MONO}`;
           ctx.fillText(String(note.finger), x, cy - nh / 2 - 9);
           ctx.globalAlpha = 1;
@@ -350,7 +384,7 @@ export class HighwayRenderer {
     ctx.globalAlpha = 1;
 
     // линия удара (вертикальная) и цели по струнам
-    ctx.strokeStyle = '#1c1c22';
+    ctx.strokeStyle = pal.hitLine;
     ctx.lineWidth = 2;
     ctx.beginPath();
     ctx.moveTo(hitLineX + 0.5, topY);
@@ -368,7 +402,7 @@ export class HighwayRenderer {
     }
 
     // подписи струн слева
-    ctx.fillStyle = 'rgba(90,90,99,0.95)';
+    ctx.fillStyle = pal.label;
     ctx.font = `600 11px ${MONO}`;
     ctx.textAlign = 'center';
     for (let s = 1; s <= strings; s++) {

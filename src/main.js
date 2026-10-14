@@ -12,6 +12,7 @@ import { parseBytes } from './parsers/index.js';
 import { DEMO_SONGS, CATEGORIES } from './songs/demos.js';
 import { loadCatalogFromUrl, loadCatalogFromFile, resolveEntry } from './parser-catalog.js';
 import { loadProfile, saveProfile, resetProfile, recordSession, streak, accuracyOf, fmtDuration, normalizeProfile } from './profile.js';
+import { t, applyDom, setLang, resolveLang, langLabel, songTitle, songArtist, songTip, categoryName } from './i18n.js';
 
 const $ = (id) => document.getElementById(id);
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
@@ -21,27 +22,30 @@ const el = {
   songTitle: $('songTitle'), songMeta: $('songMeta'),
   micStatus: $('micStatus'), micText: $('micText'), micLevelBar: $('micLevelBar'),
   btnSound: $('btnSound'), btnMenu: $('btnMenu'), menuPopover: $('menuPopover'),
-  menuAutoplay: $('menuAutoplay'), menuAutoplayVal: $('menuAutoplayVal'), menuWizard: $('menuWizard'), menuAbout: $('menuAbout'),
+  menuWizard: $('menuWizard'), menuHelp: $('menuHelp'), menuTheme: $('menuTheme'), menuThemeVal: $('menuThemeVal'), menuLang: $('menuLang'), menuLangVal: $('menuLangVal'), menuAbout: $('menuAbout'),
   tabbar: $('tabbar'),
   screenHome: $('screenHome'), screenLibrary: $('screenLibrary'), screenProfile: $('screenProfile'),
   stage: $('stage'), score: $('score'), combo: $('combo'), accuracy: $('accuracy'),
   pitchNote: $('pitchNote'), pitchCents: $('pitchCents'), feedback: $('feedback'),
   heroCard: $('heroCard'), heroSlide: $('heroSlide'),
-  heroType: $('heroType'), heroTitle: $('heroTitle'), heroArtist: $('heroArtist'),
+  heroType: $('heroType'), heroTitle: $('heroTitle'), heroArtist: $('heroArtist'), heroTip: $('heroTip'),
   heroBpm: $('heroBpm'), heroDur: $('heroDur'), heroNotes: $('heroNotes'), heroTuning: $('heroTuning'),
   heroBest: $('heroBest'), heroDifficulty: $('heroDifficulty'), tabPreview: $('tabPreview'),
+  heroPrev: $('heroPrev'), heroNext: $('heroNext'), heroDots: $('heroDots'), heroCount: $('heroCount'),
   btnPlaySelected: $('btnPlaySelected'), btnGoLibrary: $('btnGoLibrary'), heroYt: $('heroYt'),
   speedBpm: $('speedBpm'), speedChips: $('speedChips'), speed: $('speed'), speedVal: $('speedVal'), speedRange: $('speedRange'),
   btnSpeedQuick: $('btnSpeedQuick'), speedQuickVal: $('speedQuickVal'), speedPop: $('speedPop'), speedPopBpm: $('speedPopBpm'), speedPopPct: $('speedPopPct'), speedPopRange: $('speedPopRange'),
   tipText: $('tipText'), btnTipApply: $('btnTipApply'),
+  recentCard: $('recentCard'), recentList: $('recentList'),
   layoutSeg: $('layoutSeg'),
   metronome: $('metronome'), countIn: $('countIn'), showFret: $('showFret'), showFinger: $('showFinger'), autoplaySwitch: $('autoplaySwitch'),
   btnSoundHome: $('btnSoundHome'), btnWizardHome: $('btnWizardHome'), homeGitHub: $('homeGitHub'),
   categories: $('categories'),
+  libSearch: $('libSearch'), libSort: $('libSort'), libFilter: $('libFilter'),
   dropZone: $('dropZone'), fileInput: $('fileInput'), btnCatalogLink: $('btnCatalogLink'),
   ytUrl: $('ytUrl'), btnYoutube: $('btnYoutube'),
   trackPicker: $('trackPicker'), trackSelect: $('trackSelect'),
-  profileName: $('profileName'), profileStats: $('profileStats'), profileErrStrings: $('profileErrStrings'), profileSongs: $('profileSongs'),
+  profileName: $('profileName'), profileStats: $('profileStats'), profileErrStrings: $('profileErrStrings'), profileErrFrets: $('profileErrFrets'), profileCalendar: $('profileCalendar'), profileSongs: $('profileSongs'),
   btnProfileReset: $('btnProfileReset'), btnProfileExport: $('btnProfileExport'), profileImport: $('profileImport'),
   advancedOverlay: $('advancedOverlay'), btnAdvancedClose: $('btnAdvancedClose'),
   guideVol: $('guideVol'), guideVolVal: $('guideVolVal'), metroVol: $('metroVol'), metroVolVal: $('metroVolVal'),
@@ -52,14 +56,15 @@ const el = {
   wizardOverlay: $('wizardOverlay'), wizSkip: $('wizSkip'), wizSkip2: $('wizSkip2'), wizPrev: $('wizPrev'), wizNext: $('wizNext'),
   wizPane1: $('wizPane1'), wizPane2: $('wizPane2'), wizPane3: $('wizPane3'),
   wizAllow: $('wizAllow'), wizMicState: $('wizMicState'), wizLevelBar: $('wizLevelBar'), wizLevelHint: $('wizLevelHint'),
-  wizTuneNote: $('wizTuneNote'), wizCalibrate: $('wizCalibrate'), wizCalState: $('wizCalState'),
+  wizTuneNote: $('wizTuneNote'), wizTuneHint: $('wizTuneHint'), wizMicSelect: $('wizMicSelect'), wizCalibrate: $('wizCalibrate'), wizCalState: $('wizCalState'),
   resultsOverlay: $('resultsOverlay'), btnResultsClose: $('btnResultsClose'), resultsTitle: $('resultsTitle'),
-  resultGrid: $('resultGrid'), resultErrors: $('resultErrors'), btnResultsLibrary: $('btnResultsLibrary'), btnAgain: $('btnAgain'), btnPracticeWeak: $('btnPracticeWeak'),
+  resultGrid: $('resultGrid'), resultDelta: $('resultDelta'), resultErrors: $('resultErrors'), resultErrorChips: $('resultErrorChips'), btnResultsLibrary: $('btnResultsLibrary'), btnAgain: $('btnAgain'), btnPracticeWeak: $('btnPracticeWeak'),
   catalogOverlay: $('catalogOverlay'), btnCatalogClose: $('btnCatalogClose'), catalogUrl: $('catalogUrl'), btnCatalogLoad: $('btnCatalogLoad'), catalogFileInput: $('catalogFileInput'), catalogStatus: $('catalogStatus'),
   youtubeOverlay: $('youtubeOverlay'), btnYoutubeClose: $('btnYoutubeClose'), ytUrl2: $('ytUrl2'), ytPreview: $('ytPreview'), btnYtResolve: $('btnYtResolve'), ytOpenChords: $('ytOpenChords'), ytOpenVideo: $('ytOpenVideo'), btnYtAttach: $('btnYtAttach'), ytStatus: $('ytStatus'),
   ytChords: $('ytChords'), btnYtCreate: $('btnYtCreate'), ytCreateStatus: $('ytCreateStatus'),
   btnView: $('btnView'), btnViewHero: $('btnViewHero'), viewOverlay: $('viewOverlay'), btnViewClose: $('btnViewClose'), viewTabs: $('viewTabs'), viewBody: $('viewBody'),
-  btnPlay: $('btnPlay'), btnRestart: $('btnRestart'),
+  helpOverlay: $('helpOverlay'), btnHelpClose: $('btnHelpClose'),
+  btnPlay: $('btnPlay'), btnRestart: $('btnRestart'), btnExit: $('btnExit'),
   btnLoopA: $('btnLoopA'), btnLoopB: $('btnLoopB'), btnLoopClear: $('btnLoopClear'),
   btnOrient: $('btnOrient'), btnFinger: $('btnFinger'), loopBadge: $('loopBadge'),
   progressBar: $('progressBar'), loopMarkers: $('loopMarkers'), timeReadout: $('timeReadout'),
@@ -87,16 +92,16 @@ const state = {
   items: [],
   selectedId: null,
   profile: loadProfile(),
-  practiceBuffer: 0, sessionPractice: 0, lastFrame: 0,
+  practiceBuffer: 0, lastFrame: 0,
   wizardStep: 1, wizardActive: false,
-  lastErrors: null,
-  ytAttached: [],
+  lastPrevBest: null,
   settings: Object.assign({
     rate: 1, metronome: true, countIn: true, showFret: true, showFinger: true, orientation: 'h',
     guideVol: 70, metroVol: 60, latency: 0, sens: 6, clarity: 0.5,
     chordMode: 'any', sensPreset: 'room', micDeviceId: '', outputDeviceId: '',
-    autoplay: false, onboarded: false, recent: [], youtube: {},
+    autoplay: false, onboarded: false, recent: [], youtube: {}, theme: 'auto', lang: 'auto',
   }, loadStoredSettings()),
+  lib: { q: '', sort: 'default', diff: 0 },
 };
 if (!state.settings.youtube) state.settings.youtube = {};
 
@@ -110,7 +115,7 @@ function toast(text, kind = '', ms = 3600) {
   const div = document.createElement('div');
   div.className = 'toast'; div.dataset.kind = kind;
   if (icons[kind]) { const ic = document.createElement('span'); ic.className = 'toast__icon'; ic.textContent = icons[kind]; ic.setAttribute('aria-hidden', 'true'); div.appendChild(ic); }
-  const t = document.createElement('span'); t.textContent = text; div.appendChild(t);
+  const span = document.createElement('span'); span.textContent = t(text); div.appendChild(span);
   el.toasts.appendChild(div);
   setTimeout(() => div.remove(), ms);
 }
@@ -128,9 +133,8 @@ function releaseWakeLock() { if (wakeLock) { try { wakeLock.release(); } catch {
 // ---------------------------------------------------------------------------
 // Экраны, вкладки и история
 // ---------------------------------------------------------------------------
-const MODALS = () => [el.advancedOverlay, el.wizardOverlay, el.resultsOverlay, el.catalogOverlay, el.youtubeOverlay, el.viewOverlay];
-const MODAL_BY_ID = { advanced: () => el.advancedOverlay, wizard: () => el.wizardOverlay, results: () => el.resultsOverlay, catalog: () => el.catalogOverlay, youtube: () => el.youtubeOverlay, view: () => el.viewOverlay };
-const SCREENS = ['home', 'library', 'profile', 'game'];
+const MODALS = () => [el.advancedOverlay, el.wizardOverlay, el.resultsOverlay, el.catalogOverlay, el.youtubeOverlay, el.viewOverlay, el.helpOverlay];
+const MODAL_BY_ID = { advanced: () => el.advancedOverlay, wizard: () => el.wizardOverlay, results: () => el.resultsOverlay, catalog: () => el.catalogOverlay, youtube: () => el.youtubeOverlay, view: () => el.viewOverlay, help: () => el.helpOverlay };
 
 function hideAllModals() { for (const n of MODALS()) n.classList.add('hidden'); }
 function visibleModal() { return MODALS().find((o) => !o.classList.contains('hidden')) || null; }
@@ -146,6 +150,7 @@ function showScreen(view) {
   el.screenProfile.classList.toggle('hidden', view !== 'profile');
   el.tabbar.classList.remove('hidden');
   for (const b of el.tabbar.querySelectorAll('.tab')) b.classList.toggle('is-active', b.dataset.view === view);
+  if (el.btnExit) el.btnExit.classList.toggle('hidden', view !== 'game');
   if (view === 'home') { updateHero(); renderTip(); }
   else if (view === 'library') renderCategories();
   else if (view === 'profile') renderProfile();
@@ -180,7 +185,64 @@ function bindModalDismiss(node) { node.addEventListener('mousedown', (e) => { if
 // Тема и раскладка (строго по выбору, без авто)
 // ---------------------------------------------------------------------------
 function resolveLayout() { if (state.layoutPref === 'desktop' || state.layoutPref === 'phone') return state.layoutPref; return window.innerWidth < 820 ? 'phone' : 'desktop'; }
-function applyTheme() { document.body.dataset.theme = 'light'; }
+function applyTheme() {
+  const pref = state.settings.theme || 'auto';
+  const dark = pref === 'dark' || (pref === 'auto' && window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches);
+  document.body.dataset.theme = dark ? 'dark' : 'light';
+  const meta = document.querySelector('meta[name="theme-color"]');
+  if (meta) meta.setAttribute('content', dark ? '#141416' : '#ededed');
+  if (el.menuThemeVal) el.menuThemeVal.textContent = pref === 'auto' ? t('системная') : (pref === 'dark' ? t('тёмная') : t('светлая'));
+  if (state.song) drawTabPreview(state.song);
+}
+function cycleTheme() {
+  const order = ['light', 'dark', 'auto'];
+  const cur = state.settings.theme || 'auto';
+  state.settings.theme = order[(order.indexOf(cur) + 1) % order.length];
+  saveSettings(); applyTheme();
+}
+function bindSystemTheme() {
+  const mq = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)');
+  if (!mq || !mq.addEventListener) return;
+  mq.addEventListener('change', () => { if ((state.settings.theme || 'auto') === 'auto') applyTheme(); });
+}
+
+// ---------------------------------------------------------------------------
+// Язык интерфейса
+// ---------------------------------------------------------------------------
+function relocalizeBuiltins() {
+  for (const raw of state.library.builtin) {
+    if (!raw.id) continue;
+    if (!raw.__ru) raw.__ru = { title: raw.title, artist: raw.artist };
+    raw.title = songTitle(raw.id, raw.__ru.title);
+    raw.artist = songArtist(raw.id, raw.__ru.artist);
+    const trk = raw.tracks && raw.tracks[0];
+    if (trk) {
+      if (!trk.__ruName) trk.__ruName = trk.name || '';
+      trk.name = t(trk.__ruName);
+    }
+  }
+  if (state.raw && state.raw.id) {
+    if (!state.raw.__ru) state.raw.__ru = { title: state.raw.title, artist: state.raw.artist };
+    state.raw.title = songTitle(state.raw.id, state.raw.__ru.title);
+    state.raw.artist = songArtist(state.raw.id, state.raw.__ru.artist);
+  }
+}
+function applyLang() {
+  setLang(state.settings.lang);
+  if (el.menuLangVal) el.menuLangVal.textContent = langLabel(state.settings.lang);
+  relocalizeBuiltins();
+  buildItems();
+  applyDom(document);
+  if (state.song && state.raw) { state.song.title = state.raw.title; state.song.artist = state.raw.artist; applySongUi(); }
+  updateHero(); renderTip(); renderCategories(); renderProfile(); renderRecent();
+  if (!el.resultsOverlay.classList.contains('hidden')) showResults(state.lastPrevBest);
+}
+function cycleLang() {
+  const order = ['auto', 'ru', 'en'];
+  const cur = state.settings.lang || 'auto';
+  state.settings.lang = order[(order.indexOf(cur) + 1) % order.length];
+  saveSettings(); applyLang();
+}
 function applyLayout() {
   document.body.dataset.ui = resolveLayout();
   for (const b of el.layoutSeg.querySelectorAll('button')) b.classList.toggle('active', b.dataset.layout === state.layoutPref);
@@ -213,7 +275,7 @@ function updateSpeedUi() {
 function setBpm(bpm) { setRate(clamp(bpm / speedBaseBpm(), 0.25, 1.5)); }
 function toggleOrientation() { state.settings.orientation = state.settings.orientation === 'h' ? 'v' : 'h'; saveSettings(); applySettingsToUi(); }
 function toggleFinger() { state.settings.showFinger = !state.settings.showFinger; saveSettings(); applySettingsToUi(); }
-function toggleAutoplay() { state.settings.autoplay = !state.settings.autoplay; saveSettings(); applySettingsToUi(); if (state.game) state.game.autoplay = state.settings.autoplay; toast(state.settings.autoplay ? 'Автоигра включена' : 'Автоигра выключена'); }
+function toggleAutoplay() { state.settings.autoplay = !state.settings.autoplay; saveSettings(); applySettingsToUi(); if (state.game) state.game.autoplay = state.settings.autoplay; toast(t(state.settings.autoplay ? 'Автоигра включена' : 'Автоигра выключена')); }
 
 function applySettingsToUi() {
   const s = state.settings;
@@ -228,9 +290,8 @@ function applySettingsToUi() {
   el.btnFinger.setAttribute('aria-pressed', s.showFinger ? 'true' : 'false');
   el.guideVol.value = String(s.guideVol); el.guideVolVal.textContent = s.guideVol + '%';
   el.metroVol.value = String(s.metroVol); el.metroVolVal.textContent = s.metroVol + '%';
-  el.latency.value = String(s.latency); el.latencyVal.textContent = s.latency + ' мс'; state.latencySec = s.latency / 1000;
+  el.latency.value = String(s.latency); el.latencyVal.textContent = t('{n} мс', { n: s.latency }); state.latencySec = s.latency / 1000;
   el.sens.value = String(s.sens); el.sensVal.textContent = String(s.sens); pitch.rmsGate = s.sens / 1000;
-  el.menuAutoplayVal.textContent = s.autoplay ? 'вкл' : 'выкл';
   el.chordMode.value = s.chordMode;
   el.sensPreset.value = s.sensPreset;
   if (state.game) { state.game.autoplay = s.autoplay; state.game.opts.chordMode = s.chordMode; state.game.opts.clarity = s.clarity; }
@@ -250,11 +311,25 @@ function applySensPreset(name) {
 function itemId(source, title, artist) { return `${source}:${title}|${artist || ''}`; }
 function slug(s) { return String(s || '').trim().toLowerCase(); }
 
+function isExerciseRaw(raw) {
+  const artist = (raw.__ru && raw.__ru.artist) || raw.artist || '';
+  return !/PD|оригинал|original/i.test(artist);
+}
+
 function buildItems() {
+  relocalizeBuiltins();
   const items = [];
   for (const raw of state.library.builtin) {
-    const t = raw.tracks[0];
-    items.push({ id: itemId('b', raw.title, raw.artist), source: 'builtin', type: /упражнени/i.test(raw.artist || '') ? 'exercise' : 'song', title: raw.title, artist: raw.artist || '', raw, noteCount: (t.notes || []).length });
+    const track = raw.tracks[0];
+    items.push({
+      id: 'b:' + (raw.id || slug(raw.title)),
+      source: 'builtin',
+      type: isExerciseRaw(raw) ? 'exercise' : 'song',
+      title: raw.title,
+      artist: raw.artist || '',
+      raw,
+      noteCount: (track.notes || []).length,
+    });
   }
   if (state.library.catalog) {
     for (const entry of state.library.catalog.songs) {
@@ -269,12 +344,21 @@ function difficultyForRaw(raw) {
   try { return computeDifficulty(buildSong(raw, pickDefaultTrack(raw))); } catch { return 1; }
 }
 function categoryOf(item) {
-  for (const [name, titles] of Object.entries(CATEGORIES)) if (titles.includes(item.title)) return name;
-  return 'Свои и каталог';
+  if (item.raw && item.raw.id) {
+    for (const c of CATEGORIES) if (c.ids.includes(item.raw.id)) return c.key;
+  }
+  return 'mine';
 }
 function bestForItem(item) {
-  const want = item.title.toLowerCase(); let best = null;
-  for (const k of Object.keys(state.profile.songs)) if (k.startsWith(want + '|')) { const s = state.profile.songs[k]; if (best == null || s.bestAccuracy > best) best = s.bestAccuracy; }
+  let best = null;
+  const prefixes = [];
+  if (item.raw && item.raw.id) prefixes.push('b:' + item.raw.id);
+  prefixes.push(slug(item.title) + '|'); // совместимость со старой статистикой
+  for (const k of Object.keys(state.profile.songs)) {
+    if (!prefixes.some((p) => k === p || k.startsWith(p))) continue;
+    const s = state.profile.songs[k];
+    if (best == null || s.bestAccuracy > best) best = s.bestAccuracy;
+  }
   return best;
 }
 function currentItem() { return state.items.find((i) => i.id === state.selectedId) || null; }
@@ -285,45 +369,79 @@ function difficultyDots(d) {
   return html + '</span>';
 }
 
+function libraryList() {
+  const q = slug(state.lib.q);
+  const diff = Number(state.lib.diff) || 0;
+  let list = state.items.filter((it) => {
+    if (diff && (it.difficulty || 0) !== diff) return false;
+    if (q && !slug(it.title).includes(q) && !slug(it.artist).includes(q)) return false;
+    return true;
+  });
+  const sort = state.lib.sort;
+  if (sort === 'difficulty') list = list.slice().sort((a, b) => (b.difficulty || 0) - (a.difficulty || 0));
+  else if (sort === 'title') list = list.slice().sort((a, b) => a.title.localeCompare(b.title));
+  else if (sort === 'recent') {
+    const order = state.settings.recent || [];
+    const rank = (it) => { const i = order.indexOf(it.id); return i < 0 ? order.length : i; };
+    list = list.slice().sort((a, b) => rank(a) - rank(b));
+  }
+  return list;
+}
+
+function makeRail(list) {
+  const rail = document.createElement('div'); rail.className = 'cat__rail';
+  for (const item of list) {
+    const card = document.createElement('button');
+    card.className = 'exc-card' + (item.id === state.selectedId ? ' is-selected' : '');
+    card.dataset.id = item.id;
+    const best = bestForItem(item);
+    card.innerHTML = `<div class="exc-card__title">${escapeHtml(item.title)}</div>`
+      + `<div class="exc-card__meta"><span>${item.raw ? t('{n} нот', { n: item.noteCount }) : t('каталог')}</span><span>${item.difficulty ? difficultyDots(item.difficulty) : ''}</span></div>`
+      + `<div class="exc-card__meta"><span>${best != null ? Math.round(best * 100) + '%' : ''}</span><span class="muted">${escapeHtml(item.artist || '')}</span></div>`;
+    card.addEventListener('click', () => selectItem(item, false));
+    card.addEventListener('dblclick', () => selectItem(item, true));
+    rail.appendChild(card);
+  }
+  return rail;
+}
+
+function addCategory(name, list) {
+  const sec = document.createElement('section'); sec.className = 'cat';
+  const head = document.createElement('div'); head.className = 'cat__head';
+  const title = document.createElement('span'); title.className = 'cat__title'; title.textContent = name;
+  const nav = document.createElement('div'); nav.className = 'cat__nav';
+  const prev = document.createElement('button'); prev.className = 'btn btn--icon btn--sm'; prev.textContent = '‹'; prev.setAttribute('aria-label', t('Назад в категории'));
+  const next = document.createElement('button'); next.className = 'btn btn--icon btn--sm'; next.textContent = '›'; next.setAttribute('aria-label', t('Вперёд в категории'));
+  nav.append(prev, next);
+  head.append(title, nav);
+  const rail = makeRail(list);
+  const step = () => Math.max(120, rail.firstElementChild ? rail.firstElementChild.getBoundingClientRect().width + 12 : 180);
+  prev.addEventListener('click', () => rail.scrollBy({ left: -step(), behavior: reducedMotion() ? 'auto' : 'smooth' }));
+  next.addEventListener('click', () => rail.scrollBy({ left: step(), behavior: reducedMotion() ? 'auto' : 'smooth' }));
+  sec.append(head, rail);
+  el.categories.appendChild(sec);
+}
+
 function renderCategories() {
   el.categories.innerHTML = '';
-  const groups = new Map();
-  for (const name of Object.keys(CATEGORIES)) groups.set(name, []);
-  groups.set('Свои и каталог', []);
-  for (const item of state.items) { const g = groups.get(categoryOf(item)); if (g) g.push(item); }
-
-  for (const [name, list] of groups) {
-    if (!list.length) continue;
-    const sec = document.createElement('section'); sec.className = 'cat';
-    const head = document.createElement('div'); head.className = 'cat__head';
-    const title = document.createElement('span'); title.className = 'cat__title'; title.textContent = name;
-    const nav = document.createElement('div'); nav.className = 'cat__nav';
-    const prev = document.createElement('button'); prev.className = 'btn btn--icon btn--sm'; prev.textContent = '‹'; prev.setAttribute('aria-label', 'Назад в категории');
-    const next = document.createElement('button'); next.className = 'btn btn--icon btn--sm'; next.textContent = '›'; next.setAttribute('aria-label', 'Вперёд в категории');
-    nav.append(prev, next);
-    head.append(title, nav);
-    const rail = document.createElement('div'); rail.className = 'cat__rail';
-    for (const item of list) {
-      const card = document.createElement('button');
-      card.className = 'exc-card' + (item.id === state.selectedId ? ' is-selected' : '');
-      card.dataset.id = item.id;
-      const best = bestForItem(item);
-      card.innerHTML = `<div class="exc-card__title">${escapeHtml(item.title)}</div>`
-        + `<div class="exc-card__meta"><span>${item.raw ? item.noteCount + ' нот' : 'каталог'}</span><span>${item.difficulty ? difficultyDots(item.difficulty) : ''}</span></div>`
-        + `<div class="exc-card__meta"><span>${best != null ? Math.round(best * 100) + '%' : ''}</span><span class="muted">${escapeHtml(item.artist || '')}</span></div>`;
-      card.addEventListener('click', () => selectItem(item, false));
-      card.addEventListener('dblclick', () => selectItem(item, true));
-      rail.appendChild(card);
-    }
-    const step = () => Math.max(120, rail.firstElementChild ? rail.firstElementChild.getBoundingClientRect().width + 12 : 180);
-    prev.addEventListener('click', () => rail.scrollBy({ left: -step(), behavior: reducedMotion() ? 'auto' : 'smooth' }));
-    next.addEventListener('click', () => rail.scrollBy({ left: step(), behavior: reducedMotion() ? 'auto' : 'smooth' }));
-    sec.append(head, rail);
-    el.categories.appendChild(sec);
+  const list = libraryList();
+  if (!list.length) {
+    const empty = document.createElement('div'); empty.className = 'lib-empty';
+    empty.textContent = t('Ничего не найдено — измените запрос или фильтр.');
+    el.categories.appendChild(empty);
+    return;
   }
+  if (state.lib.sort !== 'default') { addCategory(t('Результаты · {n}', { n: list.length }), list); applyDom(el.categories); return; }
+  const groups = new Map();
+  for (const c of CATEGORIES) groups.set(c.key, []);
+  groups.set('mine', []);
+  for (const item of list) { const g = groups.get(categoryOf(item)); if (g) g.push(item); }
+  for (const c of CATEGORIES) { const items = groups.get(c.key); if (items.length) addCategory(categoryName(c.key), items); }
+  const mine = groups.get('mine'); if (mine.length) addCategory(categoryName('mine'), mine);
   // выделенная карточка в поле зрения
   const sel = el.categories.querySelector('.exc-card.is-selected');
   if (sel && sel.scrollIntoView) sel.scrollIntoView({ block: 'nearest', inline: 'nearest' });
+  applyDom(el.categories);
 }
 
 async function selectItem(item, autoplay) {
@@ -333,7 +451,7 @@ async function selectItem(item, autoplay) {
       item.noteCount = (item.raw.tracks[pickDefaultTrack(item.raw)].notes || []).length;
       item.artist = item.raw.artist || item.artist;
       item.difficulty = difficultyForRaw(item.raw);
-    } catch (e) { toast('Не удалось загрузить: ' + e.message, 'err', 6000); return; }
+    } catch (e) { toast(t('Не удалось загрузить: ') + e.message, 'err', 6000); return; }
   }
   state.selectedId = item.id;
   const rec = state.settings.recent.filter((id) => id !== item.id);
@@ -361,6 +479,53 @@ async function stepSelection(delta) {
   await selectItem(state.items[idx], false);
 }
 
+// Свайп главной карточки: живое следование за пальцем и переход по порогу.
+let heroSuppressClick = false;
+function bindHeroSwipe() {
+  const card = el.heroCard;
+  const slide = el.heroSlide;
+  if (!card || !slide) return;
+  const THRESHOLD = 44;
+  let startX = 0, startY = 0, dx = 0, active = false, decided = false, horizontal = false;
+  card.addEventListener('pointerdown', (e) => {
+    if (e.pointerType === 'mouse' && e.button !== 0) return;
+    startX = e.clientX; startY = e.clientY; dx = 0;
+    active = true; decided = false; horizontal = false;
+    try { card.setPointerCapture(e.pointerId); } catch { /* noop */ }
+  });
+  card.addEventListener('pointermove', (e) => {
+    if (!active) return;
+    dx = e.clientX - startX; const dy = e.clientY - startY;
+    if (!decided) {
+      if (Math.abs(dx) < 6 && Math.abs(dy) < 6) return;
+      decided = true; horizontal = Math.abs(dx) > Math.abs(dy);
+      if (!horizontal) { active = false; return; }
+    }
+    if (reducedMotion()) return;
+    slide.style.transform = `translateX(${dx}px)`;
+    slide.style.opacity = String(Math.max(0.4, 1 - Math.abs(dx) / 360));
+  });
+  const finish = (e) => {
+    if (!active) return;
+    active = false;
+    try { card.releasePointerCapture(e.pointerId); } catch { /* noop */ }
+    const swiped = decided && horizontal && Math.abs(dx) > THRESHOLD;
+    slide.style.transform = ''; slide.style.opacity = '';
+    if (swiped) {
+      heroSuppressClick = true;
+      setTimeout(() => { heroSuppressClick = false; }, 350);
+      stepSelection(dx < 0 ? 1 : -1);
+    }
+  };
+  card.addEventListener('pointerup', finish);
+  card.addEventListener('pointercancel', finish);
+  // гасим клик по кнопкам внутри карточки, если перед ним был свайп
+  card.addEventListener('click', (e) => {
+    if (!heroSuppressClick) return;
+    e.preventDefault(); e.stopPropagation();
+  }, true);
+}
+
 // ---------------------------------------------------------------------------
 // Главная карточка
 // ---------------------------------------------------------------------------
@@ -383,7 +548,7 @@ function computeDifficulty(song) {
 }
 function renderDifficulty(d) {
   el.heroDifficulty.innerHTML = '';
-  el.heroDifficulty.setAttribute('aria-label', `Сложность ${d} из 5`);
+  el.heroDifficulty.setAttribute('aria-label', t('Сложность {d} из 5', { d }));
   for (let i = 1; i <= 5; i++) { const dot = document.createElement('i'); if (i <= d) dot.className = 'on'; el.heroDifficulty.appendChild(dot); }
 }
 function drawTabPreview(song) {
@@ -404,15 +569,38 @@ function drawTabPreview(song) {
   ctx.fillStyle = indigo;
   notes.forEach((n, i) => { const x = notes.length > 1 ? x0 + i * step : (x0 + x1) / 2; const y = top + (n.string - 1) * gap; ctx.beginPath(); ctx.arc(x, y, 4, 0, Math.PI * 2); ctx.fill(); });
   ctx.fillStyle = text2; ctx.font = '10px ui-monospace, Menlo, monospace';
-  ctx.fillText(`+ ещё ${Math.max(0, song.notes.length - notes.length)}`, w - 70, h - 3);
+  ctx.fillText(t('+ ещё {n}', { n: Math.max(0, song.notes.length - notes.length) }), w - 70, h - 3);
 }
+function renderHeroNav() {
+  const items = state.items;
+  const total = items.length;
+  const idx = items.findIndex((i) => i.id === state.selectedId);
+  el.heroCount.textContent = total ? `${(idx < 0 ? 0 : idx) + 1} / ${total}` : '—';
+  el.heroPrev.disabled = total <= 1;
+  el.heroNext.disabled = total <= 1;
+  el.heroDots.innerHTML = '';
+  if (total <= 1 || total > 24) return; // при длинном списке оставляем только счётчик
+  items.forEach((it, i) => {
+    const b = document.createElement('button');
+    b.type = 'button';
+    b.className = i === idx ? 'on' : '';
+    b.setAttribute('aria-label', t('Занятие {i} из {total}: {title}', { i: i + 1, total, title: it.title }));
+    b.setAttribute('aria-current', i === idx ? 'true' : 'false');
+    b.addEventListener('click', () => selectItem(it, false));
+    el.heroDots.appendChild(b);
+  });
+}
+
 function updateHero() {
   const song = state.song; if (!song) return;
   const item = currentItem();
-  el.heroType.textContent = item && item.type === 'song' ? 'Песня' : 'Упражнение';
+  el.heroType.textContent = item && item.type === 'song' ? t('Песня') : t('Упражнение');
   el.heroTitle.textContent = song.title;
-  const sub = song.artist && !/^упражнени/i.test(song.artist) ? song.artist : (song.trackName || '');
+  const sub = song.artist && !/^упражнени/i.test(song.artist) && !/^Method/i.test(song.artist) ? song.artist : (song.trackName || '');
   el.heroArtist.textContent = sub;
+  const tipId = item && item.raw && item.raw.id;
+  const tipText = tipId ? songTip(tipId, item.raw.tip) : '';
+  el.heroTip.textContent = tipText || '';
   el.heroBpm.textContent = String(Math.round(song.bpm));
   el.heroDur.textContent = fmtTime(song.duration);
   el.heroNotes.textContent = String(song.notes.length);
@@ -424,6 +612,24 @@ function updateHero() {
   const yt = item ? state.settings.youtube[item.id] : '';
   if (yt) { el.heroYt.href = yt; el.heroYt.classList.remove('hidden'); }
   else { el.heroYt.classList.add('hidden'); }
+  renderHeroNav();
+  renderRecent();
+}
+function renderRecent() {
+  if (!el.recentCard) return;
+  const ids = (state.settings.recent || []).slice(0, 6);
+  const items = ids.map((id) => state.items.find((i) => i.id === id)).filter(Boolean);
+  if (!items.length) { el.recentCard.classList.add('hidden'); return; }
+  el.recentCard.classList.remove('hidden');
+  el.recentList.innerHTML = '';
+  for (const it of items) {
+    const b = document.createElement('button');
+    b.className = 'chip';
+    b.textContent = it.title;
+    b.title = t('Играть: {title}', { title: it.title });
+    b.addEventListener('click', () => selectItem(it, true));
+    el.recentList.appendChild(b);
+  }
 }
 
 // ---------------------------------------------------------------------------
@@ -444,16 +650,16 @@ function computeTip() {
 function renderTip() {
   const tip = computeTip();
   if (!tip) {
-    el.tipText.innerHTML = 'Пока нет истории. Начните с упражнения <b>«Разминка: хроматика»</b> на 75% — оно разогревает все струны.';
+    el.tipText.innerHTML = t('Пока нет истории. Начните с упражнения <b>«Разминка: хроматика»</b> на 75% — оно разогревает все струны.');
     el.btnTipApply.dataset.mode = 'beginner'; return;
   }
   const p = state.profile;
   const fret = Object.entries(p.missByFret || {}).sort((a, b) => b[1] - a[1])[0];
   const str = Object.entries(p.missByString || {}).sort((a, b) => b[1] - a[1])[0];
   const parts = [];
-  if (fret) parts.push(`лад <b>${fret[0]}</b>`);
-  if (str) parts.push(`струна <b>${str[0]}</b>`);
-  el.tipText.innerHTML = `Чаще всего промахи по: ${parts.join(', ')}. Предлагаю <b>«${escapeHtml(tip.title)}»</b> на <b>${tip.speed}%</b>.`;
+  if (fret) parts.push(t('лад <b>{n}</b>', { n: fret[0] }));
+  if (str) parts.push(t('струна <b>{n}</b>', { n: str[0] }));
+  el.tipText.innerHTML = t('Чаще всего промахи по: {parts}. Предлагаю <b>«{title}»</b> на <b>{speed}%</b>.', { parts: parts.join(', '), title: escapeHtml(tip.title), speed: tip.speed });
   el.btnTipApply.dataset.mode = 'tip';
 }
 function applyTip() {
@@ -465,7 +671,7 @@ function applyTip() {
   if (item) { state.selectedId = item.id; loadRaw(raw); updateHero(); if (!el.screenLibrary.classList.contains('hidden')) renderCategories(); }
   setRate(speed / 100);
   goView('game');
-  toast(`Совет применён: ${raw.title}, ${speed}%`, 'ok');
+  toast(t('Совет применён: {title}, {speed}%', { title: raw.title, speed }), 'ok');
 }
 
 // ---------------------------------------------------------------------------
@@ -492,7 +698,7 @@ function applySongUi() {
   const song = state.song;
   el.songTitle.textContent = song.title + (song.artist ? ' — ' + song.artist : '');
   const tuning = song.tuning.map((m) => midiToName(m, false)).join(' ');
-  el.songMeta.textContent = `${song.notes.length} нот · ${fmtTime(song.duration)} · ${Math.round(song.bpm)} BPM · ${tuning}${song.trackName ? ' · ' + song.trackName : ''}`;
+  el.songMeta.textContent = `${t('{n} нот', { n: song.notes.length })} · ${fmtTime(song.duration)} · ${Math.round(song.bpm)} BPM · ${tuning}${song.trackName ? ' · ' + song.trackName : ''}`;
   el.btnPlay.disabled = false; el.btnRestart.disabled = false;
   el.progressBar.value = 0; el.timeReadout.textContent = `0:00 / ${fmtTime(song.duration)}`;
   updateSpeedUi(); updateLoopMarkers(); updateHud();
@@ -502,7 +708,7 @@ function buildTrackPicker() {
   const playable = tracks.map((t, i) => ({ t, i })).filter((x) => !x.t.percussion && (x.t.notes || []).length);
   if (playable.length <= 1) { el.trackPicker.classList.add('hidden'); el.trackSelect.innerHTML = ''; return; }
   el.trackPicker.classList.remove('hidden'); el.trackSelect.innerHTML = '';
-  for (const { t, i } of playable) { const opt = document.createElement('option'); opt.value = String(i); opt.textContent = `${t.name || 'Дорожка ' + (i + 1)} — ${(t.notes || []).length} нот`; if (i === state.trackIndex) opt.selected = true; el.trackSelect.appendChild(opt); }
+  for (const { t: trk, i } of playable) { const opt = document.createElement('option'); opt.value = String(i); opt.textContent = `${trk.name || t('Дорожка {n}', { n: i + 1 })} — ${t('{n} нот', { n: (trk.notes || []).length })}`; if (i === state.trackIndex) opt.selected = true; el.trackSelect.appendChild(opt); }
 }
 async function loadFile(file) {
   try {
@@ -514,19 +720,19 @@ async function loadFile(file) {
     if (item) { item.difficulty = difficultyForRaw(raw); state.selectedId = item.id; const rec = state.settings.recent.filter((id) => id !== item.id); rec.unshift(item.id); state.settings.recent = rec; saveSettings(); }
     loadRaw(raw);
     goView('game');
-    toast(`Открыто: ${raw.title}`, 'ok');
-  } catch (e) { console.error(e); toast('Ошибка импорта: ' + e.message, 'err', 6000); }
+    toast(t('Открыто: {title}', { title: raw.title }), 'ok');
+  } catch (e) { console.error(e); toast(t('Ошибка импорта: ') + e.message, 'err', 6000); }
 }
 async function loadCatalogUrl() {
   const url = el.catalogUrl.value.trim(); if (!url) return;
-  el.catalogStatus.textContent = 'Загрузка…';
-  try { const cat = await loadCatalogFromUrl(url); state.library.catalog = cat; buildItems(); renderCategories(); renderTip(); el.catalogStatus.textContent = `Загружено: ${cat.songs.length}`; toast('Каталог загружен', 'ok'); }
-  catch (e) { el.catalogStatus.textContent = ''; toast('Каталог: ' + e.message, 'err', 6000); }
+  el.catalogStatus.textContent = t('Загрузка…');
+  try { const cat = await loadCatalogFromUrl(url); state.library.catalog = cat; buildItems(); renderCategories(); renderTip(); el.catalogStatus.textContent = t('Загружено: {n}', { n: cat.songs.length }); toast(t('Каталог загружен'), 'ok'); }
+  catch (e) { el.catalogStatus.textContent = ''; toast(t('Каталог: ') + e.message, 'err', 6000); }
 }
 async function loadCatalogFile(file) {
-  el.catalogStatus.textContent = 'Загрузка…';
-  try { const cat = await loadCatalogFromFile(file); state.library.catalog = cat; buildItems(); renderCategories(); renderTip(); el.catalogStatus.textContent = `Загружено: ${cat.songs.length}`; toast('Каталог загружен', 'ok'); }
-  catch (e) { el.catalogStatus.textContent = ''; toast('Каталог: ' + e.message, 'err', 6000); }
+  el.catalogStatus.textContent = t('Загрузка…');
+  try { const cat = await loadCatalogFromFile(file); state.library.catalog = cat; buildItems(); renderCategories(); renderTip(); el.catalogStatus.textContent = t('Загружено: {n}', { n: cat.songs.length }); toast(t('Каталог загружен'), 'ok'); }
+  catch (e) { el.catalogStatus.textContent = ''; toast(t('Каталог: ') + e.message, 'err', 6000); }
 }
 
 // ---------------------------------------------------------------------------
@@ -535,7 +741,7 @@ async function loadCatalogFile(file) {
 function renderErrBars(container, obj, labeler) {
   const entries = Object.entries(obj || {}).sort((a, b) => b[1] - a[1]).slice(0, 5);
   container.innerHTML = '';
-  if (!entries.length) { container.innerHTML = '<div class="muted small">Пока нет данных</div>'; return; }
+  if (!entries.length) { container.innerHTML = `<div class="muted small">${t('Пока нет данных')}</div>`; return; }
   const max = entries[0][1] || 1;
   for (const [k, v] of entries) {
     const row = document.createElement('div'); row.className = 'errbar';
@@ -547,22 +753,46 @@ function renderErrBars(container, obj, labeler) {
 function renderProfile() {
   const p = state.profile;
   el.profileName.value = p.name || '';
-  el.profileStats.innerHTML = [['Практика', fmtDuration(p.practiceSec)], ['Точность', Math.round(accuracyOf(p) * 100) + '%'], ['Ноты', String(p.notesHit)], ['Серия', streak(p) + ' дн.'], ['Сессий', String(p.sessions)], ['Песен', String(Object.keys(p.songs).length)]]
+  el.profileStats.innerHTML = [[t('Практика'), fmtDuration(p.practiceSec)], [t('Точность'), Math.round(accuracyOf(p) * 100) + '%'], [t('Ноты'), String(p.notesHit)], [t('Серия'), t('{n} дн.', { n: streak(p) })], [t('Сессий'), String(p.sessions)], [t('Песен'), String(Object.keys(p.songs).length)]]
     .map(([k, v]) => `<div class="m"><b>${v}</b><span>${k}</span></div>`).join('');
-  renderErrBars(el.profileErrStrings, p.missByString, (k) => 'Струна ' + k);
+  renderErrBars(el.profileErrStrings, p.missByString, (k) => t('Струна {n}', { n: k }));
+  renderErrBars(el.profileErrFrets, p.missByFret, (k) => t('Лад {n}', { n: k }));
+  renderCalendar(el.profileCalendar, p.days);
   const rows = Object.values(p.songs).sort((a, b) => b.lastPlayed - a.lastPlayed);
-  el.profileSongs.innerHTML = rows.length ? rows.slice(0, 20).map((s) => `<div class="tr"><span>${escapeHtml(s.title)}</span><span class="v">${s.plays}×</span><span class="v">${s.bestScore}</span><span class="v">${Math.round(s.bestAccuracy * 100)}%</span></div>`).join('') : '<div class="muted small">Пока нет сыгранных песен</div>';
+  el.profileSongs.innerHTML = rows.length ? rows.slice(0, 20).map((s) => `<div class="tr"><span>${escapeHtml(s.title)}</span><span class="v">${s.plays}×</span><span class="v">${s.bestScore}</span><span class="v">${Math.round(s.bestAccuracy * 100)}%</span></div>`).join('') : `<div class="muted small">${t('Пока нет сыгранных песен')}</div>`;
+  applyDom(el.screenProfile);
+}
+function dayKeyLocal(d) { return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); }
+function renderCalendar(container, days) {
+  if (!container) return;
+  const set = new Set(days || []);
+  container.innerHTML = '';
+  const today = new Date(); today.setHours(0, 0, 0, 0);
+  const start = new Date(today);
+  start.setDate(start.getDate() - 7 * 9);
+  start.setDate(start.getDate() - ((start.getDay() + 6) % 7)); // выравнивание к понедельнику
+  const grid = document.createElement('div'); grid.className = 'cal-grid';
+  for (const d = new Date(start); d <= today; d.setDate(d.getDate() + 1)) {
+    const key = dayKeyLocal(d);
+    const cell = document.createElement('span');
+    cell.className = 'cal-cell' + (set.has(key) ? ' on' : '');
+    cell.title = key;
+    grid.appendChild(cell);
+  }
+  const legend = document.createElement('div'); legend.className = 'cal-legend';
+  legend.textContent = set.size ? t('Дней с практикой: {n}', { n: set.size }) : t('Пока нет данных');
+  container.append(grid, legend);
 }
 function flushPractice() { if (state.practiceBuffer <= 0.5) return; state.profile.practiceSec += state.practiceBuffer; state.practiceBuffer = 0; saveProfile(state.profile); if (!el.screenProfile.classList.contains('hidden')) renderProfile(); }
 function exportProfile() {
   const blob = new Blob([JSON.stringify(state.profile, null, 2)], { type: 'application/json' });
   const url = URL.createObjectURL(blob); const a = document.createElement('a');
   a.href = url; a.download = 'riff-hero-profile.json'; document.body.appendChild(a); a.click(); a.remove();
-  setTimeout(() => URL.revokeObjectURL(url), 1000); toast('Профиль выгружен', 'ok');
+  setTimeout(() => URL.revokeObjectURL(url), 1000); toast(t('Профиль выгружен'), 'ok');
 }
 async function importProfile(file) {
-  try { state.profile = normalizeProfile(JSON.parse(await file.text())); saveProfile(state.profile); renderProfile(); renderTip(); toast('Профиль загружен', 'ok'); }
-  catch (e) { toast('Профиль: ' + e.message, 'err', 6000); }
+  try { state.profile = normalizeProfile(JSON.parse(await file.text())); saveProfile(state.profile); renderProfile(); renderTip(); toast(t('Профиль загружен'), 'ok'); }
+  catch (e) { toast(t('Профиль: ') + e.message, 'err', 6000); }
 }
 
 // ---------------------------------------------------------------------------
@@ -575,8 +805,8 @@ function loopActive() {
   return true;
 }
 function currentTime() { if (!state.song) return 0; const t = state.playing ? (state.paused ? state.pauseSong : computeSongTime()) : state.startSong; return clamp(t, 0, state.song.duration); }
-function setLoopA() { if (!state.song) return; state.loopA = currentTime(); if (state.loopB != null && state.loopB <= state.loopA + 0.2) state.loopB = null; updateLoopMarkers(); toast('Точка A: ' + fmtTime(state.loopA)); }
-function setLoopB() { if (!state.song) return; const t = currentTime(); if (state.loopA == null) state.loopA = 0; if (t <= state.loopA + 0.2) { toast('Точка B должна быть позже A', 'err'); return; } state.loopB = t; updateLoopMarkers(); toast(`Зацикливание: ${fmtTime(state.loopA)} – ${fmtTime(state.loopB)}`); }
+function setLoopA() { if (!state.song) return; state.loopA = currentTime(); if (state.loopB != null && state.loopB <= state.loopA + 0.2) state.loopB = null; updateLoopMarkers(); toast(t('Точка A: {time}', { time: fmtTime(state.loopA) })); }
+function setLoopB() { if (!state.song) return; const cur = currentTime(); if (state.loopA == null) state.loopA = 0; if (cur <= state.loopA + 0.2) { toast(t('Точка B должна быть позже A'), 'err'); return; } state.loopB = cur; updateLoopMarkers(); toast(t('Зацикливание: {a} – {b}', { a: fmtTime(state.loopA), b: fmtTime(state.loopB) })); }
 function clearLoop() { state.loopA = null; state.loopB = null; updateLoopMarkers(); }
 function updateLoopMarkers() {
   const dur = (state.song && state.song.duration) || 0;
@@ -603,11 +833,26 @@ function setRate(rate) {
   if (state.playing && !state.paused) { const cur = computeSongTime(); state.rate = rate; state.startSong = cur; state.startCtx = audio.now; state.schedulePtr = firstNoteIndex(cur - 0.05); state.metroPtr = firstBeatIndex(cur - 0.05); audio.stopAll(); }
   else state.rate = rate;
 }
+function setPlayingFlag(playingNow) {
+  if (state.playingFlag === playingNow) return;
+  state.playingFlag = playingNow;
+  document.body.classList.toggle('is-playing', playingNow);
+  if (playingNow) {
+    el.tabbar.classList.add('hidden');
+    el.screenHome.classList.add('hidden');
+    el.screenLibrary.classList.add('hidden');
+    el.screenProfile.classList.add('hidden');
+  } else {
+    // Завершение/пауза: вернуть вкладку и экран, даже если остаёмся в окне игры.
+    showScreen(currentView());
+  }
+}
 function resetPlayback() {
   audio.stopAll(); releaseWakeLock(); flushPractice();
   state.playing = false; state.paused = false; state.startSong = 0; state.pauseSong = 0;
-  state.schedulePtr = 0; state.metroPtr = 0; state.detected = null; state.sessionPractice = 0;
+  state.schedulePtr = 0; state.metroPtr = 0; state.detected = null;
   if (state.song) state.game.reset();
+  setPlayingFlag(false);
   updatePlayButton(); updateHud();
 }
 function firstNoteIndex(t) { return lowerBound(state.song.notes, t); }
@@ -619,27 +864,32 @@ async function play() {
   audio.setMetroVolume(state.settings.metroVol / 100);
   if (currentView() !== 'game') goView('game');
   if (state.playing && !state.paused) return;
-  if (state.playing && state.paused) { state.paused = false; state.startCtx = audio.now; state.startSong = state.pauseSong; state.schedulePtr = firstNoteIndex(state.startSong - 0.05); state.metroPtr = firstBeatIndex(state.startSong - 0.05); }
+  if (state.playing && state.paused) { state.paused = false; state.startCtx = audio.now; state.startSong = state.pauseSong; state.schedulePtr = firstNoteIndex(state.startSong - 0.05); state.metroPtr = firstBeatIndex(state.startSong - 0.05); setPlayingFlag(true); }
   else startFrom(0);
   updatePlayButton();
-  if (!audio.micReady && !state.settings.autoplay) toast('Включите микрофон или автоигру, чтобы ноты засчитывались');
+  if (!audio.micReady && !state.settings.autoplay) toast(t('Включите микрофон или автоигру, чтобы ноты засчитывались'));
 }
 function startFrom(pos, noCountIn) {
   audio.stopAll(); flushPractice();
   state.playing = true; state.paused = false;
   state.startSong = pos; state.pauseSong = pos;
   state.schedulePtr = firstNoteIndex(pos - 0.05); state.metroPtr = firstBeatIndex(pos - 0.05);
-  state.sessionPractice = pos > 0 ? state.sessionPractice : 0;
   state.game.rewind(pos);
   const beat = 60 / (state.song.bpm || 120); let lead = 0;
   if (state.settings.countIn && pos === 0 && !noCountIn) { lead = (4 * beat) / state.rate; const t0 = audio.now + 0.08; for (let k = 0; k < 4; k++) audio.click(t0 + (k * beat) / state.rate, k === 0); }
   state.startCtx = audio.now + lead;
   requestWakeLock();
+  setPlayingFlag(true);
   updatePlayButton();
 }
-function pause() { if (!state.playing || state.paused) return; state.pauseSong = computeSongTime(); state.paused = true; audio.stopAll(); flushPractice(); releaseWakeLock(); updatePlayButton(); }
+function pause() { if (!state.playing || state.paused) return; state.pauseSong = computeSongTime(); state.paused = true; audio.stopAll(); flushPractice(); releaseWakeLock(); setPlayingFlag(false); updatePlayButton(); }
 function togglePlay() { if (!state.song) return; if (!state.playing || state.paused) play(); else pause(); }
 function restart() { if (!state.song) return; if (!el.resultsOverlay.classList.contains('hidden')) goBack(); clearLoop(); state.game.reset(); startFrom(0); }
+function exitGame() {
+  if (!state.song) { goView('library'); return; }
+  if (state.playing || state.paused) pause();
+  goView('library');
+}
 function seekBy(delta) { if (!state.song) return; const pos = clamp(currentTime() + delta, 0, state.song.duration); if (state.playing && !state.paused) startFrom(pos, true); else { state.startSong = pos; state.pauseSong = pos; state.game.rewind(pos); updateHud(pos); } }
 function scheduleAhead() {
   const song = state.song; const songTime = computeSongTime(); const horizon = songTime + 1.0 * state.rate; const guideVol = state.settings.guideVol / 100;
@@ -663,16 +913,11 @@ function frameStep() {
   const realDt = state.lastFrame ? Math.min(1, (nowMs - state.lastFrame) / 1000) : 0;
   state.lastFrame = nowMs;
   const playingNow = state.playing && !state.paused;
-  if (state.playingFlag !== playingNow) {
-    state.playingFlag = playingNow;
-    document.body.classList.toggle('is-playing', playingNow);
-    if (playingNow) { el.tabbar.classList.add('hidden'); el.screenHome.classList.add('hidden'); el.screenLibrary.classList.add('hidden'); el.screenProfile.classList.add('hidden'); }
-    else if (currentView() !== 'game') { showScreen(currentView()); }
-  }
+  setPlayingFlag(playingNow);
   let songTime = state.playing ? (state.paused ? state.pauseSong : computeSongTime()) : state.startSong;
   if (state.playing && !state.paused && loopActive() && songTime >= state.loopB) { startFrom(state.loopA, true); songTime = state.loopA; }
   if (state.playing && !state.paused) {
-    state.sessionPractice += realDt; state.practiceBuffer += realDt;
+    state.practiceBuffer += realDt;
     if (state.practiceBuffer > 5) flushPractice();
     if (songTime >= -0.001) scheduleAhead();
     state.game.update(songTime - state.latencySec, state.detected);
@@ -680,7 +925,7 @@ function frameStep() {
   }
   let countIn = null;
   if (state.playing && !state.paused && songTime < -0.001) { const beatLen = 60 / (state.song.bpm || 120); countIn = Math.max(1, Math.min(4, Math.ceil((-songTime) / beatLen))); }
-  renderer.render({ song: state.song, game: state.game, songTime, pxPerSec: 230, detected: state.detected, showFret: state.settings.showFret, showFinger: state.settings.showFinger, orientation: state.settings.orientation, countIn });
+  renderer.render({ song: state.song, game: state.game, songTime, pxPerSec: 230, detected: state.detected, showFret: state.settings.showFret, showFinger: state.settings.showFinger, orientation: state.settings.orientation, countIn, theme: document.body.dataset.theme, judgeText: { perfect: t('ИДЕАЛЬНО'), good: t('ХОРОШО'), ok: t('ОК'), miss: t('ПРОМАХ') } });
   updateHud(songTime); updateMicStatus(); updateWizardLive();
 }
 function updateHud(songTime) {
@@ -688,25 +933,34 @@ function updateHud(songTime) {
   const g = state.game;
   el.score.textContent = String(g.score); el.combo.textContent = String(g.combo);
   el.accuracy.textContent = Math.round(g.accuracy * 100) + '%';
-  const dur = state.song.duration || 1; const t = songTime == null ? 0 : songTime;
-  if (!state.seeking) { el.progressBar.value = Math.max(0, Math.min(1000, Math.round((t / dur) * 1000))); el.timeReadout.textContent = `${fmtTime(t)} / ${fmtTime(dur)}`; }
+  const dur = state.song.duration || 1; const cur = songTime == null ? 0 : songTime;
+  if (!state.seeking) { el.progressBar.value = Math.max(0, Math.min(1000, Math.round((cur / dur) * 1000))); el.timeReadout.textContent = `${fmtTime(cur)} / ${fmtTime(dur)}`; }
   const d = state.detected;
   if (d && Number.isFinite(d.midi) && d.clarity > 0.45) { const cents = Math.round((d.midi - Math.round(d.midi)) * 100); el.pitchNote.firstChild.textContent = midiToName(d.midi) + ' '; el.pitchCents.textContent = (cents > 0 ? '+' : '') + cents + '¢'; }
   else if (audio.micReady) { el.pitchNote.firstChild.textContent = '— '; el.pitchCents.textContent = ''; }
-  el.feedback.dataset.state = ''; let fb = '';
+  let fb = ''; let fbState = '';
   if (audio.micReady && state.song) {
-    const jt = t - state.latencySec; const ng = nearestGroup(jt);
+    const jt = cur - state.latencySec; const ng = nearestGroup(jt);
     if (ng && Math.abs(ng.t - jt) <= 0.7) {
-      fb = 'Ждём: ' + ng.notes.map((n) => `${midiToName(n.midi)} (лад ${n.fret}${n.finger > 0 ? ', палец ' + n.finger : ''})`).join(' · ');
+      const list = ng.notes.map((n) => t(n.finger > 0 ? '{note} (лад {fret}, палец {finger})' : '{note} (лад {fret})', { note: midiToName(n.midi), fret: n.fret, finger: n.finger }));
+      fb = t('Ждём: {list}', { list: list.join(' · ') });
       if (d && Number.isFinite(d.midi) && d.clarity > 0.45) {
         const cents = Math.round((d.midi - Math.round(d.midi)) * 100);
         const ok = (d.heard && ng.notes.some((n) => d.heard.has(Math.round(n.midi)))) || ng.notes.some((n) => Math.abs(n.midi - d.midi) < 0.7);
-        fb += ` · слышу: ${midiToName(d.midi)} ${(cents > 0 ? '+' : '') + cents}¢` + (ok ? '' : ' — не та нота');
-        el.feedback.dataset.state = ok ? 'ok' : 'warn';
-      } else fb += ' · тишина';
+        fb += t(' · слышу: {note} {cents}', { note: midiToName(d.midi), cents: (cents > 0 ? '+' : '') + cents + '¢' }) + (ok ? '' : t(' — не та нота'));
+        fbState = ok ? 'ok' : 'warn';
+      } else fb += t(' · тишина');
     }
   }
-  el.feedback.textContent = fb;
+  // #feedback — live-region: обновляем не чаще ~4 раз в секунду, чтобы не «тарахтеть»
+  {
+    const nowMs = performance.now();
+    if (fb !== state.fbLastText && (fb === '' || nowMs - (state.fbLastAt || 0) > 250)) {
+      el.feedback.textContent = fb;
+      state.fbLastText = fb; state.fbLastAt = nowMs;
+    }
+    if (el.feedback.dataset.state !== fbState) el.feedback.dataset.state = fbState;
+  }
   updateLoopMarkers();
 }
 function nearestGroup(now) {
@@ -717,60 +971,106 @@ function nearestGroup(now) {
 }
 function updateMicStatus() {
   const d = state.detected; const rms = d && Number.isFinite(d.rms) ? d.rms : 0; const gate = pitch.rmsGate || 0.006;
-  let stateName = 'off', text = 'Микрофон выключен';
-  if (audio.micReady) { if (rms >= gate * 2) { stateName = 'signal'; text = 'Слышу сигнал'; } else { stateName = 'ready'; text = 'Микрофон готов'; } }
-  if (el.micStatus.dataset.state !== stateName) { el.micStatus.dataset.state = stateName; el.micText.textContent = text; el.micStatus.setAttribute('aria-label', text + '. ' + (audio.micReady ? 'Выключить микрофон' : 'Включить микрофон')); }
+  let stateName = 'off', text = t('Микрофон выключен');
+  if (audio.micReady) { if (rms >= gate * 2) { stateName = 'signal'; text = t('Слышу сигнал'); } else { stateName = 'ready'; text = t('Микрофон готов'); } }
+  if (el.micStatus.dataset.state !== stateName) { el.micStatus.dataset.state = stateName; el.micText.textContent = text; el.micStatus.setAttribute('aria-label', text + '. ' + (audio.micReady ? t('Выключить микрофон') : t('Включить микрофон'))); }
   el.micLevelBar.style.width = clamp((rms / (gate * 8)) * 100, 0, 100) + '%';
-  if (state.wizardActive && state.wizardStep === 2) { el.wizLevelBar.style.width = clamp((rms / (gate * 8)) * 100, 0, 100) + '%'; el.wizLevelHint.textContent = rms >= gate * 2 ? 'Сигнал есть' : (rms >= gate ? 'Слабый сигнал' : 'Тишина'); }
-  if (state.wizardActive && state.wizardStep === 3) { if (d && Number.isFinite(d.midi) && d.clarity > 0.5) el.wizTuneNote.textContent = midiToName(d.midi); else el.wizTuneNote.textContent = '—'; }
+  if (state.wizardActive && state.wizardStep === 2) { el.wizLevelBar.style.width = clamp((rms / (gate * 8)) * 100, 0, 100) + '%'; el.wizLevelHint.textContent = rms >= gate * 2 ? t('Сигнал есть') : (rms >= gate ? t('Слабый сигнал') : t('Тишина')); }
+  if (state.wizardActive && state.wizardStep === 3) {
+    if (d && Number.isFinite(d.midi) && d.clarity > 0.5) {
+      el.wizTuneNote.textContent = midiToName(d.midi);
+      const cents = Math.round((d.midi - Math.round(d.midi)) * 100);
+      const inTune = Math.abs(cents) <= 8;
+      el.wizTuneHint.dataset.state = inTune ? 'ok' : 'warn';
+      el.wizTuneHint.textContent = t('{cents}¢ · {word}', { cents: (cents > 0 ? '+' : '') + cents, word: inTune ? t('в строю') : (cents > 0 ? t('выше') : t('ниже')) });
+    } else {
+      el.wizTuneNote.textContent = '—';
+      el.wizTuneHint.dataset.state = '';
+      el.wizTuneHint.textContent = audio.micReady ? t('Сыграйте одну струну') : '';
+    }
+  }
 }
 function onFinish() {
   if (!state.playing) return;
-  const t = computeSongTime();
+  const endT = computeSongTime();
   state.playing = false; state.paused = false;
-  state.startSong = Math.max(0, Math.min(t, state.song.duration)); state.pauseSong = state.startSong;
+  setPlayingFlag(false);
+  state.startSong = Math.max(0, Math.min(endT, state.song.duration)); state.pauseSong = state.startSong;
   audio.stopAll(); releaseWakeLock(); flushPractice();
   const g = state.game; const song = state.song;
-  const key = `${song.title}|${song.artist}|${song.trackName}`.toLowerCase();
-  state.lastErrors = { byString: { ...g.missByString }, byFret: { ...g.missByFret } };
+  const key = song.id ? 'b:' + song.id : `${song.title}|${song.artist}|${song.trackName}`.toLowerCase();
+  const prevEntry = state.profile.songs[key];
+  const prevBest = prevEntry ? prevEntry.bestAccuracy : null;
   recordSession(state.profile, { key, title: song.title + (song.trackName ? ' · ' + song.trackName : ''), score: g.score, accuracy: g.accuracy, maxCombo: g.maxCombo, hits: g.hits, misses: g.misses, missByString: g.missByString, missByFret: g.missByFret });
-  saveProfile(state.profile); updatePlayButton(); showResults(); renderTip();
+  saveProfile(state.profile); updatePlayButton(); showResults(prevBest); renderTip();
   if (currentView() === 'game') showScreen('game');
 }
-function showResults() {
+function showResults(prevBest) {
   const g = state.game; const acc = Math.round(g.accuracy * 100);
+  state.lastPrevBest = prevBest == null ? null : prevBest;
   const grade = acc >= 98 ? 'S' : acc >= 92 ? 'A' : acc >= 82 ? 'B' : acc >= 70 ? 'C' : acc >= 55 ? 'D' : 'E';
-  el.resultsTitle.textContent = 'Результат — ' + state.song.title;
-  el.resultGrid.innerHTML = [['Оценка', grade], ['Точность', acc + '%'], ['Промахи', String(g.misses)], ['Серия', String(g.maxCombo)], ['Очки', String(g.score)], ['Попадания', String(g.hits)]].map(([k, v]) => `<div class="m"><b>${v}</b><span>${k}</span></div>`).join('');
-  const byString = Object.entries(g.missByString).sort((a, b) => b[1] - a[1]).slice(0, 6).map(([k, v]) => `струна ${k}×${v}`).join(' · ');
-  const byFret = Object.entries(g.missByFret).sort((a, b) => b[1] - a[1]).slice(0, 6).map(([k, v]) => `лад ${k}×${v}`).join(' · ');
+  el.resultsTitle.textContent = t('Результат — {title}', { title: state.song.title });
+  el.resultGrid.innerHTML = [[t('Оценка'), grade], [t('Точность'), acc + '%'], [t('Промахи'), String(g.misses)], [t('Серия'), String(g.maxCombo)], [t('Очки'), String(g.score)], [t('Попадания'), String(g.hits)]].map(([k, v]) => `<div class="m"><b>${v}</b><span>${k}</span></div>`).join('');
+  if (prevBest == null) el.resultDelta.textContent = t('Первый результат по этому упражнению');
+  else {
+    const prev = Math.round(prevBest * 100);
+    if (acc > prev) el.resultDelta.textContent = t('Новый рекорд! Раньше было {prev}%', { prev });
+    else if (acc === prev) el.resultDelta.textContent = t('Повтор лучшего результата · {prev}%', { prev });
+    else el.resultDelta.textContent = t('Лучший результат: {prev}%', { prev });
+  }
+  const byString = Object.entries(g.missByString).sort((a, b) => b[1] - a[1]).slice(0, 6).map(([k, v]) => t('струна {k}×{v}', { k, v })).join(' · ');
+  const byFret = Object.entries(g.missByFret).sort((a, b) => b[1] - a[1]).slice(0, 6).map(([k, v]) => t('лад {k}×{v}', { k, v })).join(' · ');
   const parts = [byString, byFret].filter(Boolean);
-  el.resultErrors.textContent = parts.length ? 'Ошибки: ' + parts.join(' · ') : 'Без ошибок';
+  el.resultErrors.textContent = parts.length ? t('Ошибки: {list}', { list: parts.join(' · ') }) : t('Без ошибок');
   el.btnPracticeWeak.disabled = !(g.misses > 0 && parts.length > 0);
+  el.btnPracticeWeak.textContent = t('Отработать слабое место');
+  // чипы ошибок: нажатие зацикливает проблемное место на 75%
+  el.resultErrorChips.innerHTML = '';
+  const chips = [];
+  Object.entries(g.missByString || {}).sort((a, b) => b[1] - a[1]).slice(0, 4).forEach(([k, v]) => chips.push({ kind: 'string', val: k, v }));
+  Object.entries(g.missByFret || {}).sort((a, b) => b[1] - a[1]).slice(0, 4).forEach(([k, v]) => chips.push({ kind: 'fret', val: k, v }));
+  for (const c of chips) {
+    const b = document.createElement('button');
+    b.className = 'chip';
+    const label = t(c.kind === 'string' ? 'струна {k}' : 'лад {k}', { k: c.val });
+    b.textContent = label + ' ×' + c.v;
+    b.addEventListener('click', () => startLoopAtNote(findNoteMissKind(c.kind, c.val), label));
+    el.resultErrorChips.appendChild(b);
+  }
+  applyDom(el.resultsOverlay);
   openModal('results');
+}
+function startLoopAtNote(note, label) {
+  if (!note) return;
+  const a = clamp(note.t - 1.5, 0, state.song.duration);
+  const b = clamp(note.t + 3.0, 0, state.song.duration);
+  state.loopA = a; state.loopB = b; setRate(0.75);
+  if (!el.resultsOverlay.classList.contains('hidden')) goBack();
+  startFrom(a, true); updateLoopMarkers();
+  toast(t('Отработка: {label} · 75%', { label }), 'ok', 4000);
+}
+function findNoteMissKind(kind, val) {
+  return state.song.notes.find((n) => (kind === 'string' ? n.string === Number(val) : n.fret === Number(val)));
 }
 function practiceWeak() {
   const g = state.game;
   const fretEntry = Object.entries(g.missByFret || {}).sort((a, b) => b[1] - a[1])[0];
   const strEntry = Object.entries(g.missByString || {}).sort((a, b) => b[1] - a[1])[0];
-  const targetFret = fretEntry ? Number(fretEntry[0]) : null; const targetStr = strEntry ? Number(strEntry[0]) : null;
+  const targetFret = fretEntry ? Number(fretEntry[0]) : null;
+  const targetStr = strEntry ? Number(strEntry[0]) : null;
   let note = state.song.notes.find((n) => (targetFret != null && n.fret === targetFret) || (targetStr != null && n.string === targetStr));
   if (!note) note = state.song.notes[0];
-  const a = clamp(note.t - 1.5, 0, state.song.duration); const b = clamp(note.t + 3.0, 0, state.song.duration);
-  state.loopA = a; state.loopB = b; setRate(0.75);
-  if (!el.resultsOverlay.classList.contains('hidden')) goBack();
-  startFrom(a, true); updateLoopMarkers();
-  toast(`Отработка: лад ${targetFret != null ? targetFret : '—'}, струна ${targetStr != null ? targetStr : '—'} · 75%`, 'ok', 5000);
+  startLoopAtNote(note, t('лад {fret}, струна {string}', { fret: targetFret != null ? targetFret : '—', string: targetStr != null ? targetStr : '—' }));
 }
-function updatePlayButton() { el.btnPlay.textContent = (!state.playing || state.paused) ? 'Играть' : 'Пауза'; }
+function updatePlayButton() { el.btnPlay.textContent = (!state.playing || state.paused) ? t('Играть') : t('Пауза'); }
 
 // ---------------------------------------------------------------------------
 // Микрофон и устройства
 // ---------------------------------------------------------------------------
 async function toggleMic() {
-  if (audio.micReady) { audio.disableMic(); el.micStatus.dataset.state = 'off'; el.micText.textContent = 'Микрофон выключен'; el.micLevelBar.style.width = '0%'; el.pitchNote.firstChild.textContent = '— '; el.pitchCents.textContent = ''; toast('Микрофон выключен'); return true; }
-  try { await audio.enableMic(state.settings.micDeviceId || undefined); pitch.setSampleRate(audio.ctx.sampleRate); el.micStatus.dataset.state = 'ready'; el.micText.textContent = 'Микрофон готов'; toast('Микрофон включён', 'ok'); refreshDevices(); return true; }
-  catch (e) { el.micStatus.dataset.state = 'denied'; el.micText.textContent = 'Нет доступа'; toast('Микрофон недоступен: ' + e.message, 'err', 6000); return false; }
+  if (audio.micReady) { audio.disableMic(); el.micStatus.dataset.state = 'off'; el.micText.textContent = t('Микрофон выключен'); el.micLevelBar.style.width = '0%'; el.pitchNote.firstChild.textContent = '— '; el.pitchCents.textContent = ''; toast(t('Микрофон выключен')); return true; }
+  try { await audio.enableMic(state.settings.micDeviceId || undefined); pitch.setSampleRate(audio.ctx.sampleRate); el.micStatus.dataset.state = 'ready'; el.micText.textContent = t('Микрофон готов'); toast(t('Микрофон включён'), 'ok'); refreshDevices(); return true; }
+  catch (e) { el.micStatus.dataset.state = 'denied'; el.micText.textContent = t('Нет доступа'); toast(t('Микрофон недоступен: ') + e.message, 'err', 6000); return false; }
 }
 function fillSelect(sel, items, defaultLabel, value) {
   sel.innerHTML = ''; const def = document.createElement('option'); def.value = ''; def.textContent = defaultLabel; sel.appendChild(def);
@@ -781,10 +1081,11 @@ async function refreshDevices() {
   if (!el.micSelect) return;
   let info = { inputs: [], outputs: [], canSelectOutput: false };
   try { info = await audio.listDevices(); } catch { /* noop */ }
-  fillSelect(el.micSelect, info.inputs, 'Микрофон по умолчанию', state.settings.micDeviceId);
-  if (info.canSelectOutput) { fillSelect(el.outputSelect, info.outputs, 'Вывод по умолчанию', state.settings.outputDeviceId); el.outputSelect.disabled = false; }
-  else { el.outputSelect.innerHTML = '<option value="">Не поддерживается браузером</option>'; el.outputSelect.disabled = true; }
-  el.deviceHint.textContent = !audio.micReady ? 'Включите микрофон, чтобы увидеть названия устройств.' : '';
+  fillSelect(el.micSelect, info.inputs, t('Микрофон по умолчанию'), state.settings.micDeviceId);
+  if (el.wizMicSelect) fillSelect(el.wizMicSelect, info.inputs, t('Микрофон по умолчанию'), state.settings.micDeviceId);
+  if (info.canSelectOutput) { fillSelect(el.outputSelect, info.outputs, t('Вывод по умолчанию'), state.settings.outputDeviceId); el.outputSelect.disabled = false; }
+  else { el.outputSelect.innerHTML = `<option value="">${t('Не поддерживается браузером')}</option>`; el.outputSelect.disabled = true; }
+  el.deviceHint.textContent = !audio.micReady ? t('Включите микрофон, чтобы увидеть названия устройств.') : '';
 }
 
 // ---------------------------------------------------------------------------
@@ -792,7 +1093,7 @@ async function refreshDevices() {
 // ---------------------------------------------------------------------------
 async function measureLatency() {
   await audio.ensure();
-  if (!audio.micReady) throw new Error('сначала включите микрофон');
+  if (!audio.micReady) throw new Error(t('сначала включите микрофон'));
   const prevGain = audio.metro.gain.value; audio.metro.gain.value = 0.85;
   try {
     const t0 = audio.now + 0.4; const gap = 0.7, count = 3;
@@ -801,7 +1102,7 @@ async function measureLatency() {
     while (audio.now < endT) { const data = audio.getTimeData(); if (data) samples.push({ t: audio.now, rms: rmsOf(data) }); await sleep(8); }
     const offsets = [];
     for (let k = 0; k < count; k++) { const exp = t0 + k * gap; let best = null; for (const s of samples) if (s.t >= exp - 0.02 && s.t <= exp + 0.5) if (!best || s.rms > best.rms) best = s; if (best && best.rms > 0.02) offsets.push(best.t - exp); }
-    if (!offsets.length) throw new Error('клики не слышны — проверьте звук и микрофон');
+    if (!offsets.length) throw new Error(t('клики не слышны — проверьте звук и микрофон'));
     offsets.sort((a, b) => a - b);
     const median = offsets[Math.floor(offsets.length / 2)]; const mean = offsets.reduce((a, b) => a + b, 0) / offsets.length;
     const spread = Math.sqrt(offsets.reduce((a, b) => a + (b - mean) * (b - mean), 0) / offsets.length);
@@ -812,13 +1113,13 @@ async function autoCalibrateLatency() { const r = await measureLatency(); return
 async function verifyLatency() {
   const r = await measureLatency(); renderLatencyVerify(r);
   state.settings.latency = r.median; state.latencySec = r.median / 1000; saveSettings();
-  el.latency.value = String(r.median); el.latencyVal.textContent = r.median + ' мс'; return r;
+  el.latency.value = String(r.median); el.latencyVal.textContent = t('{n} мс', { n: r.median }); return r;
 }
 function renderLatencyVerify(r) {
   const maxAbs = Math.max(1, ...r.offsets.map((o) => Math.abs(o)));
-  const bars = r.offsets.map((o) => `<span class="verify__bar${o < 0 ? ' neg' : ''}" style="height:${Math.max(8, Math.round((Math.abs(o) / maxAbs) * 40))}px" title="${o} мс"></span>`).join('');
-  const verdict = r.spread <= 15 ? 'стабильно' : r.spread <= 30 ? 'средне' : 'нестабильно';
-  el.latencyVerify.innerHTML = `<div class="verify__bars">${bars}</div><div class="verify__summary">Клики: ${r.offsets.join(', ')} мс · медиана ${r.median} мс · разброс ±${r.spread} мс (${verdict})</div>`;
+  const bars = r.offsets.map((o) => `<span class="verify__bar${o < 0 ? ' neg' : ''}" style="height:${Math.max(8, Math.round((Math.abs(o) / maxAbs) * 40))}px" title="${t('{n} мс', { n: o })}"></span>`).join('');
+  const verdict = t(r.spread <= 15 ? 'стабильно' : r.spread <= 30 ? 'средне' : 'нестабильно');
+  el.latencyVerify.innerHTML = `<div class="verify__bars">${bars}</div><div class="verify__summary">${t('Клики: {clicks} мс · медиана {median} мс · разброс ±{spread} мс ({verdict})', { clicks: r.offsets.join(', '), median: r.median, spread: r.spread, verdict })}</div>`;
 }
 
 // ---------------------------------------------------------------------------
@@ -854,8 +1155,8 @@ function renderWizard() {
   const s = state.wizardStep;
   el.wizPane1.classList.toggle('hidden', s !== 1); el.wizPane2.classList.toggle('hidden', s !== 2); el.wizPane3.classList.toggle('hidden', s !== 3);
   document.querySelectorAll('#wizardOverlay .steps i').forEach((d, i) => d.classList.toggle('on', i < s));
-  el.wizPrev.disabled = s === 1; el.wizNext.textContent = s === 3 ? 'Готово' : 'Далее';
-  el.wizMicState.textContent = audio.micReady ? 'Доступ есть' : '';
+  el.wizPrev.disabled = s === 1; el.wizNext.textContent = s === 3 ? t('Готово') : t('Далее');
+  el.wizMicState.textContent = audio.micReady ? t('Доступ есть') : '';
 }
 function openWizard() { state.wizardActive = true; state.wizardStep = 1; renderWizard(); el.wizCalState.textContent = ''; openModal('wizard'); }
 function finishWizard() { state.wizardActive = false; state.settings.onboarded = true; saveSettings(); goView('library'); }
@@ -874,30 +1175,33 @@ function youtubeId(url) {
 }
 async function resolveYoutube(url) {
   let title = '';
-  try { const res = await fetch('https://noembed.com/embed?url=' + encodeURIComponent(url)); if (res.ok) { const j = await res.json(); title = (j && j.title) || ''; } } catch { /* noembed может быть недоступен */ }
+  const ctrl = new AbortController();
+  const timer = setTimeout(() => ctrl.abort(), 6000);
+  try {
+    const res = await fetch('https://noembed.com/embed?url=' + encodeURIComponent(url), { signal: ctrl.signal });
+    if (res.ok) { const j = await res.json(); title = (j && j.title) || ''; }
+  } catch { /* noembed недоступен или таймаут */ } finally { clearTimeout(timer); }
   return title;
 }
 function chordsSearchUrl(q) { return 'https://www.google.com/search?q=' + encodeURIComponent(q + ' аккорды'); }
 async function doYoutubeResolve(inputEl) {
   const url = (inputEl.value || '').trim();
-  if (!youtubeId(url)) { el.ytPreview.textContent = 'Не похоже на ссылку YouTube.'; return; }
-  el.ytPreview.textContent = 'Определяю название…';
+  if (!youtubeId(url)) { el.ytPreview.textContent = t('Не похоже на ссылку YouTube.'); return; }
+  el.ytPreview.textContent = t('Определяю название…');
   const title = await resolveYoutube(url);
   el.ytPreview.dataset.title = title || '';
-  el.ytPreview.innerHTML = title ? `Найдено: <b>${escapeHtml(title)}</b>` : 'Название определить не удалось — откроем поиск по ссылке.';
+  el.ytPreview.innerHTML = title ? `${t('Найдено: {title}', { title: `<b>${escapeHtml(title)}</b>` })}` : t('Название определить не удалось — откроем поиск по ссылке.');
   el.ytOpenChords.href = chordsSearchUrl(title || url); el.ytOpenChords.hidden = false;
   el.ytOpenVideo.href = url; el.ytOpenVideo.hidden = false;
   el.btnYtAttach.hidden = false; el.btnYtAttach.dataset.url = url;
-  el.ytStatus.textContent = '';
-  // подсказать аккорды, если название похоже на известную прогрессию
-  if (!el.ytChords.value) el.ytChords.value = 'Am F C G';
+  el.ytStatus.textContent = t('Аккорды подберите сами и введите ниже — приложение соберёт из них упражнение.');
   return { url, title };
 }
 function attachYoutube(url) {
   const item = currentItem();
-  if (!item) { toast('Сначала выберите занятие', 'err'); return; }
+  if (!item) { toast(t('Сначала выберите занятие'), 'err'); return; }
   state.settings.youtube[item.id] = url; saveSettings(); updateHero();
-  toast('Ссылка прикреплена к «' + item.title + '»', 'ok'); goBack();
+  toast(t('Ссылка прикреплена к «{title}»', { title: item.title }), 'ok'); goBack();
 }
 
 // ---------- Аккорды: справочник форм и генерация упражнения ----------
@@ -933,12 +1237,12 @@ function makeChordExercise(title, chordNames) {
       beat += 1;
     }
   }
-  return { title, artist: 'По ссылке', bpm, tuning: ['E2', 'A2', 'D3', 'G3', 'B3', 'E4'], timeSignature: [4, 4], notes };
+  return { title, artist: t('По ссылке'), bpm, tuning: ['E2', 'A2', 'D3', 'G3', 'B3', 'E4'], timeSignature: [4, 4], notes };
 }
 function createExerciseFromChords() {
   const names = (el.ytChords.value || '').split(/[\s,|/]+/).map((s) => normalizeChord(s)).filter(Boolean);
-  if (!names.length) { el.ytCreateStatus.textContent = 'Введите аккорды, например: Am F C G'; return; }
-  const title = (el.ytPreview.dataset.title || '').trim() || 'Упражнение по песне';
+  if (!names.length) { el.ytCreateStatus.textContent = t('Введите аккорды, например: Am F C G'); return; }
+  const title = (el.ytPreview.dataset.title || '').trim() || t('Упражнение по песне');
   const raw = parseNative(makeChordExercise(title, names));
   state.library.builtin.unshift(raw);
   buildItems();
@@ -949,8 +1253,8 @@ function createExerciseFromChords() {
     if (url) { state.settings.youtube[item.id] = url; saveSettings(); }
     state.selectedId = item.id; loadRaw(raw);
   }
-  el.ytCreateStatus.textContent = 'Готово: ' + names.join(' – ');
-  toast('Упражнение создано: ' + title, 'ok');
+  el.ytCreateStatus.textContent = t('Готово: {list}', { list: names.join(' – ') });
+  toast(t('Упражнение создано: {title}', { title }), 'ok');
   goView('library');
 }
 
@@ -1005,17 +1309,17 @@ function diagramSVG(notes) {
 }
 function renderViewer(mode) {
   const song = state.song;
-  if (!song) { el.viewBody.innerHTML = '<p class="muted">Нет выбранной песни.</p>'; return; }
+  if (!song) { el.viewBody.innerHTML = `<p class="muted">${t('Нет выбранной песни.')}</p>`; return; }
   if (mode === 'notes') {
-    let html = '<div class="note-table"><div class="tr head"><span>#</span><span>Время</span><span>Стр.</span><span>Лад</span><span>Палец</span><span>Нота</span></div>';
+    let html = `<div class="note-table"><div class="tr head"><span>#</span><span>${t('Время')}</span><span>${t('Стр.')}</span><span>${t('Лад')}</span><span>${t('Палец')}</span><span>${t('Нота')}</span></div>`;
     const list = song.notes.slice(0, 500);
     html += list.map((n, i) => `<div class="tr"><span>${i + 1}</span><span>${fmtTime(n.t)}</span><span>${n.string}</span><span>${n.fret}</span><span>${n.finger > 0 ? n.finger : '—'}</span><span>${midiToName(n.midi)}</span></div>`).join('');
-    html += `</div><p class="muted small">${song.notes.length > list.length ? 'Показаны первые ' + list.length + ' из ' + song.notes.length : 'Всего нот: ' + song.notes.length}</p>`;
+    html += `</div><p class="muted small">${song.notes.length > list.length ? t('Показаны первые {shown} из {total}', { shown: list.length, total: song.notes.length }) : t('Всего нот: {n}', { n: song.notes.length })}</p>`;
     el.viewBody.innerHTML = html;
     return;
   }
   const groups = songGroups(song).filter((g) => g.notes.length >= 2);
-  if (!groups.length) { el.viewBody.innerHTML = '<p class="muted">В этом упражнении нет аккордов — откройте вкладку «Ноты» или играйте по трассе.</p>'; return; }
+  if (!groups.length) { el.viewBody.innerHTML = `<p class="muted">${t('В этом упражнении нет аккордов — откройте вкладку «Ноты» или играйте по трассе.')}</p>`; return; }
   const seen = new Map();
   for (const g of groups) { const key = g.notes.map((n) => n.string + ':' + n.fret).sort().join(','); if (!seen.has(key)) seen.set(key, g); }
   const names = [...seen.values()].map((g) => chordName(g.notes.map((n) => n.midi)));
@@ -1037,6 +1341,7 @@ function openViewer(mode = 'chords') {
 function bindEvents() {
   el.btnPlay.addEventListener('click', togglePlay);
   el.btnRestart.addEventListener('click', restart);
+  el.btnExit.addEventListener('click', exitGame);
   el.btnLoopA.addEventListener('click', setLoopA);
   el.btnLoopB.addEventListener('click', setLoopB);
   el.btnLoopClear.addEventListener('click', clearLoop);
@@ -1049,6 +1354,9 @@ function bindEvents() {
 
   for (const b of el.tabbar.querySelectorAll('.tab')) b.addEventListener('click', () => goView(b.dataset.view));
   document.querySelector('.brand').addEventListener('click', () => goView('home'));
+  el.heroPrev.addEventListener('click', () => stepSelection(-1));
+  el.heroNext.addEventListener('click', () => stepSelection(1));
+  bindHeroSwipe();
 
   el.btnOrient.addEventListener('click', toggleOrientation);
   el.btnFinger.addEventListener('click', toggleFinger);
@@ -1065,9 +1373,12 @@ function bindEvents() {
   // меню
   el.btnMenu.addEventListener('click', () => { const open = el.menuPopover.classList.toggle('hidden') === false; el.btnMenu.setAttribute('aria-expanded', open ? 'true' : 'false'); });
   document.addEventListener('click', (e) => { if (!el.menuPopover.contains(e.target) && !el.btnMenu.contains(e.target)) { el.menuPopover.classList.add('hidden'); el.btnMenu.setAttribute('aria-expanded', 'false'); } });
-  el.menuAutoplay.addEventListener('click', () => { el.menuPopover.classList.add('hidden'); toggleAutoplay(); });
   el.menuWizard.addEventListener('click', () => { el.menuPopover.classList.add('hidden'); openWizard(); });
+  el.menuHelp.addEventListener('click', () => { el.menuPopover.classList.add('hidden'); openModal('help'); });
+  el.menuTheme.addEventListener('click', cycleTheme);
+  el.menuLang.addEventListener('click', cycleLang);
   el.menuAbout.addEventListener('click', () => { el.menuPopover.classList.add('hidden'); goView('home'); });
+  el.btnHelpClose.addEventListener('click', () => goBack());
 
   // микрофон/звук
   el.micStatus.addEventListener('click', toggleMic);
@@ -1076,8 +1387,9 @@ function bindEvents() {
   el.btnWizardHome.addEventListener('click', openWizard);
   el.btnAdvancedClose.addEventListener('click', () => goBack());
   el.btnRefreshDevices.addEventListener('click', refreshDevices);
-  el.micSelect.addEventListener('change', async () => { state.settings.micDeviceId = el.micSelect.value; saveSettings(); if (audio.micReady) { try { await audio.enableMic(state.settings.micDeviceId || undefined); pitch.setSampleRate(audio.ctx.sampleRate); toast('Микрофон переключён', 'ok'); refreshDevices(); } catch (e) { toast('Не удалось переключить: ' + e.message, 'err', 6000); } } });
-  el.outputSelect.addEventListener('change', async () => { state.settings.outputDeviceId = el.outputSelect.value; saveSettings(); try { await audio.setOutputDevice(state.settings.outputDeviceId || ''); toast('Вывод переключён', 'ok'); } catch (e) { toast('Вывод: ' + e.message, 'err', 6000); } });
+  el.micSelect.addEventListener('change', async () => { state.settings.micDeviceId = el.micSelect.value; saveSettings(); if (audio.micReady) { try { await audio.enableMic(state.settings.micDeviceId || undefined); pitch.setSampleRate(audio.ctx.sampleRate); toast(t('Микрофон переключён'), 'ok'); refreshDevices(); } catch (e) { toast(t('Не удалось переключить: ') + e.message, 'err', 6000); } } });
+  if (el.wizMicSelect) el.wizMicSelect.addEventListener('change', async () => { state.settings.micDeviceId = el.wizMicSelect.value; saveSettings(); if (audio.micReady) { try { await audio.enableMic(state.settings.micDeviceId || undefined); pitch.setSampleRate(audio.ctx.sampleRate); toast(t('Микрофон переключён'), 'ok'); refreshDevices(); } catch (e) { toast(t('Не удалось переключить: ') + e.message, 'err', 6000); } } });
+  el.outputSelect.addEventListener('change', async () => { state.settings.outputDeviceId = el.outputSelect.value; saveSettings(); try { await audio.setOutputDevice(state.settings.outputDeviceId || ''); toast(t('Вывод переключён'), 'ok'); } catch (e) { toast(t('Вывод: ') + e.message, 'err', 6000); } });
 
   // темп
   el.speed.addEventListener('input', () => setBpm(Number(el.speed.value)));
@@ -1096,6 +1408,9 @@ function bindEvents() {
   el.dropZone.addEventListener('drop', (e) => { e.preventDefault(); el.dropZone.classList.remove('is-over'); const f = e.dataTransfer.files && e.dataTransfer.files[0]; if (f) loadFile(f); });
   el.fileInput.addEventListener('change', (e) => { const f = e.target.files && e.target.files[0]; if (f) loadFile(f); e.target.value = ''; });
   el.btnCatalogLink.addEventListener('click', () => openModal('catalog'));
+  el.libSearch.addEventListener('input', () => { state.lib.q = el.libSearch.value; renderCategories(); });
+  el.libSort.addEventListener('change', () => { state.lib.sort = el.libSort.value; renderCategories(); });
+  el.libFilter.addEventListener('change', () => { state.lib.diff = Number(el.libFilter.value); renderCategories(); });
   el.btnCatalogClose.addEventListener('click', () => goBack());
   el.btnCatalogLoad.addEventListener('click', loadCatalogUrl);
   el.catalogUrl.addEventListener('keydown', (e) => { if (e.key === 'Enter') loadCatalogUrl(); });
@@ -1119,20 +1434,36 @@ function bindEvents() {
 
   // профиль
   el.profileName.addEventListener('input', () => { state.profile.name = el.profileName.value; saveProfile(state.profile); });
-  el.btnProfileReset.addEventListener('click', () => { state.profile = resetProfile(); renderProfile(); renderTip(); toast('Статистика сброшена'); });
+  let resetArmed = false, resetTimer = 0;
+  const disarmReset = () => {
+    resetArmed = false; clearTimeout(resetTimer);
+    el.btnProfileReset.removeAttribute('data-confirm');
+    el.btnProfileReset.textContent = t('Сбросить');
+  };
+  el.btnProfileReset.addEventListener('click', () => {
+    if (!resetArmed) {
+      resetArmed = true;
+      el.btnProfileReset.dataset.confirm = '1';
+      el.btnProfileReset.textContent = t('Точно сбросить?');
+      resetTimer = setTimeout(disarmReset, 5000);
+      return;
+    }
+    disarmReset();
+    state.profile = resetProfile(); renderProfile(); renderTip(); toast(t('Статистика сброшена'));
+  });
   el.btnProfileExport.addEventListener('click', exportProfile);
   el.profileImport.addEventListener('change', (e) => { const f = e.target.files && e.target.files[0]; if (f) importProfile(f); e.target.value = ''; });
 
   // звук: громкости/задержка/чувствительность
   el.guideVol.addEventListener('input', () => { state.settings.guideVol = Number(el.guideVol.value); el.guideVolVal.textContent = el.guideVol.value + '%'; saveSettings(); audio.setGuideVolume(state.settings.guideVol / 100); });
   el.metroVol.addEventListener('input', () => { state.settings.metroVol = Number(el.metroVol.value); el.metroVolVal.textContent = el.metroVol.value + '%'; saveSettings(); audio.setMetroVolume(state.settings.metroVol / 100); });
-  el.latency.addEventListener('input', () => { state.settings.latency = Number(el.latency.value); state.latencySec = state.settings.latency / 1000; el.latencyVal.textContent = el.latency.value + ' мс'; saveSettings(); });
+  el.latency.addEventListener('input', () => { state.settings.latency = Number(el.latency.value); state.latencySec = state.settings.latency / 1000; el.latencyVal.textContent = t('{n} мс', { n: el.latency.value }); saveSettings(); });
   el.sens.addEventListener('input', () => { state.settings.sens = Number(el.sens.value); pitch.rmsGate = state.settings.sens / 1000; el.sensVal.textContent = el.sens.value; if (state.settings.sensPreset !== 'custom') { state.settings.sensPreset = 'custom'; el.sensPreset.value = 'custom'; } saveSettings(); });
   el.sensPreset.addEventListener('change', () => applySensPreset(el.sensPreset.value));
-  el.chordMode.addEventListener('change', () => { state.settings.chordMode = el.chordMode.value; saveSettings(); if (state.game) state.game.opts.chordMode = state.settings.chordMode; toast('Режим аккордов обновлён'); });
-  el.btnAutoLatency.addEventListener('click', async () => { el.btnAutoLatency.disabled = true; const p = el.btnAutoLatency.textContent; el.btnAutoLatency.textContent = 'Измеряю…'; try { const ms = await autoCalibrateLatency(); state.settings.latency = ms; state.latencySec = ms / 1000; saveSettings(); el.latency.value = String(ms); el.latencyVal.textContent = ms + ' мс'; toast('Задержка подобрана: ' + ms + ' мс', 'ok'); } catch (e) { toast('Калибровка: ' + e.message, 'err', 6000); } finally { el.btnAutoLatency.disabled = false; el.btnAutoLatency.textContent = p; } });
-  el.btnVerifyLatency.addEventListener('click', async () => { el.btnVerifyLatency.disabled = true; const p = el.btnVerifyLatency.textContent; el.btnVerifyLatency.textContent = 'Измеряю…'; try { const r = await verifyLatency(); toast(`Задержка: ${r.median} мс (±${r.spread})`, 'ok'); } catch (e) { el.latencyVerify.innerHTML = `<div class="verify__summary">${escapeHtml(e.message)}</div>`; } finally { el.btnVerifyLatency.disabled = false; el.btnVerifyLatency.textContent = p; } });
-  el.btnAutoSens.addEventListener('click', async () => { el.btnAutoSens.disabled = true; const p = el.btnAutoSens.textContent; el.btnAutoSens.textContent = 'Измеряю…'; try { await audio.ensure(); if (!audio.micReady) throw new Error('сначала включите микрофон'); await sleep(1200); let peak = 0; const end = audio.now + 1.2; while (audio.now < end) { const data = audio.getTimeData(); if (data) peak = Math.max(peak, rmsOf(data)); await sleep(10); } const v = clamp(Math.round(clamp(peak * 1.6, 0.002, 0.05) * 1000), 2, 50); state.settings.sens = v; pitch.rmsGate = v / 1000; saveSettings(); el.sens.value = String(v); el.sensVal.textContent = String(v); toast('Чувствительность подобрана', 'ok'); } catch (e) { toast('Калибровка: ' + e.message, 'err', 6000); } finally { el.btnAutoSens.disabled = false; el.btnAutoSens.textContent = p; } });
+  el.chordMode.addEventListener('change', () => { state.settings.chordMode = el.chordMode.value; saveSettings(); if (state.game) state.game.opts.chordMode = state.settings.chordMode; toast(t('Режим аккордов обновлён')); });
+  el.btnAutoLatency.addEventListener('click', async () => { el.btnAutoLatency.disabled = true; const p = el.btnAutoLatency.textContent; el.btnAutoLatency.textContent = t('Измеряю…'); try { const ms = await autoCalibrateLatency(); state.settings.latency = ms; state.latencySec = ms / 1000; saveSettings(); el.latency.value = String(ms); el.latencyVal.textContent = t('{n} мс', { n: ms }); toast(t('Задержка подобрана: {n} мс', { n: ms }), 'ok'); } catch (e) { toast(t('Калибровка: ') + e.message, 'err', 6000); } finally { el.btnAutoLatency.disabled = false; el.btnAutoLatency.textContent = p; } });
+  el.btnVerifyLatency.addEventListener('click', async () => { el.btnVerifyLatency.disabled = true; const p = el.btnVerifyLatency.textContent; el.btnVerifyLatency.textContent = t('Измеряю…'); try { const r = await verifyLatency(); toast(t('Задержка: {n} мс (±{spread})', { n: r.median, spread: r.spread }), 'ok'); } catch (e) { el.latencyVerify.innerHTML = `<div class="verify__summary">${escapeHtml(e.message)}</div>`; } finally { el.btnVerifyLatency.disabled = false; el.btnVerifyLatency.textContent = p; } });
+  el.btnAutoSens.addEventListener('click', async () => { el.btnAutoSens.disabled = true; const p = el.btnAutoSens.textContent; el.btnAutoSens.textContent = t('Измеряю…'); try { await audio.ensure(); if (!audio.micReady) throw new Error(t('сначала включите микрофон')); await sleep(1200); let peak = 0; const end = audio.now + 1.2; while (audio.now < end) { const data = audio.getTimeData(); if (data) peak = Math.max(peak, rmsOf(data)); await sleep(10); } const v = clamp(Math.round(clamp(peak * 1.6, 0.002, 0.05) * 1000), 2, 50); state.settings.sens = v; pitch.rmsGate = v / 1000; saveSettings(); el.sens.value = String(v); el.sensVal.textContent = String(v); toast(t('Чувствительность подобрана'), 'ok'); } catch (e) { toast(t('Калибровка: ') + e.message, 'err', 6000); } finally { el.btnAutoSens.disabled = false; el.btnAutoSens.textContent = p; } });
 
   // мастер
   el.wizAllow.addEventListener('click', toggleMic);
@@ -1140,20 +1471,24 @@ function bindEvents() {
   el.wizPrev.addEventListener('click', () => { if (state.wizardStep > 1) { state.wizardStep -= 1; renderWizard(); } });
   el.wizSkip.addEventListener('click', finishWizard);
   el.wizSkip2.addEventListener('click', finishWizard);
-  el.wizCalibrate.addEventListener('click', async () => { el.wizCalibrate.disabled = true; try { const ms = await autoCalibrateLatency(); state.settings.latency = ms; state.latencySec = ms / 1000; saveSettings(); el.latency.value = String(ms); el.latencyVal.textContent = ms + ' мс'; el.wizCalState.textContent = 'Задержка: ' + ms + ' мс'; toast('Задержка подобрана: ' + ms + ' мс', 'ok'); } catch (e) { el.wizCalState.textContent = 'Не получилось: ' + e.message; } finally { el.wizCalibrate.disabled = false; } });
+  el.wizCalibrate.addEventListener('click', async () => { el.wizCalibrate.disabled = true; try { const ms = await autoCalibrateLatency(); state.settings.latency = ms; state.latencySec = ms / 1000; saveSettings(); el.latency.value = String(ms); el.latencyVal.textContent = t('{n} мс', { n: ms }); el.wizCalState.textContent = t('Задержка: {n} мс', { n: ms }); toast(t('Задержка подобрана: {n} мс', { n: ms }), 'ok'); } catch (e) { el.wizCalState.textContent = t('Не получилось: ') + e.message; } finally { el.wizCalibrate.disabled = false; } });
   el.btnOpenWizard.addEventListener('click', openWizard);
 
   // прогресс
   el.progressBar.addEventListener('input', () => { state.seeking = true; });
   el.progressBar.addEventListener('change', () => { state.seeking = false; if (!state.song) return; const pos = (parseFloat(el.progressBar.value) / 1000) * state.song.duration; if (state.playing && !state.paused) startFrom(pos, true); else { state.startSong = pos; state.pauseSong = pos; state.game.rewind(pos); } });
+  // страховка: не залипать в режиме перемотки, если 'change' не пришёл
+  for (const ev of ['pointerup', 'pointercancel', 'blur']) el.progressBar.addEventListener(ev, () => { state.seeking = false; });
 
   // клавиатура
   document.addEventListener('keydown', (e) => {
     const typing = e.target && /input|select|textarea/i.test(e.target.tagName);
-    if (e.key === 'Escape') { const ov = visibleModal(); if (ov) { if (ov === el.wizardOverlay) finishWizard(); else goBack(); } return; }
+    if (e.key === 'Escape') { const ov = visibleModal(); if (ov) { if (ov === el.wizardOverlay) finishWizard(); else goBack(); } else if (currentView() === 'game') { exitGame(); } return; }
+    if (e.key === '?' && !typing) { e.preventDefault(); openModal('help'); return; }
     overlayKeydown(e);
     if (typing) return;
     const inLibrary = currentView() === 'library';
+    const inHome = currentView() === 'home';
     if (e.code === 'Space') { e.preventDefault(); togglePlay(); }
     else if (e.code === 'KeyR') { e.preventDefault(); restart(); }
     else if (e.code === 'KeyT') { e.preventDefault(); toggleOrientation(); }
@@ -1162,8 +1497,8 @@ function bindEvents() {
     else if (e.code === 'Backslash') { e.preventDefault(); clearLoop(); }
     else if (e.code === 'Minus' || e.code === 'NumpadSubtract' || e.code === 'Comma') { e.preventDefault(); setRate(clamp(state.settings.rate - 0.05, 0.25, 1.5)); }
     else if (e.code === 'Equal' || e.code === 'NumpadAdd' || e.code === 'Period') { e.preventDefault(); setRate(clamp(state.settings.rate + 0.05, 0.25, 1.5)); }
-    else if (e.code === 'ArrowLeft') { e.preventDefault(); if (inLibrary) stepSelection(-1); else seekBy(-5); }
-    else if (e.code === 'ArrowRight') { e.preventDefault(); if (inLibrary) stepSelection(1); else seekBy(5); }
+    else if (e.code === 'ArrowLeft') { e.preventDefault(); if (inLibrary || inHome) stepSelection(-1); else seekBy(-5); }
+    else if (e.code === 'ArrowRight') { e.preventDefault(); if (inLibrary || inHome) stepSelection(1); else seekBy(5); }
   });
 
   window.addEventListener('resize', () => { applyLayout(); if (state.song) drawTabPreview(state.song); });
@@ -1177,6 +1512,7 @@ function bindEvents() {
 // Инициализация
 // ---------------------------------------------------------------------------
 function init() {
+  setLang(state.settings.lang);
   state.library.builtin = DEMO_SONGS.map(parseNative);
   buildItems();
   const first = state.items[0];
@@ -1184,6 +1520,7 @@ function init() {
   renderProfile();
   bindEvents();
   applyTheme();
+  bindSystemTheme();
   applyLayout();
   applySettingsToUi();
   renderer.resize();
@@ -1199,9 +1536,15 @@ function init() {
 
   history.replaceState({ view: 'home' }, '');
   showScreen('home');
+  applyDom(document);
+  if (el.menuLangVal) el.menuLangVal.textContent = langLabel(state.settings.lang);
   if (!state.settings.onboarded) openModal('wizard');
 
-  window.__riff = { state, audio, pitch, renderer, play, pause, togglePlay, startFrom, restart, loadRaw, renderProfile, renderCategories, applyLayout, applyTheme, frame, autoCalibrateLatency, goView, selectItem, countInFor: (songTime) => { const beatLen = 60 / (state.song.bpm || 120); return Math.max(1, Math.min(4, Math.ceil((-songTime) / beatLen))); } };
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => { navigator.serviceWorker.register('sw.js').catch(() => { /* офлайн необязателен */ }); });
+  }
+
+  window.__riff = { state, audio, pitch, renderer, play, pause, togglePlay, startFrom, restart, loadRaw, renderProfile, renderCategories, applyLayout, applyTheme, applyLang, cycleLang, frame, autoCalibrateLatency, goView, selectItem, countInFor: (songTime) => { const beatLen = 60 / (state.song.bpm || 120); return Math.max(1, Math.min(4, Math.ceil((-songTime) / beatLen))); } };
 }
 
 init();

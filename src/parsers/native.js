@@ -37,8 +37,10 @@ export function parseNative(input) {
   });
 
   return {
+    id: data.id || '',
     title: data.title || 'Песня',
     artist: data.artist || '',
+    tip: data.tip || '',
     source: 'native',
     tempo: [{ q: 0, bpm }],
     timeSignatures: [{ q: 0, num: ts[0], den: ts[1] }],

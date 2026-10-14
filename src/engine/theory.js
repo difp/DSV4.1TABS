@@ -216,6 +216,7 @@ export function buildSong(raw, trackIndex = 0) {
   });
 
   return {
+    id: raw.id || '',
     title: raw.title || 'Без названия',
     artist: raw.artist || '',
     source: raw.source || 'native',

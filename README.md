@@ -1,16 +1,54 @@
-# Riff Hero
+# RiffHero
 
-Браузерный тренажёр гитары в духе Rocksmith: ноты падают по трассе, приложение слушает игру через микрофон (алгоритм YIN) и начисляет очки. Статические файлы, без сборки и зависимостей.
+A lightweight browser guitar trainer in the spirit of Rocksmith: notes fall down a highway, the app listens to your playing through the microphone (YIN pitch detection) and scores you. Pure static files — no build step, no dependencies.
 
-## Возможности
+**Play online:** https://difp.github.io/DSV4.1TABS/ (allow microphone access; the mic needs `localhost` or HTTPS).
 
-- Падающие табы с номерами ладов, сустейном, линиями долей и тактов
-- Распознавание нот с микрофона, оценка точности, комбо, итоговая оценка S–E
-- Импорт Guitar Pro (`.gp`, `.gpx`), MIDI (`.mid`) и собственного `.json`
-- Каталоги песен по файлу или ссылке
-- Профиль и статистика (локально): время практики, точность, ошибки по струнам и ладам, экспорт/импорт
-- «Совет на сегодня» на основе истории ошибок
-- A/B повтор, скорость 25–150%, метроном, отсчёт, автоигра
-- Светлая и тёмная темы, режимы отображения Авто / ПК / Телефон
+![RiffHero home screen](docs/screenshots/home.png)
 
-Откройте страницу (https://difp.github.io/DSV4.1TABS/) и разрешите доступ к микрофону. Для работы микрофона нужен `localhost` или HTTPS.
+## Features
+
+- Falling tabs with fret numbers, sustain tails, beat and bar lines
+- Microphone note recognition: accuracy, combo, S–E grade
+- Import Guitar Pro (`.gp`, `.gpx`), MIDI (`.mid`) and native `.json`
+- Song catalogs by file or link, with search, sorting and difficulty filter
+- Built-in lessons (warm-ups, scales, chords, classics), a chord set from a classic guitar method, and simple public-domain tunes
+- A short practice tip from the method is shown under each lesson title (RU/EN)
+- Local profile and stats: practice time, accuracy, misses by string and fret, practice calendar, export/import
+- "Tip of the day" based on your miss history; "Continue" for recent lessons
+- A–B loop, speed 25–150%, metronome, count-in, autoplay
+- Light / dark / system theme; Russian and English UI
+- Installable PWA, works offline
+
+| Falling notes | Lessons | Profile |
+|---|---|---|
+| ![Game](docs/screenshots/game.png) | ![Lessons](docs/screenshots/library.png) | ![Profile](docs/screenshots/profile.png) |
+
+Dark theme and the built-in help:
+
+| Dark theme | Help & shortcuts |
+|---|---|
+| ![Dark](docs/screenshots/dark.png) | ![Help](docs/screenshots/help.png) |
+
+## Getting started
+
+1. Open the page and allow microphone access.
+2. Pick a lesson on the **Lessons** tab (or hit **Play** for the selected one).
+3. Play along — the app listens and scores every note.
+
+Keyboard: `Space` play/pause · `R` restart · `←/→` choose lesson or seek · `−/+` speed · `[`/`]` set loop A/B · `\` clear loop · `T` switch view · `?` help · `Esc` close/leave.
+
+## Development
+
+- Local: `python3 serve.py` → http://localhost:8000 (no-cache server).
+- `?demo=1` in the URL enables autoplay — handy for a demo without a guitar.
+- Entry point: `index.html` + `src/main.js`. Engine in `src/engine`, parsers in `src/parsers`, built-in lessons in `src/songs/demos.js`, UI strings in `src/i18n.js`.
+- Offline mode is provided by `sw.js` (network-first, cache as fallback).
+
+## Content
+
+Classical and folk pieces are in the public domain; rock and blues patterns are original. Built-in chord exercises follow the progression and order of a public guitar method (warm-up and chromatic exercises → chords Em, Am, A, E, Dm, D, G, C, B7 → chord changes → sequences → arpeggios), and a short practice tip from the method is shown for every lesson.
+
+## Русская версия
+
+Смотрите [README.ru.md](README.ru.md).
