@@ -1,5 +1,8 @@
+// Music theory, tunings, timing (tempo map, beat grid).
 // Музыкальная теория, строи, тайминги (темпо-карта, сетка долей).
+// Internal convention: string 1 = the lowest (thickest), string N = the highest.
 // Внутреннее соглашение: струна 1 = самая низкая (толстая), струна N = самая высокая.
+// Tuning array index 0 corresponds to string 1.
 // index 0 массива строя соответствует струне 1.
 
 export const NOTE_NAMES = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
@@ -40,6 +43,7 @@ export function parseTuning(input) {
   throw new Error('Неверный формат строя');
 }
 
+// Tunings are listed from the lowest string to the highest.
 // Строи указаны от самой низкой струны к самой высокой.
 export const TUNING_PRESETS = {
   standard: { name: 'Standard E (EADGBE)', pitches: [40, 45, 50, 55, 59, 64] },
@@ -74,8 +78,11 @@ export function assignFret(pitch, tuning, capo = 0, maxFret = 24) {
   return best;
 }
 
+// Left-hand fingering: 0 — open string, 1..4 — index..pinky.
 // Аппликатура левой руки: 0 — открытая струна, 1..4 — указательный..мизинец.
+// The position (index-finger fret) moves as little as possible; it works as the heuristic
 // Позиция (лад указательного пальца) двигается минимально; работает как эвристика
+// “one finger per fret” taught to beginners.
 // «один палец на лад», которой учат новичков.
 export function assignFingers(notes) {
   let base = 1;
@@ -101,7 +108,9 @@ export function assignFingers(notes) {
 }
 
 // ---------------------------------------------------------------------------
+// Tempo map: stepwise (tempo is constant between events).
 // Темпо-карта: ступенчатая (между событиями темп постоянен).
+// Events are given in quarter notes: { q, bpm }.
 // События задаются в четвертных долях: { q, bpm }.
 // ---------------------------------------------------------------------------
 export class TempoMap {
@@ -138,6 +147,7 @@ export class TempoMap {
   }
 }
 
+// Beat and bar grid for rendering. TimeSignatures: [{ q, num, den }].
 // Сетка долей и тактов для отрисовки. TimeSignatures: [{ q, num, den }].
 export function buildGrid({ tempoMap, timeSignatures, duration }) {
   let ts = (timeSignatures && timeSignatures.length)
@@ -168,6 +178,7 @@ export function buildGrid({ tempoMap, timeSignatures, duration }) {
   return { beats, bars };
 }
 
+// Turns a parser's “raw” song into the game model (strings/frets + timing).
 // Превращает "сырую" песню парсера в игровую модель (струны/лады + тайминги).
 export function buildSong(raw, trackIndex = 0) {
   const tracks = raw.tracks || [];
@@ -236,6 +247,7 @@ export function buildSong(raw, trackIndex = 0) {
   };
 }
 
+// Groups simultaneous notes into a chord (for the monophonic detector).
 // Группировка одновременных нот в аккорд (для монофонического детектора).
 export function groupNotes(notes, tolerance = 0.035) {
   const groups = [];

@@ -1,8 +1,12 @@
 #!/usr/bin/env python3
-"""Мини-сервер для Riff Hero: отдаёт файлы и запрещает кеширование (удобно при разработке).
+"""Tiny server for RiffHero: serves files and disables caching (handy during development).
+Мини-сервер для Riff Hero: отдаёт файлы и запрещает кеширование (удобно при разработке).
 
-Запуск:  python3 serve.py [порт]
+Run:      python3 serve.py [port]
+Запуск:   python3 serve.py [порт]
+Then open http://localhost:8000
 Затем откройте http://localhost:8000
+(getUserMedia for the microphone requires localhost or https.)
 (getUserMedia для микрофона требует localhost или https.)
 """
 import http.server

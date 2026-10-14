@@ -1,12 +1,19 @@
+// Built-in exercises (native format) + the category structure.
 // Встроенные упражнения (нативный формат) + структура категорий.
+// A stable id is needed for localized titles and the profile statistics.
 // Стабильный id нужен для мультиязычных названий и статистики профиля.
+// Difficulty is computed automatically: note density, average/max fret, chords.
 // Сложность вычисляется автоматически: плотность нот, средний/максимальный лад, аккорды.
 //
+// Some exercises follow "Новый самоучитель игры на гитаре" (O. Sladkova):
 // Часть упражнений составлена по «Новому самоучителю игры на гитаре» (О. Сладкова):
-// разминка и хроматика → укрепление и координация пальцев → аккорды (Em, Am, A, E, Dm, D, G, C, B7)
-// → чередования аккордов → последовательности → арпеджио (перебор) → песни.
+// warm-up and chromatic → finger strengthening and coordination → chords
+// (Em, Am, A, E, Dm, D, G, C, B7) → chord changes → sequences → arpeggios → songs.
+// разминка и хроматика → укрепление и координация пальцев → аккорды
+// (Em, Am, A, E, Dm, D, G, C, B7) → чередования → последовательности → арпеджио → песни.
 const N = (beat, string, fret, dur) => ({ beat, string, fret, dur });
 
+// --- Level 1 ---
 // --- Уровень 1 ---
 function openStrings() {
   const notes = [];
@@ -26,6 +33,7 @@ function firstFret() {
   return { id: 'first-fret', title: 'Первый лад', artist: 'Упражнение', bpm: 80, notes };
 }
 
+// --- Level 2 ---
 // --- Уровень 2 ---
 function fiveInARow() {
   const notes = [];
@@ -49,6 +57,7 @@ function chromatic() {
   return { id: 'chromatic-warmup', title: 'Разминка: хроматика', artist: 'Упражнение', bpm: 90, notes };
 }
 
+// --- Level 3 ---
 // --- Уровень 3 ---
 function pentatonic() {
   const up = [[1, 5], [1, 8], [2, 5], [2, 7], [3, 5], [3, 7], [4, 5], [4, 7], [5, 5], [5, 8], [6, 5], [6, 8]];
@@ -75,6 +84,7 @@ function spider() {
   return { id: 'spider-1-3-2-4', title: 'Спуск и подъём 1-3-2-4', artist: 'Упражнение', bpm: 100, notes };
 }
 
+// --- Level 4 ---
 // --- Уровень 4 ---
 function handsSync() {
   const notes = [];
@@ -116,6 +126,7 @@ function rockRiff() {
   return { id: 'rock-power-riff', title: 'Рифф: квинт-аккорды', artist: 'Упражнение', bpm: 110, notes };
 }
 
+// --- Level 5 ---
 // --- Уровень 5 ---
 function pentatonic16() {
   const up = [[1, 5], [1, 8], [2, 5], [2, 7], [3, 5], [3, 7], [4, 5], [4, 7], [5, 5], [5, 8], [6, 5], [6, 8]];
@@ -126,6 +137,7 @@ function pentatonic16() {
   return { id: 'pentatonic-16ths', title: 'Пентатоника 16-ми', artist: 'Упражнение', bpm: 140, notes };
 }
 
+// --- Well-known simple pieces (public domain) and “in the style of” patterns ---
 // --- Известные простые произведения (общественное достояние) и паттерны «в стиле» ---
 function odeToJoy() {
   const q = [[5, 0], [5, 0], [5, 1], [5, 3], [5, 3], [5, 1], [5, 0], [4, 2], [4, 0], [4, 0], [4, 2], [5, 0], [5, 0], [4, 2], [4, 2]];
@@ -233,7 +245,9 @@ function rockRoll() {
 }
 
 // ---------------------------------------------------------------------------
+// Chords from the method (O. Sladkova): practise chords, changes,
 // Аккорды по самоучителю (О. Сладкова): отрабатываем аккорды, переходы,
+// sequences and arpeggios. String 1 = the lowest (thickest).
 // последовательности и перебор. Струна 1 = самая низкая (толстая).
 // ---------------------------------------------------------------------------
 const SHAPES = {
@@ -280,6 +294,7 @@ function arpExercise(id, title, bpm, chords, cycles, beats = 4) {
   return { id, title, artist: 'По самоучителю', bpm, timeSignature: [4, 4], notes };
 }
 
+// Single-chord practice (Em — the easiest), then alternating chord pairs.
 // Отработка одного аккорда (Em — самый лёгкий), затем чередования пар аккордов.
 const bookEm = () => strumExercise('book-em', 'Аккорд Em', 70, ['Em'], 4);
 const bookEmAm = () => strumExercise('book-em-am', 'Em ⇄ Am', 70, ['Em', 'Am'], 3);
@@ -289,17 +304,21 @@ const bookDmD = () => strumExercise('book-dm-d', 'Dm ⇄ D', 70, ['Dm', 'D'], 3)
 const bookGC = () => strumExercise('book-g-c', 'G ⇄ C', 70, ['G', 'C'], 3);
 const bookB7Em = () => strumExercise('book-b7-em', 'B7 ⇄ Em', 70, ['B7', 'Em'], 3);
 
+// Sequences (four strums per chord, play in a slow loop).
 // Последовательности (по 4 удара на аккорд, играть по кругу медленно).
 const bookProgAmDmE = () => strumExercise('book-prog-am-dm-e', 'Am – Dm – E – Am', 80, ['Am', 'Dm', 'E', 'Am'], 2);
 const bookProgCGDA = () => strumExercise('book-prog-c-g-dm-am', 'C – G – Dm – Am', 80, ['C', 'G', 'Dm', 'Am'], 2);
 const bookProgEmAmDG = () => strumExercise('book-prog-em-am-d-g', 'Em – Am – D – G', 80, ['Em', 'Am', 'D', 'G'], 2);
 
+// Arpeggio / fingerstyle.
 // Арпеджио / перебор.
 const bookArpAmDmE = () => arpExercise('book-arp-am-dm-e', 'Перебор Am – Dm – Am – E', 76, ['Am', 'Dm', 'Am', 'E'], 2);
 const bookArpGC = () => arpExercise('book-arp-g-c', 'Перебор G – C – G – C', 76, ['G', 'C', 'G', 'C'], 2);
 
 // ---------------------------------------------------------------------------
+// Simple folk pieces (public domain) — handy for first performances.
 // Простые народные пьесы (public domain) — удобны для первых исполнений.
+// Notes are given as MIDI: fingering is assigned automatically.
 // Ноты задаются через midi: аппликатура подбирается автоматически.
 // ---------------------------------------------------------------------------
 const M = (beat, midi, dur) => ({ beat, midi, dur });
@@ -377,6 +396,7 @@ const RAW = [
   spanishStrum(),
   bluesShuffle(),
   rockRoll(),
+  // Chords from the method
   // Аккорды по самоучителю
   bookEm(),
   bookEmAm(),
@@ -390,6 +410,7 @@ const RAW = [
   bookProgEmAmDG(),
   bookArpAmDmE(),
   bookArpGC(),
+  // Simple folk pieces
   // Простые народные пьесы
   twinkleTwinkle(),
   maryLamb(),
@@ -398,6 +419,7 @@ const RAW = [
   whenTheSaints(),
 ];
 
+// Method tips (from the method book). Shown under the lesson title.
 // Методические советы (из самоучителя). Показываются под названием занятия.
 const TIPS = {
   'open-strings': 'Разминка: играйте открытые струны ровно и чисто, под метроном ~70.',
@@ -442,6 +464,7 @@ const TIPS = {
 
 export const DEMO_SONGS = RAW.map((s) => { s.tip = TIPS[s.id] || ''; return s; });
 
+// Categories by stable id (names are localized via i18n).
 // Категории по стабильным id (названия локализуются через i18n).
 export const CATEGORIES = [
   { key: 'warmup', ids: ['open-strings', 'first-fret', 'five-in-a-row', 'scale-one-string', 'chromatic-warmup'] },

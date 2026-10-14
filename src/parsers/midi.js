@@ -1,4 +1,6 @@
+// Standard MIDI File (SMF) parser for formats 0/1/2.
 // Парсер Standard MIDI File (SMF) формата 0/1/2.
+// Notes are mapped to the fretboard later (in theory.buildSong) by choosing the lowest fret.
 // Ноты мапятся на гриф позже (в theory.buildSong) по выбору наименьшего лада.
 import { TempoMap, TUNING_PRESETS } from '../engine/theory.js';
 
@@ -120,12 +122,14 @@ export function parseMidiBytes(bytes) {
         case 0xd0: state.p += 1; break;
         case 0xe0: state.p += 2; break;
         default:
+          // unknown byte — so we do not loop forever
           // неизвестный байт — чтобы не зациклиться
           state.p++;
           break;
       }
     }
 
+    // unclosed notes
     // незакрытые ноты
     for (const [key, o] of open) {
       rawNotes.push({ track: ti, channel: Math.floor(key / 128), midi: key % 128, startTick: o.startTick, endTick: absTick, velocity: o.velocity });
@@ -135,6 +139,7 @@ export function parseMidiBytes(bytes) {
     p = end;
   }
 
+  // Tempo map in quarter notes
   // Темпо-карта в четвертных долях
   const tempoMap = new TempoMap(
     tempoEvents.map(e => ({ q: e.tick / ppq, bpm: e.bpm })),
@@ -145,6 +150,7 @@ export function parseMidiBytes(bytes) {
     ? timeSigEvents.map(e => ({ q: e.tick / ppq, num: e.num, den: e.den }))
     : [{ q: 0, num: 4, den: 4 }];
 
+  // Grouping: format 0 -> by channel, otherwise by track
   // Группировка: формат 0 -> по каналам, иначе по трекам
   const groups = new Map();
   const groupKey = (n) => (format === 0 ? `ch${n.channel}` : `tr${n.track}`);

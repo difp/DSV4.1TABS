@@ -1,3 +1,4 @@
+// Profile and statistics. Everything is stored locally in the browser (localStorage).
 // Профиль и статистика. Всё хранится локально в браузере (localStorage).
 import { t } from './i18n.js';
 const KEY = 'riffhero.profile.v1';
@@ -38,6 +39,7 @@ export function saveProfile(p) {
   } catch { /* хранилище недоступно */ }
 }
 
+// Normalizes an arbitrary object (e.g. from an imported file) to the profile schema.
 // Приводит произвольный объект (например, из импортированного файла) к схеме профиля.
 export function normalizeProfile(data) {
   const p = Object.assign(defaultProfile(), data && typeof data === 'object' ? data : {});

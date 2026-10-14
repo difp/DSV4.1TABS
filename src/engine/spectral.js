@@ -1,4 +1,8 @@
+// Spectral analysis for guided detection (Goertzel algorithm).
 // Спектральный анализ для guided-детекции (алгоритм Гоерцеля).
+// Idea: instead of a "clean" pitch estimate we check the energy at the notes
+// expected from the tab and at their harmonics. This is more robust to octave
+// errors and lets us recognize chords (several notes at once).
 // Идея: вместо «чистого» определения высоты тона мы проверяем энергию
 // на ожидаемых из табулатуры нотах и их гармониках. Это устойчивее к октавным
 // ошибкам и позволяет распознавать аккорды (несколько нот одновременно).
@@ -42,6 +46,7 @@ export class SpectralAnalyzer {
     return n;
   }
 
+  // Normalized energy at a frequency using a Hann window.
   // Нормированная энергия на частоте по окну Ханна.
   _energy(n, freq, sr) {
     const buf = this.buf;
@@ -59,6 +64,7 @@ export class SpectralAnalyzer {
     return Math.sqrt(Math.max(0, power)) / n;
   }
 
+  // For each MIDI number — harmonic support (weighted toward the fundamental).
   // Для каждого MIDI-номера — поддержка по гармоникам (упор на основной тон).
   analyze(input, midis) {
     const n = this._decimate(input);
@@ -71,7 +77,7 @@ export class SpectralAnalyzer {
     if (rms < 1e-4) return { rms, scores: midis.map(() => 0), max: 0 };
 
     const nyq = sr / 2;
-    const weights = [1, 0.45, 0.7, 0.3]; // 1f, 2f, 3f, 4f
+    const weights = [1, 0.45, 0.7, 0.3]; // 1f, 2f, 3f, 4f — harmonics 1f..4f
     const scores = midis.map((m) => {
       const f = midiToFreq(m);
       if (f >= nyq) return 0;

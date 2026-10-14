@@ -1,3 +1,5 @@
+/* RiffHero design system (single light theme).
+   Accents: indigo and a dark primary-action button. All colors live in tokens. */
 /* RiffHero — дизайн-система (единая светлая тема).
    Акценты: индиго и тёмная кнопка главного действия. Все цвета — в токенах. */
 
@@ -47,6 +49,7 @@
   --stage-line: #c9ccd4;
   --backdrop: #e2e2e2;
 
+  /* device safe areas (fallback 0) */
   /* безопасные зоны устройства (fallback 0) */
   --sat: env(safe-area-inset-top, 0px);
   --sab: env(safe-area-inset-bottom, 0px);
@@ -54,6 +57,7 @@
   --sar: env(safe-area-inset-right, 0px);
 }
 
+/* ------------------------- Dark theme ------------------------- */
 /* ------------------------- Тёмная тема ------------------------- */
 body[data-theme="dark"] {
   color-scheme: dark;
@@ -113,6 +117,7 @@ html, body {
 
 :focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; border-radius: 4px; }
 
+/* ------------------------- Buttons ------------------------- */
 /* ------------------------- Кнопки ------------------------- */
 .btn {
   display: inline-flex;
@@ -135,6 +140,7 @@ html, body {
 .btn:active { transform: scale(0.98); }
 .btn:disabled { opacity: 0.45; cursor: default; }
 
+/* The only white fill per screen — the primary action */
 /* Единственная белая заливка на экран — главное действие */
 .btn--action {
   background: var(--action-bg);
@@ -157,6 +163,7 @@ html, body {
 .btn--icon { width: 40px; min-width: 40px; padding: 0; }
 .btn--sm { min-height: 32px; padding: 0 var(--space-3); font-size: 13px; }
 
+/* ------------------------- Segmented control ------------------------- */
 /* ------------------------- Сегментный переключатель ------------------------- */
 .seg { display: inline-flex; padding: 2px; gap: 2px; background: var(--surface-2); border: 1px solid var(--line); border-radius: 999px; }
 .seg button {
@@ -168,6 +175,7 @@ html, body {
 .seg button.active { background: var(--indigo); color: #ffffff; }
 body[data-ui="phone"] .seg button { padding: 7px 10px; font-size: 12px; }
 
+/* ------------------------- Chips ------------------------- */
 /* ------------------------- Чипы ------------------------- */
 .chip {
   display: inline-flex;
@@ -196,6 +204,7 @@ body[data-ui="phone"] .seg button { padding: 7px 10px; font-size: 12px; }
   border-color: var(--indigo);
 }
 
+/* ------------------------- Cards ------------------------- */
 /* ------------------------- Карточки ------------------------- */
 .card {
   position: relative;
@@ -208,6 +217,7 @@ body[data-ui="phone"] .seg button { padding: 7px 10px; font-size: 12px; }
 .card__title { margin: 0 0 var(--space-3); font-size: 12px; font-weight: 500; letter-spacing: 0.08em; text-transform: none; color: var(--text-2); }
 .card__hero-title { margin: 0; font-size: 26px; font-weight: 500; line-height: 1.15; }
 
+/* soft indigo glow behind the hero card */
 /* мягкое индиго-свечение за главной карточкой */
 .card--hero { touch-action: pan-y; cursor: grab; user-select: none; }
 .card--hero:active { cursor: grabbing; }
@@ -221,6 +231,7 @@ body[data-ui="phone"] .seg button { padding: 7px 10px; font-size: 12px; }
   pointer-events: none;
 }
 
+/* ------------------------- Forms ------------------------- */
 /* ------------------------- Формы ------------------------- */
 .field { display: flex; flex-direction: column; gap: var(--space-1); margin-bottom: var(--space-3); }
 .field__row { display: flex; align-items: center; justify-content: space-between; gap: var(--space-3); }
@@ -259,6 +270,7 @@ input[type="range"]::-moz-range-thumb {
   width: 18px; height: 18px; border-radius: 50%; background: var(--indigo); border: 2px solid var(--surface);
 }
 
+/* switch */
 /* тумблер */
 .switch {
   position: relative; width: 44px; height: 26px; flex: none;
@@ -295,10 +307,13 @@ input[type="range"]::-moz-range-thumb {
 }
 [data-tip]:hover::after, [data-tip]:focus-visible::after { opacity: 1; }
 
+/* ------------------------- App shell ------------------------- */
 /* ------------------------- Каркас ------------------------- */
+/* dynamic viewport height — so the mobile browser bar does not crop the screen */
 /* dynamic viewport height — чтобы браузерная панель на телефоне не обрезала экран */
 #app { display: flex; flex-direction: column; height: 100vh; height: 100dvh; min-height: 0; position: relative; }
 
+/* ------------------------- Top bar ------------------------- */
 /* ------------------------- Шапка ------------------------- */
 .topbar {
   display: flex;
@@ -316,6 +331,7 @@ input[type="range"]::-moz-range-thumb {
 .now-playing__meta { font-family: var(--mono); font-size: 12px; color: var(--text-2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .topbar__actions { display: flex; align-items: center; gap: var(--space-2); }
 
+/* microphone status */
 /* статус микрофона */
 .mic {
   display: inline-flex; align-items: center; gap: var(--space-2);
@@ -336,6 +352,7 @@ input[type="range"]::-moz-range-thumb {
 .mic__level { width: 40px; height: 4px; border-radius: 3px; background: var(--line); overflow: hidden; flex: none; }
 .mic__level i { display: block; height: 100%; width: 0%; background: var(--indigo-text); transition: width 80ms linear; }
 
+/* menu */
 /* меню */
 .menu { position: relative; }
 .popover {
@@ -354,6 +371,7 @@ input[type="range"]::-moz-range-thumb {
 .popover__value { font-family: var(--mono); font-size: 12px; color: var(--text-2); }
 .popover__sep { height: 0.5px; background: var(--line); margin: var(--space-2) 0; }
 
+/* ------------------------- Stage ------------------------- */
 /* ------------------------- Сцена ------------------------- */
 .stage { position: relative; flex: 1; min-height: 0; }
 #stage { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
@@ -384,6 +402,7 @@ input[type="range"]::-moz-range-thumb {
 .playbar__loop .btn[aria-pressed="true"] { border-color: var(--indigo); color: var(--indigo-text); }
 .playbar__loop .btn.is-active { border-color: var(--indigo); }
 
+/* ------------------------- Overlays ------------------------- */
 /* ------------------------- Оверлеи ------------------------- */
 .overlay {
   position: absolute; inset: 0; z-index: 50;
@@ -426,6 +445,7 @@ input[type="range"]::-moz-range-thumb {
 .col-2 { grid-column: span 2; }
 @media (max-width: 900px) { .bento { grid-template-columns: repeat(2, 1fr); } .col-6, .col-4, .col-3, .col-2 { grid-column: span 2; } }
 
+/* hero card */
 /* главная карточка */
 .hero-head { display: flex; align-items: flex-start; gap: var(--space-3); }
 .hero-slide { flex: 1; min-width: 0; display: flex; flex-direction: column; will-change: transform, opacity; }
@@ -468,19 +488,23 @@ input[type="range"]::-moz-range-thumb {
 .small { font-size: 12px; }
 .verify-actions { display: flex; gap: var(--space-2); margin-top: var(--space-2); }
 
+/* difficulty */
 /* сложность */
 .dots { display: inline-flex; gap: 6px; align-items: center; }
 .dots i { width: 8px; height: 8px; border-radius: 50%; background: var(--line); }
 .dots i.on { background: var(--indigo); }
 
+/* tab preview */
 /* превью табулатуры */
 .tab-preview { width: 100%; height: 84px; border-radius: var(--radius-ctl); background: var(--surface-2); border: 0.5px solid var(--line); display: block; }
 
+/* tempo */
 /* темп */
 .speed-big { display: flex; align-items: baseline; gap: 6px; font-family: var(--mono); font-size: 40px; font-weight: 500; line-height: 1; }
 .speed-big__u { font-size: 14px; font-weight: 500; color: var(--text-2); }
 .speed-chips { display: flex; gap: var(--space-2); margin: var(--space-3) 0; }
 
+/* quick tempo in the playbar */
 /* быстрый темп в панели */
 .playbar__speedwrap { display: inline-flex; }
 .speed-pop {
@@ -494,9 +518,11 @@ input[type="range"]::-moz-range-thumb {
 .speed-pop__head .mono:first-child { font-size: 15px; }
 .speed-pop__chips { display: flex; gap: var(--space-2); margin-top: var(--space-2); }
 
+/* song list */
 /* список песен */
 .filters { display: flex; gap: var(--space-2); flex-wrap: wrap; }
 
+/* import */
 /* импорт */
 .dropzone {
   display: flex; align-items: center; justify-content: center; gap: var(--space-2);
@@ -510,10 +536,12 @@ input[type="range"]::-moz-range-thumb {
 .linklike { background: none; border: 0; padding: var(--space-2) 0; color: var(--indigo-text); font: inherit; cursor: pointer; }
 .linklike:hover { text-decoration: underline; }
 
+/* tip of the day */
 /* совет дня */
 .tip__text { margin: 0 0 var(--space-3); }
 .tip__text b { color: var(--indigo-text); font-weight: 500; }
 
+/* ------------------------- Playbar ------------------------- */
 /* ------------------------- Нижняя панель ------------------------- */
 .playbar {
   position: relative; z-index: 20;
@@ -538,6 +566,7 @@ input[type="range"]::-moz-range-thumb {
 .progress__marks .pt { position: absolute; top: 50%; width: 2px; height: 16px; transform: translate(-50%, -50%); background: var(--indigo); }
 .time { font-family: var(--mono); font-size: 13px; color: var(--text-2); white-space: nowrap; }
 
+/* ------------------------- Metrics / tables ------------------------- */
 /* ------------------------- Метрики / таблицы ------------------------- */
 .metrics { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1px; background: var(--line); border: 0.5px solid var(--line); border-radius: var(--radius-ctl); overflow: hidden; }
 .metrics .m { background: var(--surface); padding: var(--space-4); text-align: center; }
@@ -560,6 +589,7 @@ input[type="range"]::-moz-range-thumb {
 .table .tr .v { font-family: var(--mono); font-size: 12px; color: var(--text-2); }
 .table .empty { color: var(--text-2); padding: var(--space-3); }
 
+/* ------------------------- Toasts ------------------------- */
 /* ------------------------- Тосты ------------------------- */
 .toasts { position: absolute; left: 50%; bottom: calc(72px + var(--sab)); transform: translateX(-50%); display: flex; flex-direction: column; align-items: center; gap: var(--space-2); z-index: 70; }
 .toast {
@@ -575,6 +605,7 @@ input[type="range"]::-moz-range-thumb {
 .toast[data-kind="ok"] { border-color: var(--success); }
 .toast[data-kind="ok"] .toast__icon { color: var(--success); }
 
+/* ------------------------- Setup wizard ------------------------- */
 /* ------------------------- Мастер ------------------------- */
 .wizard { width: min(560px, 100%); }
 .steps { display: flex; gap: var(--space-2); margin-bottom: var(--space-4); }
@@ -586,11 +617,14 @@ input[type="range"]::-moz-range-thumb {
 .tune-note { font-family: var(--mono); font-size: 40px; font-weight: 500; min-height: 48px; }
 .wizard__foot { display: flex; align-items: center; justify-content: space-between; gap: var(--space-3); margin-top: var(--space-4); }
 
+/* ------------------------- Phone ------------------------- */
 /* ------------------------- Телефон ------------------------- */
+/* On a real phone — full screen (no frame) so nothing is cropped. */
 /* На реальном телефоне — во весь экран (без рамки), чтобы ничего не обрезалось. */
 body[data-ui="phone"] { display: flex; align-items: center; justify-content: center; background: var(--backdrop); }
 body[data-ui="phone"] #app { width: 100%; height: 100dvh; background: var(--bg); }
 
+/* Device frame — only as a preview on a large screen. */
 /* Рамка устройства — только как превью на большом экране. */
 @media (min-width: 520px) {
   body[data-ui="phone"] #app {
@@ -630,6 +664,7 @@ body[data-ui="phone"] .playbar__loop { border-left: 0; padding-left: 0; }
 body[data-ui="phone"] .playbar__view { border-left: 0; padding-left: 0; }
 body[data-ui="phone"] .popover { min-width: 0; width: min(280px, 80vw); }
 
+/* all controls at least 44×44 on a phone */
 /* все элементы управления — не меньше 44×44 на телефоне */
 @media (max-width: 700px) {
   .btn, .chip, .mic, .switch-row { min-height: 48px; }
@@ -640,7 +675,9 @@ body[data-ui="phone"] .popover { min-width: 0; width: min(280px, 80vw); }
   .playbar__loop .btn { min-width: 48px; }
 }
 
+/* ------------------------- Minimal game mode ------------------------- */
 /* ------------------------- Минимальный режим игры ------------------------- */
+/* While playing keep only the highway, the current note and progress. */
 /* Во время игры оставляем только трассу, текущую ноту и прогресс. */
 body.is-playing .brand,
 body.is-playing .menu { display: none; }
@@ -649,6 +686,7 @@ body.is-playing .playbar #btnRestart,
 body.is-playing .playbar__loop { display: none; }
 body.is-playing .hud { padding-top: max(var(--space-4), var(--sat)); }
 
+/* ------------------------- Chips (About block) ------------------------- */
 /* ------------------------- Чипы (блок «О проекте») ------------------------- */
 .chips { display: flex; flex-wrap: wrap; gap: var(--space-2); }
 .chips span {
@@ -658,6 +696,7 @@ body.is-playing .hud { padding-top: max(var(--space-4), var(--sat)); }
 }
 a.btn { text-decoration: none; }
 
+/* ------------------------- Tabs, screens, categories ------------------------- */
 /* ------------------------- Вкладки, экраны, категории ------------------------- */
 .tabbar {
   display: flex; gap: var(--space-1);
@@ -689,6 +728,7 @@ body.is-playing .screen, body.is-playing .tabbar { display: none; }
 
 .yt-preview { margin-top: var(--space-3); font-size: 13px; line-height: 1.5; }
 
+/* chords & notes viewer */
 /* просмотр аккордов и нот */
 .viewer { margin-top: var(--space-3); }
 .chord-seq { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-2); margin-bottom: var(--space-4); font-family: var(--mono); font-size: 13px; }
@@ -703,13 +743,16 @@ body.is-playing .screen, body.is-playing .tabbar { display: none; }
 .note-table .tr.head { font-family: var(--mono); font-size: 11px; color: var(--text-2); border-bottom: 1px solid var(--line); }
 .note-table .tr > span:first-child { font-family: var(--mono); color: var(--text-2); }
 
+/* destructive-action confirmation */
 /* подтверждение разрушительного действия */
 .btn[data-confirm="1"] { border-color: var(--error); color: var(--error); background: color-mix(in srgb, var(--error) 8%, transparent); }
 .btn[data-confirm="1"]:hover { border-color: var(--error); background: color-mix(in srgb, var(--error) 14%, transparent); }
 
+/* result: delta to the best */
 /* результат: дельта к лучшему */
 .result-delta { margin: var(--space-3) 0 0; font-family: var(--mono); font-size: 13px; color: var(--indigo-text); }
 
+/* help: key and button list */
 /* справка: список клавиш и кнопок */
 .keys { display: flex; flex-direction: column; gap: var(--space-2); }
 .keys__row { display: flex; align-items: center; gap: var(--space-2); font-size: 13px; }
@@ -726,6 +769,7 @@ kbd {
   border-radius: 999px; padding: 3px 10px;
 }
 
+/* ------------------------- Library: search / filters ------------------------- */
 /* ------------------------- Библиотека: поиск/фильтры ------------------------- */
 .lib-tools { display: flex; gap: var(--space-2); flex-wrap: wrap; margin-bottom: var(--space-2); }
 .lib-tools input[type="search"] { flex: 1 1 220px; }
@@ -733,10 +777,12 @@ kbd {
 .lib-empty { color: var(--text-2); padding: var(--space-6) var(--space-2); text-align: center; }
 .recent { display: flex; flex-wrap: wrap; gap: var(--space-2); }
 
+/* ------------------------- Result: error chips ------------------------- */
 /* ------------------------- Результат: чипы ошибок ------------------------- */
 .err-chips { display: flex; flex-wrap: wrap; gap: var(--space-2); margin-top: var(--space-3); }
 .err-chips:empty { display: none; }
 
+/* ------------------------- Profile: practice calendar ------------------------- */
 /* ------------------------- Профиль: календарь практики ------------------------- */
 .calendar { display: flex; flex-direction: column; gap: var(--space-2); margin-top: var(--space-2); }
 .cal-grid { display: grid; grid-template-rows: repeat(7, 1fr); grid-auto-flow: column; gap: 3px; }
@@ -744,11 +790,13 @@ kbd {
 .cal-cell.on { background: var(--indigo); border-color: var(--indigo); }
 .cal-legend { font-size: 11px; color: var(--text-2); }
 
+/* ------------------------- Setup wizard: tuning ------------------------- */
 /* ------------------------- Мастер: строй ------------------------- */
 .tune-hint { min-height: 20px; font-family: var(--mono); font-size: 13px; color: var(--text-2); margin-bottom: var(--space-3); }
 .tune-hint[data-state="ok"] { color: var(--success); }
 .tune-hint[data-state="warn"] { color: var(--error); }
 
+/* ------------------------- Preferences ------------------------- */
 /* ------------------------- Предпочтения ------------------------- */
 @media (prefers-reduced-transparency: reduce) {
   .playbar { background: var(--surface); backdrop-filter: none; -webkit-backdrop-filter: none; }

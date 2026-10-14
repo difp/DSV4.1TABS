@@ -1,6 +1,9 @@
+// RiffHero entry point: screens (Home/Lessons/Profile), playback,
+// the game loop, import, catalogs, profile, the setup wizard and YouTube chords.
 // RiffHero — точка входа: экраны (Главная/Занятия/Профиль), воспроизведение,
 // игровой цикл, импорт, каталоги, профиль, мастер, YouTube-аккорды.
-// Аудио, тайминг и парсеры не менялись.
+// Audio, timing and parsers live in src/engine and src/parsers.
+// Аудио, тайминг и парсеры — в src/engine и src/parsers.
 import { AudioEngine } from './engine/audio.js';
 import { PitchDetector } from './engine/pitch.js';
 import { SpectralAnalyzer } from './engine/spectral.js';
@@ -108,6 +111,7 @@ if (!state.settings.youtube) state.settings.youtube = {};
 function saveSettings() { try { localStorage.setItem(SETTINGS_KEY, JSON.stringify(state.settings)); } catch { /* noop */ } }
 
 // ---------------------------------------------------------------------------
+// Utilities
 // Утилиты
 // ---------------------------------------------------------------------------
 function toast(text, kind = '', ms = 3600) {
@@ -131,6 +135,7 @@ async function requestWakeLock() { try { if (!('wakeLock' in navigator) || wakeL
 function releaseWakeLock() { if (wakeLock) { try { wakeLock.release(); } catch { /* noop */ } wakeLock = null; } }
 
 // ---------------------------------------------------------------------------
+// Screens, tabs and history
 // Экраны, вкладки и история
 // ---------------------------------------------------------------------------
 const MODALS = () => [el.advancedOverlay, el.wizardOverlay, el.resultsOverlay, el.catalogOverlay, el.youtubeOverlay, el.viewOverlay, el.helpOverlay];
@@ -182,6 +187,7 @@ function overlayKeydown(e) {
 function bindModalDismiss(node) { node.addEventListener('mousedown', (e) => { if (e.target === node) goBack(); }); }
 
 // ---------------------------------------------------------------------------
+// Theme and layout (strictly by choice, no auto)
 // Тема и раскладка (строго по выбору, без авто)
 // ---------------------------------------------------------------------------
 function resolveLayout() { if (state.layoutPref === 'desktop' || state.layoutPref === 'phone') return state.layoutPref; return window.innerWidth < 820 ? 'phone' : 'desktop'; }
@@ -207,6 +213,7 @@ function bindSystemTheme() {
 }
 
 // ---------------------------------------------------------------------------
+// UI language
 // Язык интерфейса
 // ---------------------------------------------------------------------------
 function relocalizeBuiltins() {
@@ -250,6 +257,7 @@ function applyLayout() {
 }
 
 // ---------------------------------------------------------------------------
+// Settings
 // Настройки
 // ---------------------------------------------------------------------------
 function setSwitch(node, on) { node.setAttribute('aria-checked', on ? 'true' : 'false'); }
@@ -306,6 +314,7 @@ function applySensPreset(name) {
 }
 
 // ---------------------------------------------------------------------------
+// Songs, categories, selection
 // Песни, категории, выбор
 // ---------------------------------------------------------------------------
 function itemId(source, title, artist) { return `${source}:${title}|${artist || ''}`; }
@@ -353,6 +362,7 @@ function bestForItem(item) {
   let best = null;
   const prefixes = [];
   if (item.raw && item.raw.id) prefixes.push('b:' + item.raw.id);
+  // compatibility with old statistics
   prefixes.push(slug(item.title) + '|'); // совместимость со старой статистикой
   for (const k of Object.keys(state.profile.songs)) {
     if (!prefixes.some((p) => k === p || k.startsWith(p))) continue;
@@ -438,6 +448,7 @@ function renderCategories() {
   for (const item of list) { const g = groups.get(categoryOf(item)); if (g) g.push(item); }
   for (const c of CATEGORIES) { const items = groups.get(c.key); if (items.length) addCategory(categoryName(c.key), items); }
   const mine = groups.get('mine'); if (mine.length) addCategory(categoryName('mine'), mine);
+  // selected card scrolled into view
   // выделенная карточка в поле зрения
   const sel = el.categories.querySelector('.exc-card.is-selected');
   if (sel && sel.scrollIntoView) sel.scrollIntoView({ block: 'nearest', inline: 'nearest' });
@@ -479,6 +490,7 @@ async function stepSelection(delta) {
   await selectItem(state.items[idx], false);
 }
 
+// Hero card swipe: live follow under the finger and commit past a threshold.
 // Свайп главной карточки: живое следование за пальцем и переход по порогу.
 let heroSuppressClick = false;
 function bindHeroSwipe() {
@@ -519,6 +531,7 @@ function bindHeroSwipe() {
   };
   card.addEventListener('pointerup', finish);
   card.addEventListener('pointercancel', finish);
+  // suppress clicks on buttons inside the card if a swipe preceded them
   // гасим клик по кнопкам внутри карточки, если перед ним был свайп
   card.addEventListener('click', (e) => {
     if (!heroSuppressClick) return;
@@ -527,6 +540,7 @@ function bindHeroSwipe() {
 }
 
 // ---------------------------------------------------------------------------
+// Hero card
 // Главная карточка
 // ---------------------------------------------------------------------------
 function computeDifficulty(song) {
@@ -633,6 +647,7 @@ function renderRecent() {
 }
 
 // ---------------------------------------------------------------------------
+// Tip of the day
 // Совет дня
 // ---------------------------------------------------------------------------
 function computeTip() {
@@ -675,6 +690,7 @@ function applyTip() {
 }
 
 // ---------------------------------------------------------------------------
+// Loading a song
 // Загрузка песни
 // ---------------------------------------------------------------------------
 function loadRaw(raw) {
@@ -736,6 +752,7 @@ async function loadCatalogFile(file) {
 }
 
 // ---------------------------------------------------------------------------
+// Profile
 // Профиль
 // ---------------------------------------------------------------------------
 function renderErrBars(container, obj, labeler) {
@@ -770,6 +787,7 @@ function renderCalendar(container, days) {
   const today = new Date(); today.setHours(0, 0, 0, 0);
   const start = new Date(today);
   start.setDate(start.getDate() - 7 * 9);
+  // align to Monday
   start.setDate(start.getDate() - ((start.getDay() + 6) % 7)); // выравнивание к понедельнику
   const grid = document.createElement('div'); grid.className = 'cal-grid';
   for (const d = new Date(start); d <= today; d.setDate(d.getDate() + 1)) {
@@ -796,6 +814,7 @@ async function importProfile(file) {
 }
 
 // ---------------------------------------------------------------------------
+// A/B loop
 // A/B повтор
 // ---------------------------------------------------------------------------
 function loopActive() {
@@ -825,6 +844,7 @@ function updateLoopMarkers() {
 }
 
 // ---------------------------------------------------------------------------
+// Playback
 // Воспроизведение
 // ---------------------------------------------------------------------------
 function computeSongTime() { if (!state.playing) return state.startSong; if (state.paused) return state.pauseSong; return state.startSong + (audio.now - state.startCtx) * state.rate; }
@@ -843,6 +863,7 @@ function setPlayingFlag(playingNow) {
     el.screenLibrary.classList.add('hidden');
     el.screenProfile.classList.add('hidden');
   } else {
+    // Stop/pause: bring back the tab bar and screen even if we stay in the game view.
     // Завершение/пауза: вернуть вкладку и экран, даже если остаёмся в окне игры.
     showScreen(currentView());
   }
@@ -905,6 +926,7 @@ function scheduleAhead() {
 }
 
 // ---------------------------------------------------------------------------
+// Game loop
 // Игровой цикл
 // ---------------------------------------------------------------------------
 function frame() { try { frameStep(); } catch (e) { if (!state.frameErrorLogged) { state.frameErrorLogged = true; console.error('Ошибка кадра:', e); } } requestAnimationFrame(frame); }
@@ -952,6 +974,7 @@ function updateHud(songTime) {
       } else fb += t(' · тишина');
     }
   }
+  // #feedback is a live region: update at most ~4 times per second so it does not chatter
   // #feedback — live-region: обновляем не чаще ~4 раз в секунду, чтобы не «тарахтеть»
   {
     const nowMs = performance.now();
@@ -1024,6 +1047,7 @@ function showResults(prevBest) {
   el.resultErrors.textContent = parts.length ? t('Ошибки: {list}', { list: parts.join(' · ') }) : t('Без ошибок');
   el.btnPracticeWeak.disabled = !(g.misses > 0 && parts.length > 0);
   el.btnPracticeWeak.textContent = t('Отработать слабое место');
+  // error chips: clicking loops the problem spot at 75%
   // чипы ошибок: нажатие зацикливает проблемное место на 75%
   el.resultErrorChips.innerHTML = '';
   const chips = [];
@@ -1065,6 +1089,7 @@ function practiceWeak() {
 function updatePlayButton() { el.btnPlay.textContent = (!state.playing || state.paused) ? t('Играть') : t('Пауза'); }
 
 // ---------------------------------------------------------------------------
+// Microphone and devices
 // Микрофон и устройства
 // ---------------------------------------------------------------------------
 async function toggleMic() {
@@ -1089,6 +1114,7 @@ async function refreshDevices() {
 }
 
 // ---------------------------------------------------------------------------
+// Auto-calibration
 // Автокалибровка
 // ---------------------------------------------------------------------------
 async function measureLatency() {
@@ -1123,6 +1149,7 @@ function renderLatencyVerify(r) {
 }
 
 // ---------------------------------------------------------------------------
+// Guided detection
 // Guided-детекция
 // ---------------------------------------------------------------------------
 function collectCandidates(now) {
@@ -1149,6 +1176,7 @@ function detectionTick() {
 }
 
 // ---------------------------------------------------------------------------
+// Setup wizard
 // Мастер
 // ---------------------------------------------------------------------------
 function renderWizard() {
@@ -1164,9 +1192,11 @@ async function wizardNext() {
   if (state.wizardStep === 1 && !audio.micReady) { await toggleMic(); state.wizardStep = 2; renderWizard(); return; }
   if (state.wizardStep < 3) { state.wizardStep += 1; renderWizard(); } else finishWizard();
 }
+/* wizard screens are refreshed in updateMicStatus */
 function updateWizardLive() { /* экраны мастера обновляются в updateMicStatus */ }
 
 // ---------------------------------------------------------------------------
+// YouTube → chords
 // YouTube → аккорды
 // ---------------------------------------------------------------------------
 function youtubeId(url) {
@@ -1180,6 +1210,7 @@ async function resolveYoutube(url) {
   try {
     const res = await fetch('https://noembed.com/embed?url=' + encodeURIComponent(url), { signal: ctrl.signal });
     if (res.ok) { const j = await res.json(); title = (j && j.title) || ''; }
+  /* noembed is unavailable or timed out */
   } catch { /* noembed недоступен или таймаут */ } finally { clearTimeout(timer); }
   return title;
 }
@@ -1204,6 +1235,7 @@ function attachYoutube(url) {
   toast(t('Ссылка прикреплена к «{title}»', { title: item.title }), 'ok'); goBack();
 }
 
+// ---------- Chords: shape reference and lesson generation ----------
 // ---------- Аккорды: справочник форм и генерация упражнения ----------
 const CHORD_SHAPES = {
   C: [null, 3, 2, 0, 1, 0], C7: [null, 3, 2, 3, 1, 0], Cmaj7: [null, 3, 2, 0, 0, 0], Cm: [null, 3, 5, 5, 4, 3],
@@ -1258,6 +1290,7 @@ function createExerciseFromChords() {
   goView('library');
 }
 
+// ---------- Chords & notes viewer (no timeline) ----------
 // ---------- Просмотр аккордов и нот (без таймлайна) ----------
 function songGroups(song) {
   const groups = []; let cur = null;
@@ -1336,6 +1369,7 @@ function openViewer(mode = 'chords') {
 }
 
 // ---------------------------------------------------------------------------
+// Events
 // События
 // ---------------------------------------------------------------------------
 function bindEvents() {
@@ -1361,15 +1395,18 @@ function bindEvents() {
   el.btnOrient.addEventListener('click', toggleOrientation);
   el.btnFinger.addEventListener('click', toggleFinger);
 
+  // theme and layout
   // тема и раскладка
   el.layoutSeg.addEventListener('click', (e) => { const b = e.target.closest('button[data-layout]'); if (!b) return; state.layoutPref = b.dataset.layout; localStorage.setItem('riffhero.layout', state.layoutPref); applyLayout(); });
 
+  // switches
   // тумблеры
   for (const [node, key] of [[el.metronome, 'metronome'], [el.countIn, 'countIn'], [el.showFret, 'showFret'], [el.showFinger, 'showFinger']]) {
     node.addEventListener('click', () => { state.settings[key] = !state.settings[key]; saveSettings(); applySettingsToUi(); });
   }
   el.autoplaySwitch.addEventListener('click', toggleAutoplay);
 
+  // menu
   // меню
   el.btnMenu.addEventListener('click', () => { const open = el.menuPopover.classList.toggle('hidden') === false; el.btnMenu.setAttribute('aria-expanded', open ? 'true' : 'false'); });
   document.addEventListener('click', (e) => { if (!el.menuPopover.contains(e.target) && !el.btnMenu.contains(e.target)) { el.menuPopover.classList.add('hidden'); el.btnMenu.setAttribute('aria-expanded', 'false'); } });
@@ -1380,6 +1417,7 @@ function bindEvents() {
   el.menuAbout.addEventListener('click', () => { el.menuPopover.classList.add('hidden'); goView('home'); });
   el.btnHelpClose.addEventListener('click', () => goBack());
 
+  // microphone / sound
   // микрофон/звук
   el.micStatus.addEventListener('click', toggleMic);
   el.btnSound.addEventListener('click', () => { refreshDevices(); openModal('advanced'); });
@@ -1391,6 +1429,7 @@ function bindEvents() {
   if (el.wizMicSelect) el.wizMicSelect.addEventListener('change', async () => { state.settings.micDeviceId = el.wizMicSelect.value; saveSettings(); if (audio.micReady) { try { await audio.enableMic(state.settings.micDeviceId || undefined); pitch.setSampleRate(audio.ctx.sampleRate); toast(t('Микрофон переключён'), 'ok'); refreshDevices(); } catch (e) { toast(t('Не удалось переключить: ') + e.message, 'err', 6000); } } });
   el.outputSelect.addEventListener('change', async () => { state.settings.outputDeviceId = el.outputSelect.value; saveSettings(); try { await audio.setOutputDevice(state.settings.outputDeviceId || ''); toast(t('Вывод переключён'), 'ok'); } catch (e) { toast(t('Вывод: ') + e.message, 'err', 6000); } });
 
+  // tempo
   // темп
   el.speed.addEventListener('input', () => setBpm(Number(el.speed.value)));
   el.speedChips.addEventListener('click', (e) => { const b = e.target.closest('.chip'); if (!b) return; setRate(Number(b.dataset.speed) / 100); });
@@ -1399,9 +1438,11 @@ function bindEvents() {
   el.btnSpeedQuick.addEventListener('click', (e) => { e.stopPropagation(); const open = el.speedPop.classList.toggle('hidden') === false; el.btnSpeedQuick.setAttribute('aria-expanded', open ? 'true' : 'false'); });
   document.addEventListener('click', (e) => { if (el.speedPop.classList.contains('hidden')) return; if (!el.speedPop.contains(e.target) && !el.btnSpeedQuick.contains(e.target)) { el.speedPop.classList.add('hidden'); el.btnSpeedQuick.setAttribute('aria-expanded', 'false'); } });
 
+  // tip
   // совет
   el.btnTipApply.addEventListener('click', applyTip);
 
+  // import
   // импорт
   el.dropZone.addEventListener('dragover', (e) => { e.preventDefault(); el.dropZone.classList.add('is-over'); });
   el.dropZone.addEventListener('dragleave', () => el.dropZone.classList.remove('is-over'));
@@ -1432,6 +1473,7 @@ function bindEvents() {
     for (const c of el.viewTabs.querySelectorAll('.chip')) { const on = c === b; c.setAttribute('aria-pressed', on ? 'true' : 'false'); c.classList.toggle('is-active', on); }
   });
 
+  // profile
   // профиль
   el.profileName.addEventListener('input', () => { state.profile.name = el.profileName.value; saveProfile(state.profile); });
   let resetArmed = false, resetTimer = 0;
@@ -1454,6 +1496,7 @@ function bindEvents() {
   el.btnProfileExport.addEventListener('click', exportProfile);
   el.profileImport.addEventListener('change', (e) => { const f = e.target.files && e.target.files[0]; if (f) importProfile(f); e.target.value = ''; });
 
+  // sound: volumes / latency / sensitivity
   // звук: громкости/задержка/чувствительность
   el.guideVol.addEventListener('input', () => { state.settings.guideVol = Number(el.guideVol.value); el.guideVolVal.textContent = el.guideVol.value + '%'; saveSettings(); audio.setGuideVolume(state.settings.guideVol / 100); });
   el.metroVol.addEventListener('input', () => { state.settings.metroVol = Number(el.metroVol.value); el.metroVolVal.textContent = el.metroVol.value + '%'; saveSettings(); audio.setMetroVolume(state.settings.metroVol / 100); });
@@ -1465,6 +1508,7 @@ function bindEvents() {
   el.btnVerifyLatency.addEventListener('click', async () => { el.btnVerifyLatency.disabled = true; const p = el.btnVerifyLatency.textContent; el.btnVerifyLatency.textContent = t('Измеряю…'); try { const r = await verifyLatency(); toast(t('Задержка: {n} мс (±{spread})', { n: r.median, spread: r.spread }), 'ok'); } catch (e) { el.latencyVerify.innerHTML = `<div class="verify__summary">${escapeHtml(e.message)}</div>`; } finally { el.btnVerifyLatency.disabled = false; el.btnVerifyLatency.textContent = p; } });
   el.btnAutoSens.addEventListener('click', async () => { el.btnAutoSens.disabled = true; const p = el.btnAutoSens.textContent; el.btnAutoSens.textContent = t('Измеряю…'); try { await audio.ensure(); if (!audio.micReady) throw new Error(t('сначала включите микрофон')); await sleep(1200); let peak = 0; const end = audio.now + 1.2; while (audio.now < end) { const data = audio.getTimeData(); if (data) peak = Math.max(peak, rmsOf(data)); await sleep(10); } const v = clamp(Math.round(clamp(peak * 1.6, 0.002, 0.05) * 1000), 2, 50); state.settings.sens = v; pitch.rmsGate = v / 1000; saveSettings(); el.sens.value = String(v); el.sensVal.textContent = String(v); toast(t('Чувствительность подобрана'), 'ok'); } catch (e) { toast(t('Калибровка: ') + e.message, 'err', 6000); } finally { el.btnAutoSens.disabled = false; el.btnAutoSens.textContent = p; } });
 
+  // setup wizard
   // мастер
   el.wizAllow.addEventListener('click', toggleMic);
   el.wizNext.addEventListener('click', wizardNext);
@@ -1474,12 +1518,15 @@ function bindEvents() {
   el.wizCalibrate.addEventListener('click', async () => { el.wizCalibrate.disabled = true; try { const ms = await autoCalibrateLatency(); state.settings.latency = ms; state.latencySec = ms / 1000; saveSettings(); el.latency.value = String(ms); el.latencyVal.textContent = t('{n} мс', { n: ms }); el.wizCalState.textContent = t('Задержка: {n} мс', { n: ms }); toast(t('Задержка подобрана: {n} мс', { n: ms }), 'ok'); } catch (e) { el.wizCalState.textContent = t('Не получилось: ') + e.message; } finally { el.wizCalibrate.disabled = false; } });
   el.btnOpenWizard.addEventListener('click', openWizard);
 
+  // progress
   // прогресс
   el.progressBar.addEventListener('input', () => { state.seeking = true; });
   el.progressBar.addEventListener('change', () => { state.seeking = false; if (!state.song) return; const pos = (parseFloat(el.progressBar.value) / 1000) * state.song.duration; if (state.playing && !state.paused) startFrom(pos, true); else { state.startSong = pos; state.pauseSong = pos; state.game.rewind(pos); } });
+  // safety: do not get stuck seeking if 'change' never fires
   // страховка: не залипать в режиме перемотки, если 'change' не пришёл
   for (const ev of ['pointerup', 'pointercancel', 'blur']) el.progressBar.addEventListener(ev, () => { state.seeking = false; });
 
+  // keyboard
   // клавиатура
   document.addEventListener('keydown', (e) => {
     const typing = e.target && /input|select|textarea/i.test(e.target.tagName);

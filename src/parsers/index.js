@@ -1,3 +1,4 @@
+// Single entry point for parsing a song file from bytes (used by file loading and the catalog).
 // Единая точка разбора файлов песни по байтам (используется загрузкой файлов и каталогом).
 import { parseNative } from './native.js';
 import { parseMidiBytes } from './midi.js';

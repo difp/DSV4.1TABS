@@ -1,4 +1,6 @@
+// Native song format (JSON) — simple and predictable.
 // Нативный формат песен (JSON) — простой и предсказуемый.
+// Beats are given in quarter notes from the start (beat); durations too (dur).
 // Доли задаются в четвертных нотах от начала (beat), длительности тоже (dur).
 import { parseTuning, TUNING_PRESETS } from '../engine/theory.js';
 

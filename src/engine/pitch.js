@@ -1,4 +1,6 @@
+// Fundamental-frequency detection with the YIN method (decimated for speed).
 // Определение основного тона методом YIN (с децимацией для скорости).
+// Runs in real time on a monophonic signal (a single note or a chord).
 // Работает в реальном времени на монофоническом сигнале (одна нота / аккорд).
 import { freqToMidi } from './theory.js';
 

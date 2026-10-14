@@ -1,3 +1,4 @@
+// RiffHero service worker: offline mode (network-first, cache as fallback).
 // RiffHero — service worker: офлайн-режим (network-first, кэш как запасной вариант).
 const CACHE = 'riffhero-v1';
 const ASSETS = [
@@ -15,6 +16,7 @@ self.addEventListener('install', (e) => {
   e.waitUntil(
     caches.open(CACHE)
       .then((c) => c.addAll(ASSETS))
+      /* not all assets are available — we will survive */
       .catch(() => { /* не все ресурсы доступны — переживём */ })
       .then(() => self.skipWaiting())
   );
@@ -34,6 +36,7 @@ self.addEventListener('fetch', (e) => {
   const req = e.request;
   if (req.method !== 'GET') return;
   const url = new URL(req.url);
+  // leave third-party requests (noembed etc.) alone
   if (url.origin !== location.origin) return; // сторонние запросы (noembed и пр.) не трогаем
   e.respondWith(networkFirst(req));
 });

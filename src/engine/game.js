@@ -1,3 +1,4 @@
+// Game logic: match a played note to the tab, score, combo, accuracy.
 // Логика игры: сопоставление сыгранной ноты с табом, очки, комбо, точность.
 import { groupNotes } from './theory.js';
 
@@ -34,6 +35,7 @@ export class Game {
     this.finished = false;
   }
 
+  // Resets note judgments after a position (on seek) without touching the score.
   // Сбрасывает оценку нот после позиции (при перемотке), не трогая очки.
   rewind(songTime) {
     for (const g of this.groups) {
@@ -79,6 +81,7 @@ export class Game {
       }
     }
 
+    // Misses
     // Пропуски
     for (let i = this.pointer; i < this.groups.length; i++) {
       const g = this.groups[i];
@@ -95,6 +98,7 @@ export class Game {
     }
   }
 
+  // Whether a group matches what was heard (guided energy and/or YIN).
   // Совпадает ли группа с услышанным (guided-энергия и/или YIN).
   _matches(g, heard, yinMidi) {
     const has = (m) => (heard != null && heard.has(m)) || (yinMidi != null && yinMidi === m);
@@ -134,6 +138,7 @@ export class Game {
     g.judge = 'miss';
     this.combo = 0;
     this.misses++;
+    // miss statistics: by string and by fret (for tips and practice)
     // статистика ошибок: по струне и по ладу (для советов и отработки)
     for (const n of g.notes) {
       const s = String(n.string);

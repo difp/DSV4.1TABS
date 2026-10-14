@@ -1,4 +1,6 @@
+// Internationalization (ru/en). The key is the Russian source string; the translation lives in EN.
 // Мультиязычность (ru/en). Ключ — русская строка-источник; перевод хранится в EN.
+// For templates use placeholders like {n} and call t('...{n}', { n }).
 // Для шаблонов используйте плейсхолдеры {n} и вызывайте t('...{n}', { n }).
 const LANG_KEY = 'riffhero.lang';
 export const LANGS = ['ru', 'en'];
@@ -23,6 +25,7 @@ export function langLabel(pref) {
   return t('системный');
 }
 
+// Translates a source string. For ru returns the source string.
 // Перевод строки-источника. Для ru возвращает исходную строку.
 export function t(src, params) {
   let out = (lang === 'en' && EN[src]) ? EN[src] : src;
@@ -30,7 +33,9 @@ export function t(src, params) {
   return out;
 }
 
+// -------- Translating static markup --------
 // -------- Перевод статической разметки --------
+// Store the original (Russian) text/attribute so the language can be switched back and forth.
 // Храним исходный (русский) текст/атрибут, чтобы можно было переключать язык туда-обратно.
 const origText = new WeakMap();
 const origAttr = new WeakMap();
@@ -41,6 +46,7 @@ export function applyDom(root = document) {
   for (const el of root.querySelectorAll('*')) {
     const tag = el.tagName;
     if (tag === 'SCRIPT' || tag === 'STYLE' || tag === 'CANVAS') continue;
+    // Leaf text nodes.
     // листовые текстовые узлы
     if (el.children.length === 0 && el.childNodes.length === 1 && el.childNodes[0].nodeType === 3) {
       const trimmed = el.textContent.trim();
@@ -67,6 +73,7 @@ export function applyDom(root = document) {
   }
 }
 
+// -------- Built-in exercise and category texts (by stable id) --------
 // -------- Тексты встроенных упражнений и категорий (по стабильному id) --------
 export function songTitle(id, fallback) {
   return (lang === 'en' && SONG_EN[id] && SONG_EN[id].title) || fallback;
@@ -106,6 +113,7 @@ const SONG_EN = {
   'spanish-strum-cfgam': { title: 'Spanish strum C–F–G–Am', artist: 'Folk · PD' },
   'blues-shuffle-12': { title: 'Blues shuffle (12 bars)', artist: 'Blues · original' },
   'rock-n-roll-fifths': { title: "Rock'n'roll fifths", artist: 'Rock · original' },
+  // Chords from the method
   // Аккорды по самоучителю
   'book-em': { title: 'Chord Em — clean strum', artist: 'Method: chords' },
   'book-em-am': { title: 'Em ⇄ Am alternation', artist: 'Method: chords' },
@@ -126,6 +134,7 @@ const SONG_EN = {
   'when-the-saints': { title: 'When the Saints Go Marching In', artist: 'Folk · PD' },
 };
 
+// -------- Method tips for lessons (en) --------
 // -------- Методические советы к занятиям (en) --------
 const SONG_TIP_EN = {
   'open-strings': 'Warm-up: play the open strings evenly and cleanly, with a metronome around 70.',
@@ -168,8 +177,10 @@ const SONG_TIP_EN = {
   'when-the-saints': 'A melody in C major — a good warm-up for fluency.',
 };
 
+// -------- UI dictionary (ru source → en) --------
 // -------- Словарь интерфейса (ru источник → en) --------
 const EN = {
+  // Top bar / navigation
   // Шапка / навигация
   'Микрофон выключен': 'Microphone off',
   'Микрофон готов': 'Microphone ready',
@@ -198,6 +209,7 @@ const EN = {
   'Разделы': 'Sections',
   'Песня не выбрана': 'No song selected',
 
+  // Home
   // Главная
   'Упражнение': 'Exercise',
   'Песня': 'Song',
@@ -246,6 +258,7 @@ const EN = {
   'Занятие {i} из {total}: {title}': 'Lesson {i} of {total}: {title}',
   'Играть: {title}': 'Play: {title}',
 
+  // Lessons
   // Занятия
   'Поиск по названию или исполнителю': 'Search by title or artist',
   'Поиск занятий': 'Search lessons',
@@ -278,6 +291,7 @@ const EN = {
   '{n} нот': '{n} notes',
   'каталог': 'catalog',
 
+  // Profile
   // Профиль
   'Имя': 'Name',
   'Имя игрока': 'Player name',
@@ -308,6 +322,7 @@ const EN = {
   'Лад {n}': 'Fret {n}',
   'без имени': 'unnamed',
 
+  // Playbar / A–B
   // Плейбар / A–B
   'Зацикливание A–B': 'A–B loop',
   'Отметить точку A зацикливания': 'Set loop point A',
@@ -329,6 +344,7 @@ const EN = {
   'Вид': 'View',
   'Аппликатура': 'Fingering',
 
+  // Sound & devices
   // Звук и устройства
   'Микрофон и звук': 'Microphone & sound',
   'Устройства': 'Devices',
@@ -373,6 +389,7 @@ const EN = {
   '{n} мс': '{n} ms',
   'мс': 'ms',
 
+  // Setup wizard
   // Мастер
   'Настройка': 'Setup',
   'Доступ к микрофону': 'Microphone access',
@@ -404,6 +421,7 @@ const EN = {
   'клики не слышны — проверьте звук и микрофон': 'clicks not heard — check the sound and microphone',
   'Не получилось: ': 'Failed: ',
 
+  // Playback / HUD
   // Игра / HUD
   'Очки': 'Score',
   'Серия': 'Streak',
@@ -421,6 +439,7 @@ const EN = {
   'ОК': 'OK',
   'ПРОМАХ': 'MISS',
 
+  // Results
   // Результаты
   'Результат': 'Result',
   'Результат — {title}': 'Result — {title}',
@@ -443,6 +462,7 @@ const EN = {
   'Повтор лучшего результата · {prev}%': 'Matched your best · {prev}%',
   'Лучший результат: {prev}%': 'Your best: {prev}%',
 
+  // Viewer
   // Просмотр
   'Просмотр аккордов и нот': 'Chords & notes',
   'Нет выбранной песни.': 'No song selected.',
@@ -479,6 +499,7 @@ const EN = {
   'Упражнение по песне': 'Lesson from a song',
   'По ссылке': 'From link',
 
+  // Categories and utility
   // Категории и служебные
   'Каталог по ссылке': 'Catalog by link',
   'Ссылка на JSON-каталог': 'JSON catalog link',
@@ -492,6 +513,7 @@ const EN = {
   'Название каталога': 'Catalog name',
   'Каталог': 'Catalog',
 
+  // Help
   // Справка
   'Справка': 'Help',
   'Клавиатура': 'Keyboard',
@@ -514,6 +536,7 @@ const EN = {
   'Панель воспроизведения': 'Playback bar',
   'Выход': 'Exit',
 
+  // Misc notifications
   // Разные уведомления
   'Статистика сброшена': 'Statistics reset',
   'Профиль выгружен': 'Profile exported',
@@ -538,6 +561,7 @@ const EN = {
   'Не удалось загрузить: ': 'Failed to load: ',
   'Пока нет данных': 'No data yet',
 
+  // Misc formats (parser/device errors)
   // Разные форматы (ошибки парсеров/устройств)
   'Нота не распознана: ': 'Note not recognized: ',
   'Неверный формат строя': 'Invalid tuning format',
@@ -571,6 +595,7 @@ const EN = {
   'Не удалось загрузить каталог: HTTP {status}': 'Could not load the catalog: HTTP {status}',
   'Не удалось скачать песню: HTTP {status}': 'Could not download the song: HTTP {status}',
 
+  // Additions
   // Дополнения
   'Измеряю…': 'Measuring…',
   'Вывод: ': 'Output: ',

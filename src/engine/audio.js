@@ -1,3 +1,4 @@
+// Audio engine: tab playback (synthesizer), metronome and microphone input.
 // Аудио-движок: воспроизведение таба (синтезатор), метроном и вход с микрофона.
 import { midiToFreq } from './theory.js';
 
@@ -138,6 +139,7 @@ export class AudioEngine {
     return true;
   }
 
+  // List of available devices (labels appear only after permission).
   // Список доступных устройств (метки появляются только после разрешения).
   async listDevices() {
     if (!navigator.mediaDevices || !navigator.mediaDevices.enumerateDevices) {
@@ -155,6 +157,7 @@ export class AudioEngine {
     return { inputs, outputs, canSelectOutput };
   }
 
+  // Output device selection (headphones, etc.).
   // Выбор устройства вывода (наушники и т.п.).
   async setOutputDevice(deviceId) {
     await this.ensure();

@@ -1,4 +1,6 @@
+// Minimal ZIP reader (central directory + DecompressionStream).
 // Минимальный читатель ZIP (центральный каталог + DecompressionStream).
+// Needed for Guitar Pro .gp / .gpx files (they contain score.gpif inside).
 // Нужен для .gp / .gpx файлов Guitar Pro (внутри лежит score.gpif).
 
 const SIG_EOCD = 0x06054b50;
@@ -52,6 +54,7 @@ export async function readZip(bytes) {
     const localOffset = u32(dv, offset + 42);
     const name = decoder.decode(bytes.subarray(offset + 46, offset + 46 + nameLen));
 
+    // local header: compute the data offset
     // локальный заголовок: считаем смещение данных
     if (u32(dv, localOffset) === SIG_LOCAL) {
       const lNameLen = u16(dv, localOffset + 26);

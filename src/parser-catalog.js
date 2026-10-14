@@ -1,10 +1,12 @@
+// Song catalog: loading by file or link + parsing.
 // Каталог «предложенных» песен: загрузка по файлу или ссылке + разбор.
+// Catalog format:
 // Формат каталога:
 // {
-//   "name": "Название каталога",
+//   "name": "Catalog name",
 //   "songs": [
-//     { "title": "...", "artist": "...", "url": "song.gp" },     // загрузится и распарсится по ссылке (относительно каталога)
-//     { "title": "...", "song": { ...нативный формат... } }      // песня прямо в каталоге
+//     { "title": "...", "artist": "...", "url": "song.gp" },     // fetched and parsed by link (relative to the catalog)
+//     { "title": "...", "song": { ...native format... } }         // the song is embedded in the catalog
 //   ]
 // }
 import { parseNative } from './parsers/native.js';
@@ -45,6 +47,7 @@ export async function loadCatalogFromFile(file) {
   return parseCatalogText(await file.text(), null);
 }
 
+// Get a ready “raw” song from a catalog entry.
 // Получить готовую «сырую» песню из элемента каталога.
 export async function resolveEntry(entry, baseUrl) {
   if (entry.song) {
@@ -56,6 +59,7 @@ export async function resolveEntry(entry, baseUrl) {
   if (entry.url) {
     let href = baseUrl ? new URL(entry.url, baseUrl).href : entry.url;
     let res = await fetch(href, { cache: 'no-store' });
+    // fallback: relative path from the page itself
     // запасной вариант: относительный путь от самой страницы
     if (!res.ok && baseUrl && !/^https?:/i.test(entry.url)) {
       const alt = entry.url;

@@ -1,5 +1,8 @@
+// Guitar Pro 6/7/8 parser (.gpx, .gp): ZIP container + Content/score.gpif.
 // Парсер Guitar Pro 6/7/8 (.gpx, .gp): ZIP-контейнер + Content/score.gpif.
+// The GPIF format follows the Guitar Pro spec (cross-checked against alphaTab).
 // Формат GPIF разобран по спецификации Guitar Pro (сверено с реализацией alphaTab).
+// GPIF convention: <String> 0 = the lowest string; <Pitches> are listed low to high.
 // Соглашение GPIF: <String> 0 = самая низкая струна; <Pitches> перечислены от низкой к высокой.
 import { isZip, readZip, findEntry } from './zip.js';
 import { TempoMap, TUNING_PRESETS } from '../engine/theory.js';
@@ -75,6 +78,7 @@ export function parseGpifXml(xml) {
   const notesEl = childOf(root, 'Notes');
   const rhythmsEl = childOf(root, 'Rhythms');
 
+  // --- Rhythms ---
   // --- Ритмы ---
   const rhythmById = new Map();
   for (const r of childrenOf(rhythmsEl, 'Rhythm')) {
@@ -88,6 +92,7 @@ export function parseGpifXml(xml) {
     });
   }
 
+  // --- Notes ---
   // --- Ноты ---
   const noteById = new Map();
   for (const n of childrenOf(notesEl, 'Note')) {
@@ -102,6 +107,7 @@ export function parseGpifXml(xml) {
     });
   }
 
+  // --- Beats ---
   // --- Биты ---
   const beatById = new Map();
   for (const b of childrenOf(beatsEl, 'Beat')) {
@@ -112,18 +118,21 @@ export function parseGpifXml(xml) {
     });
   }
 
+  // --- Voices ---
   // --- Голоса ---
   const voiceById = new Map();
   for (const v of childrenOf(voicesEl, 'Voice')) {
     voiceById.set(v.getAttribute('id'), splitNums(textOf(v, 'Beats')));
   }
 
+  // --- Bars ---
   // --- Такты ---
   const barById = new Map();
   for (const bar of childrenOf(barsEl, 'Bar')) {
     barById.set(bar.getAttribute('id'), splitNums(textOf(bar, 'Voices')));
   }
 
+  // --- Master bars (time signatures) ---
   // --- Мастер-такты (размеры) ---
   const masterBars = [];
   for (const mb of childrenOf(masterBarsEl, 'MasterBar')) {
@@ -136,6 +145,7 @@ export function parseGpifXml(xml) {
     });
   }
 
+  // --- Tracks ---
   // --- Дорожки ---
   const tracks = [];
   const trackEls = childrenOf(tracksEl, 'Track');
@@ -170,6 +180,7 @@ export function parseGpifXml(xml) {
     });
   });
 
+  // --- Bar lengths and starts ---
   // --- Длины и начала тактов ---
   const barContentLen = (barId) => {
     const voiceIds = barById.get(barId);
@@ -203,6 +214,7 @@ export function parseGpifXml(xml) {
     q += content > 0 ? content : mb.num * (4 / mb.den);
   }
 
+  // --- Tempo ---
   // --- Темп ---
   const tempoEvents = [];
   const autoRoot = masterTrackEl ? childOf(masterTrackEl, 'Automations') : null;

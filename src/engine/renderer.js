@@ -1,4 +1,6 @@
+// Note rendering: two modes — "falling" (vertical) and "tab" (horizontal, time left-to-right).
 // Отрисовка нот: два режима — «падающие» (вертикально) и «табы» (горизонтально, время слева-направо).
+// Style — matte, warm palette, no glow.
 // Стиль — матовый, тёплая палитра, без свечения.
 import { midiToName, assignFret } from './theory.js';
 
@@ -12,6 +14,7 @@ const JUDGE_TEXT = { perfect: 'ИДЕАЛЬНО', good: 'ХОРОШО', ok: 'О�
 const INK = '#0b0b18';
 const MONO = 'ui-monospace, Menlo, Consolas, monospace';
 
+// Game-stage palettes for the light and dark themes.
 // Палитры игровой сцены под светлую и тёмную темы.
 const THEME = {
   light: {
@@ -153,6 +156,7 @@ export class HighwayRenderer {
     else this.renderHorizontal(state);
   }
 
+  // ---------------- Vertical mode: notes fall top to bottom ----------------
   // ---------------- Вертикальный режим: ноты падают сверху вниз ----------------
   renderVertical(state) {
     const { song, game, songTime, pxPerSec, detected, showFret, showFinger, countIn } = state;
@@ -284,6 +288,7 @@ export class HighwayRenderer {
     this._countInAndJudge(songTime, countIn, game);
   }
 
+  // ---------------- Horizontal mode: tab, time left to right ----------------
   // ---------------- Горизонтальный режим: табы, время слева направо ----------------
   renderHorizontal(state) {
     const { song, game, songTime, pxPerSec, detected, showFret, showFinger, countIn } = state;
@@ -300,12 +305,14 @@ export class HighwayRenderer {
     const rowH = Math.min(72, Math.max(22, usable / strings));
     const totalH = rowH * strings;
     const topY = topPad + Math.max(0, (usable - totalH) / 2);
+    // string N (high) on top, string 1 (low) at the bottom — like tablature
     // струна N (высокая) сверху, струна 1 (низкая) снизу — как в табулатуре
     const yFor = (s) => topY + (strings - s) * rowH + rowH / 2;
     const timeToX = (t) => hitLineX + (t - songTime) * pxPerSec;
 
     this._background();
 
+    // string rows
     // строки-струны
     for (let s = 1; s <= strings; s++) {
       const y = yFor(s);
@@ -320,6 +327,7 @@ export class HighwayRenderer {
       ctx.stroke();
     }
 
+    // beat / bar lines
     // линии долей / тактов
     if (song.grid) {
       for (const beat of song.grid.beats) {
@@ -334,6 +342,7 @@ export class HighwayRenderer {
       }
     }
 
+    // notes
     // ноты
     const groups = game.groups;
     ctx.textAlign = 'center';
@@ -383,6 +392,7 @@ export class HighwayRenderer {
     }
     ctx.globalAlpha = 1;
 
+    // hit line (vertical) and per-string targets
     // линия удара (вертикальная) и цели по струнам
     ctx.strokeStyle = pal.hitLine;
     ctx.lineWidth = 2;
@@ -401,6 +411,7 @@ export class HighwayRenderer {
       ctx.globalAlpha = 1;
     }
 
+    // string labels on the left
     // подписи струн слева
     ctx.fillStyle = pal.label;
     ctx.font = `600 11px ${MONO}`;
