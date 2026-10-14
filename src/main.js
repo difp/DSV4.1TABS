@@ -498,12 +498,15 @@ function bindHeroSwipe() {
   const slide = el.heroSlide;
   if (!card || !slide) return;
   const THRESHOLD = 44;
-  let startX = 0, startY = 0, dx = 0, active = false, decided = false, horizontal = false;
+  let startX = 0, startY = 0, dx = 0, active = false, decided = false, horizontal = false, captured = false;
   card.addEventListener('pointerdown', (e) => {
     if (e.pointerType === 'mouse' && e.button !== 0) return;
     startX = e.clientX; startY = e.clientY; dx = 0;
-    active = true; decided = false; horizontal = false;
-    try { card.setPointerCapture(e.pointerId); } catch { /* noop */ }
+    active = true; decided = false; horizontal = false; captured = false;
+    // NB: do not capture the pointer here — it would retarget the click and
+    // break buttons inside the card (arrows, Play, Chords...). Capture only once a drag is decided.
+    // NB: не захватываем указатель здесь — иначе клик перенаправляется на карточку
+    // и ломает кнопки внутри (стрелки, «Играть», «Аккорды»...). Захват — только при свайпе.
   });
   card.addEventListener('pointermove', (e) => {
     if (!active) return;
@@ -512,6 +515,7 @@ function bindHeroSwipe() {
       if (Math.abs(dx) < 6 && Math.abs(dy) < 6) return;
       decided = true; horizontal = Math.abs(dx) > Math.abs(dy);
       if (!horizontal) { active = false; return; }
+      if (!captured) { try { card.setPointerCapture(e.pointerId); captured = true; } catch { /* noop */ } }
     }
     if (reducedMotion()) return;
     slide.style.transform = `translateX(${dx}px)`;
@@ -521,6 +525,7 @@ function bindHeroSwipe() {
     if (!active) return;
     active = false;
     try { card.releasePointerCapture(e.pointerId); } catch { /* noop */ }
+    captured = false;
     const swiped = decided && horizontal && Math.abs(dx) > THRESHOLD;
     slide.style.transform = ''; slide.style.opacity = '';
     if (swiped) {

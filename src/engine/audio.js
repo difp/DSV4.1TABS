@@ -13,6 +13,7 @@ export class AudioEngine {
     this.micAnalyser = null;
     this._micBuf = null;
     this._sources = new Set();
+    this._pluckCache = new Map();
   }
 
   async ensure() {
@@ -23,6 +24,7 @@ export class AudioEngine {
     const Ctx = window.AudioContext || window.webkitAudioContext;
     if (!Ctx) throw new Error('Web Audio API не поддерживается браузером');
     this.ctx = new Ctx();
+    this._pluckCache = new Map();
     this.master = this.ctx.createGain();
     this.master.gain.value = 0.9;
     this.master.connect(this.ctx.destination);
@@ -40,46 +42,70 @@ export class AudioEngine {
   setGuideVolume(v) { if (this.guide) this.guide.gain.value = v; }
   setMetroVolume(v) { if (this.metro) this.metro.gain.value = v; }
 
+  // Karplus–Strong plucked-string buffer, cached per pitch (guitar-like guide tone).
+  // Щипковый синтез Карплуса–Стронга, с кэшем по высоте (гитарный «путевой» тон).
+  _pluckBuffer(ctx, midi) {
+    const key = Math.round(midi);
+    const cached = this._pluckCache.get(key);
+    if (cached) return cached;
+    const sr = ctx.sampleRate;
+    const freq = midiToFreq(key);
+    const sec = 1.6;
+    const len = Math.max(64, Math.floor(sr * sec));
+    const N = Math.max(2, Math.round(sr / freq));
+    const ring = new Float32Array(N);
+    for (let i = 0; i < N; i++) ring[i] = Math.random() * 2 - 1;
+    const decay = Math.pow(0.001, 1 / Math.max(1, freq * sec)); // ~ -60 dB by the end of `sec`
+    const buf = ctx.createBuffer(1, len, sr);
+    const out = buf.getChannelData(0);
+    let idx = 0;
+    for (let i = 0; i < len; i++) {
+      const cur = ring[idx];
+      const nxt = ring[(idx + 1) % N];
+      out[i] = cur;
+      ring[idx] = (cur + nxt) * 0.5 * decay;
+      idx = (idx + 1) % N;
+    }
+    if (this._pluckCache.size < 96) this._pluckCache.set(key, buf);
+    return buf;
+  }
+
   playNote(midi, when, dur, velocity = 0.8) {
     const c = this.ctx;
     if (!c) return;
     const freq = midiToFreq(midi);
-    const rel = Math.min(2.4, Math.max(0.3, dur + 0.4));
-
+    const rel = Math.min(1.7, Math.max(0.5, dur + 0.5));
+    const src = c.createBufferSource();
+    src.buffer = this._pluckBuffer(c, midi);
     const out = c.createGain();
-    const peak = Math.max(0.001, 0.85 * velocity);
-    out.gain.setValueAtTime(0.0001, when);
-    out.gain.linearRampToValueAtTime(peak, when + 0.006);
-    out.gain.exponentialRampToValueAtTime(0.0008, when + rel);
-
+    out.gain.value = 0.9 * velocity;
     const filt = c.createBiquadFilter();
     filt.type = 'lowpass';
-    filt.Q.value = 0.8;
-    filt.frequency.setValueAtTime(Math.min(6500, freq * 8 + 700), when);
-    filt.frequency.exponentialRampToValueAtTime(Math.max(300, freq * 2), when + rel);
+    filt.Q.value = 0.6;
+    filt.frequency.value = Math.min(7000, freq * 9 + 900);
+    src.connect(filt); filt.connect(out); out.connect(this.guide);
+    const stop = when + rel;
+    src.start(when);
+    src.stop(stop);
+    this._pick(when, velocity);
+    return this._track({ stop: () => { try { src.stop(); } catch { /* noop */ } }, end: stop });
+  }
 
-    const o1 = c.createOscillator();
-    o1.type = 'sawtooth';
-    o1.frequency.value = freq;
-    const o2 = c.createOscillator();
-    o2.type = 'triangle';
-    o2.frequency.value = freq * 2;
-    const g2 = c.createGain();
-    g2.gain.value = 0.22;
-
-    o1.connect(filt);
-    o2.connect(g2);
-    g2.connect(filt);
-    filt.connect(out);
-    out.connect(this.guide);
-
-    const stop = when + rel + 0.05;
-    o1.start(when);
-    o2.start(when);
-    o1.stop(stop);
-    o2.stop(stop);
-
-    return this._track({ stop: () => { try { o1.stop(); } catch { /* noop */ } try { o2.stop(); } catch { /* noop */ } }, end: stop });
+  // Short noise burst — the pick/string attack.
+  // Короткий шумовой всплеск — атака медиатора/струны.
+  _pick(when, velocity = 0.8) {
+    const c = this.ctx;
+    if (!c) return;
+    const len = Math.max(1, Math.floor(c.sampleRate * 0.012));
+    const buf = c.createBuffer(1, len, c.sampleRate);
+    const d = buf.getChannelData(0);
+    for (let i = 0; i < len; i++) d[i] = (Math.random() * 2 - 1) * (1 - i / len);
+    const s = c.createBufferSource(); s.buffer = buf;
+    const hp = c.createBiquadFilter(); hp.type = 'highpass'; hp.frequency.value = 1400;
+    const g = c.createGain(); g.gain.value = 0.13 * velocity;
+    s.connect(hp); hp.connect(g); g.connect(this.guide);
+    s.start(when); s.stop(when + 0.02);
+    return this._track({ stop: () => { try { s.stop(); } catch { /* noop */ } }, end: when + 0.02 });
   }
 
   _track(handle) {

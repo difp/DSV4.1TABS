@@ -38,8 +38,8 @@
           <div class="popover hidden" id="menuPopover" role="menu" aria-label="Дополнительно">
             <button class="popover__item" role="menuitem" id="menuWizard">Мастер настройки</button>
             <button class="popover__item" role="menuitem" id="menuHelp">Справка и клавиши</button>
-            <button class="popover__item" role="menuitem" id="menuTheme">Тема <span class="popover__value" id="menuThemeVal">системная</span></button>
-            <button class="popover__item" role="menuitem" id="menuLang">Язык <span class="popover__value" id="menuLangVal">системный</span></button>
+            <button class="popover__item" role="menuitem" id="menuTheme"><span>Тема</span> <span class="popover__value" id="menuThemeVal">системная</span></button>
+            <button class="popover__item" role="menuitem" id="menuLang"><span>Язык</span> <span class="popover__value" id="menuLangVal">системный</span></button>
             <div class="popover__sep" role="separator"></div>
             <button class="popover__item" role="menuitem" id="menuAbout">О проекте</button>
           </div>
@@ -75,7 +75,6 @@
           <div class="bento">
             <section class="card card--hero col-4" id="heroCard">
               <div class="hero-head">
-                <button class="hero-nav" id="heroPrev" type="button" aria-label="Предыдущее занятие">‹</button>
                 <div class="hero-slide" id="heroSlide">
                   <div class="hero-main">
                     <div class="hero-type" id="heroType">Упражнение</div>
@@ -107,11 +106,12 @@
                     </div>
                   </div>
                 </div>
-                <button class="hero-nav" id="heroNext" type="button" aria-label="Следующее занятие">›</button>
               </div>
               <div class="hero-indicator">
+                <button class="hero-nav" id="heroPrev" type="button" aria-label="Предыдущее занятие">‹</button>
                 <span class="hero-count mono" id="heroCount">—</span>
                 <div class="hero-dots" id="heroDots" role="group" aria-label="Выбор занятия"></div>
+                <button class="hero-nav" id="heroNext" type="button" aria-label="Следующее занятие">›</button>
               </div>
               <p class="hero-hint">Смахните карточку или нажмите ‹ ›, чтобы выбрать занятие</p>
             </section>
