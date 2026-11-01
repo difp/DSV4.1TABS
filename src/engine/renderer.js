@@ -124,7 +124,7 @@ export class HighwayRenderer {
       ctx.font = `700 22px ${MONO}`;
       ctx.textAlign = 'center';
       const jt = this.judgeText || JUDGE_TEXT;
-      ctx.fillText(jt[lj.judge] || '', w / 2, h * 0.3);
+      ctx.fillText(jt[lj.judge] || '', w / 2, h < 220 ? 18 : h * 0.3);
       ctx.globalAlpha = 1;
     }
   }
@@ -302,10 +302,14 @@ export class HighwayRenderer {
 
     const labelW = 46;
     const hitLineX = labelW + 18;
-    const topPad = Math.min(140, Math.max(72, h * 0.16));
-    const bottomPad = 24;
-    const usable = Math.max(90, h - topPad - bottomPad);
-    const rowH = Math.min(72, Math.max(22, usable / strings));
+    // The diagrams and controls can leave a short canvas on a phone. Fit every
+    // string into that canvas rather than drawing rows below its bottom edge.
+    const topPad = w < 520
+      ? Math.min(94, h * 0.45)
+      : h < 220 ? Math.min(56, h * 0.25) : Math.min(140, Math.max(72, h * 0.16));
+    const bottomPad = Math.min(24, h * 0.06);
+    const usable = Math.max(0, h - topPad - bottomPad);
+    const rowH = Math.min(72, usable / strings);
     const totalH = rowH * strings;
     const topY = topPad + Math.max(0, (usable - totalH) / 2);
     // string N (high) on top, string 1 (low) at the bottom — like tablature

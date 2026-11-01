@@ -20,7 +20,7 @@ export class Game {
   }
 
   reset() {
-    for (const g of this.groups) { g.hit = false; g.judged = false; g.judge = null; g.judgedAt = null; }
+    for (const g of this.groups) { g.hit = false; g.judged = false; g.judge = null; g.judgedAt = null; g.outcome = null; }
     this.score = 0;
     this.combo = 0;
     this.maxCombo = 0;
@@ -30,20 +30,51 @@ export class Game {
     this.missByFret = {};
     this.notesTotal = this.groups.length;
     this.pointer = 0;
+    this.chordModes = new Set();
     this.events = [];
     this.lastJudge = null;
     this.finished = false;
   }
 
-  // Resets note judgments after a position (on seek) without touching the score.
-  // Сбрасывает оценку нот после позиции (при перемотке), не трогая очки.
-  rewind(songTime) {
+  // Clear results in the replayed range; retain results outside an A/B loop.
+  rewind(songTime, endTime = Infinity) {
     for (const g of this.groups) {
-      if (g.t >= songTime - 0.15) { g.hit = false; g.judged = false; g.judge = null; g.judgedAt = null; }
+      if (g.t >= songTime - 0.001 && g.t < endTime) {
+        g.hit = false; g.judged = false; g.judge = null; g.judgedAt = null; g.outcome = null;
+      } else if (g.t < songTime - 0.001 && !g.judged) {
+        // A forward seek skips notes rather than treating them as missed.
+        g.judged = true; g.judge = null;
+      }
     }
+    this._recount();
     this.pointer = 0;
     this.advancePointer();
+    this.lastJudge = null;
     this.finished = false;
+  }
+
+  _recount(currentGroup = null) {
+    this.score = 0; this.combo = 0; this.maxCombo = 0; this.hits = 0; this.misses = 0;
+    this.missByString = {}; this.missByFret = {}; this.chordModes = new Set();
+    let currentCombo = 0;
+    for (const g of this.groups) {
+      const outcome = g.outcome;
+      if (!outcome) { this.combo = 0; continue; }
+      if (outcome.mode) this.chordModes.add(outcome.mode);
+      if (outcome.judge === 'miss') {
+        this.misses++; this.combo = 0;
+        for (const n of g.notes) {
+          const s = String(n.string), f = String(n.fret);
+          this.missByString[s] = (this.missByString[s] || 0) + 1;
+          this.missByFret[f] = (this.missByFret[f] || 0) + 1;
+        }
+      } else {
+        this.hits++; this.combo++; this.maxCombo = Math.max(this.maxCombo, this.combo);
+        this.score += Math.round(outcome.points * (1 + Math.floor(this.combo / 10) * 0.5));
+      }
+      if (g === currentGroup) currentCombo = this.combo;
+    }
+    this.combo = currentCombo;
   }
 
   advancePointer() {
@@ -104,7 +135,7 @@ export class Game {
     const has = (m) => (heard != null && heard.has(m)) || (yinMidi != null && yinMidi === m);
     if (g.notes.every((n) => n.dead)) return heard != null || yinMidi != null;
     const mode = this.opts.chordMode || 'any';
-    if (mode === 'all' && heard && g.notes.length > 1) {
+    if (mode === 'all' && g.notes.length > 1) {
       return g.notes.every((n) => n.dead || has(Math.round(n.midi)));
     }
     if (mode === 'root') {
@@ -123,11 +154,8 @@ export class Game {
     if (adt <= this.opts.perfect) { judge = 'perfect'; points = 100; }
     else if (adt <= this.opts.good) { judge = 'good'; points = 70; }
     g.judge = judge;
-    this.combo++;
-    this.maxCombo = Math.max(this.maxCombo, this.combo);
-    this.hits++;
-    const mult = 1 + Math.floor(this.combo / 10) * 0.5;
-    this.score += Math.round(points * mult);
+    g.outcome = { judge, points, mode: g.notes.length > 1 ? this.opts.chordMode : null };
+    this._recount(g);
     this.lastJudge = { judge, dt, t: now };
     this.events.push({ type: 'hit', judge, dt, notes: g.notes, t: now, combo: this.combo });
   }
@@ -136,16 +164,8 @@ export class Game {
     g.judged = true;
     g.judgedAt = now;
     g.judge = 'miss';
-    this.combo = 0;
-    this.misses++;
-    // miss statistics: by string and by fret (for tips and practice)
-    // статистика ошибок: по струне и по ладу (для советов и отработки)
-    for (const n of g.notes) {
-      const s = String(n.string);
-      const f = String(n.fret);
-      this.missByString[s] = (this.missByString[s] || 0) + 1;
-      this.missByFret[f] = (this.missByFret[f] || 0) + 1;
-    }
+    g.outcome = { judge: 'miss', mode: g.notes.length > 1 ? this.opts.chordMode : null };
+    this._recount(g);
     this.lastJudge = { judge: 'miss', t: now };
     this.events.push({ type: 'miss', notes: g.notes, t: now });
   }

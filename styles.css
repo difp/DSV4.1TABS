@@ -682,8 +682,7 @@ body[data-ui="phone"] .popover { left: auto; right: 0; min-width: 0; width: min(
 body.is-playing .brand,
 body.is-playing .menu { display: none; }
 body.is-playing .stat--score { display: none; }
-body.is-playing .playbar #btnRestart,
-body.is-playing .playbar__loop { display: none; }
+
 body.is-playing .hud { padding-top: max(var(--space-4), var(--sat)); }
 
 /* ------------------------- Chips (About block) ------------------------- */
@@ -813,4 +812,152 @@ kbd {
 }
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation-duration: 0.001ms !important; animation-iteration-count: 1 !important; transition-duration: 0.001ms !important; }
+}
+
+/* Clear labels and a text alternative for the practice view. */
+.sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; border: 0; }
+.assessment-hint { color: var(--stage-text-2); font-size: 12px; max-width: 32em; text-align: right; }
+.playbar__view .btn { width: auto; display: inline-flex; align-items: center; gap: 5px; padding-inline: 9px; }
+.playbar__text { font-size: 12px; }
+dialog { max-width: min(480px, calc(100vw - 32px)); border: 1px solid var(--line); border-radius: var(--radius-card); color: var(--text); background: var(--surface); padding: var(--space-5); }
+dialog::backdrop { background: var(--scrim); }
+.dialog-actions { display: flex; gap: var(--space-2); justify-content: flex-end; flex-wrap: wrap; }
+@media (max-width: 1100px) { .playbar { flex-wrap: wrap; row-gap: var(--space-2); } .playbar .progress { flex-basis: 100%; } }
+@media (max-width: 700px) { .playbar__text { font-size: 11px; } .playbar { gap: var(--space-1); } }
+
+.note-table { display: table; width: 100%; border-collapse: collapse; text-align: start; }
+.note-table th, .note-table td { text-align: start; padding: var(--space-2); border-bottom: 1px solid var(--line); }
+.note-table th { font-weight: 500; color: var(--text-2); }
+
+@media (max-width: 700px) {
+  .playbar { padding-inline: 8px; }
+  .playbar .btn { min-height: 44px; padding-inline: 8px; }
+  .playbar .btn--icon, .playbar__loop .btn { min-width: 44px; }
+  .playbar__loop-label { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
+  body[data-ui="phone"] .playbar .progress { flex: 1 1 120px; order: 5; }
+  body[data-ui="phone"] .playbar .time { order: 6; }
+}
+
+.warning { padding: var(--space-3); border: 1px solid var(--line-strong); border-radius: var(--radius-ctl); color: var(--text); background: var(--surface-2); }
+
+/* Static tablature: one column per exact onset, one row per string. */
+.tab-scroll { max-width: 100%; overflow-x: auto; margin-block: var(--space-4); border: 1px solid var(--line); border-radius: var(--radius-ctl); }
+.tablature { border-collapse: collapse; width: 100%; min-width: max-content; font-family: var(--mono); font-variant-numeric: tabular-nums; }
+.tablature th, .tablature td { min-width: 68px; padding: 6px 8px; text-align: center; border-bottom: 1px solid var(--line); }
+.tablature th:first-child { position: sticky; left: 0; z-index: 1; min-width: 105px; background: var(--surface); text-align: left; }
+.tablature thead th { font-size: 11px; font-weight: 400; color: var(--text-2); }
+.tablature td { font-weight: 600; background: linear-gradient(transparent calc(50% - .5px), var(--line-strong) 50%, transparent calc(50% + .5px)); }
+.tab-note { display: inline-block; padding: 1px 3px; background: var(--surface); }
+.tab-note small { display: block; color: var(--text-2); font-size: 10px; font-weight: 400; }
+
+/* Fretboard diagrams: positions follow the exercise, not an inferred chord. */
+.fretboard-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: var(--space-4); align-items: start; }
+.fretboard-card { margin: 0; min-width: 0; text-align: center; color: var(--text); }
+.fretboard-card figcaption { display: flex; flex-direction: column; min-height: 42px; font-size: 13px; }
+.fretboard-card figcaption span { color: var(--text-2); font-size: 11px; }
+.fretboard-card .diagram { display: block; width: 100%; max-width: 150px; height: auto; margin: var(--space-2) auto; }
+.fretboard-card details { color: var(--text-2); font-size: 12px; overflow-wrap: anywhere; }
+.fretboard-card details summary { cursor: pointer; }
+
+@media (max-width: 500px) { .fretboard-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--space-3); } }
+
+/* The practice reference has its own space above the canvas and HUD. */
+.area { display: flex; flex-direction: column; }
+.game-stage { position: relative; flex: 1 1 0; min-height: 0; }
+.practice-diagrams[hidden] { display: none; }
+.practice-diagrams { flex: 0 0 auto; max-height: min(38%, 222px); overflow-y: auto; padding: var(--space-2) var(--space-4); background: var(--surface); border-bottom: 1px solid var(--line); }
+.practice-diagrams__header { display: flex; align-items: center; justify-content: space-between; gap: var(--space-3); }
+.practice-diagrams__header h2 { margin: 0; font-size: 14px; line-height: 1.2; }
+.practice-diagrams__header p { margin: 2px 0 0; color: var(--text-2); font-size: 11px; line-height: 1.3; }
+.practice-diagrams__header .btn { flex: none; }
+.practice-diagrams__rail { display: flex; gap: var(--space-3); overflow-x: auto; overscroll-behavior-inline: contain; scrollbar-width: thin; padding: var(--space-1) 2px; }
+.practice-diagram { flex: 0 0 108px; min-width: 0; margin: 0; text-align: center; color: var(--text); }
+.practice-diagram figcaption { font-size: 13px; font-weight: 600; }
+.practice-diagram .diagram { display: block; height: 100px; width: auto; max-width: 100%; margin: 0 auto; }
+body[data-ui="phone"] .practice-diagrams { padding-inline: var(--space-3); max-height: min(42%, 238px); }
+body[data-ui="phone"] .practice-diagram { flex-basis: 145px; }
+body[data-ui="phone"] .practice-diagram figcaption { font-size: 15px; }
+body[data-ui="phone"] .practice-diagram .diagram { height: 130px; }
+@media (max-height: 650px) { .practice-diagram .diagram, body[data-ui="phone"] .practice-diagram .diagram { height: 110px; } }
+@media (max-height: 500px) and (orientation: portrait) { body[data-ui="phone"] .practice-diagram .diagram { height: 82px; } }
+/* Keep the entire diagram visible above the track on short screens. */
+.practice-diagrams, body[data-ui="phone"] .practice-diagrams { max-height: none; overflow-y: visible; }
+@media (max-height: 500px) and (orientation: landscape) {
+  body.is-playing[data-ui="phone"] .topbar { flex-wrap: nowrap; }
+  body.is-playing[data-ui="phone"] .now-playing { flex-basis: auto; order: 0; }
+  body.is-playing[data-ui="phone"] .now-playing__meta { display: none; }
+  body.is-playing .practice-diagrams__header p { display: none; }
+  body.is-playing .practice-diagram .diagram, body.is-playing[data-ui="phone"] .practice-diagram .diagram { height: 60px; }
+}
+@media (max-height: 500px) and (orientation: landscape) {
+  body.is-playing[data-ui="phone"] #app { width: 100%; border: 0; border-radius: 0; }
+  body.is-playing[data-ui="phone"] .topbar__actions { flex: none; flex-wrap: nowrap; }
+}
+@media (max-height: 500px) and (orientation: landscape) {
+  body.is-playing .practice-diagrams { display: flex; align-items: center; gap: var(--space-2); padding-block: 4px; }
+  body.is-playing .practice-diagrams__header { flex: 0 0 96px; flex-direction: column; align-items: flex-start; gap: 2px; }
+  body.is-playing .practice-diagrams__rail { flex: 1; min-width: 0; }
+  body.is-playing[data-ui="phone"] .practice-diagram { flex-basis: 85px; }
+}
+
+.playbar__controls { display: contents; }
+.playbar__scroll-hint { display: none; }
+@media (max-height: 650px) {
+  body.is-playing .topbar { padding-block: 4px; }
+  body.is-playing[data-ui="phone"] .topbar { flex-wrap: nowrap; }
+  body.is-playing[data-ui="phone"] .now-playing { flex-basis: auto; order: 0; }
+  body.is-playing[data-ui="phone"] .now-playing__meta { display: none; }
+  body.is-playing[data-ui="phone"] .topbar__actions { flex: none; flex-wrap: nowrap; }
+  body.is-playing .playbar { gap: 2px 8px; padding: 4px 8px; }
+  body.is-playing .playbar__scroll-hint { display: block; flex-basis: 100%; color: var(--text-2); font-size: 10px; line-height: 1.2; }
+  body.is-playing .playbar__controls { display: flex; flex: 0 0 100%; gap: var(--space-2); overflow-x: auto; overflow-y: hidden; scrollbar-width: thin; padding: 2px; }
+  body.is-playing .playbar__controls > * { flex: none; }
+  body.is-playing .playbar__controls::-webkit-scrollbar { height: 5px; }
+  body.is-playing .playbar__controls::-webkit-scrollbar-thumb { background: var(--line-strong); border-radius: 4px; }
+  body.is-playing .playbar .progress { flex: 1 1 120px; }
+}
+
+body[data-ui="phone"] .hud__right { max-width: 55%; }
+body[data-ui="phone"] .hud__right .assessment-hint { font-size: 10px; line-height: 1.2; }
+body[data-ui="phone"] .feedback:empty { display: none; }
+
+@media (max-height: 500px) and (orientation: landscape) {
+  body.is-playing .hud { padding: 2px 8px; }
+  body.is-playing .hud__stats { gap: var(--space-2); }
+  body.is-playing .stat { min-width: 0; flex-direction: row; align-items: baseline; gap: 3px; }
+  body.is-playing .stat__value { font-size: 16px; }
+  body.is-playing .stat__label { margin: 0; font-size: 9px; letter-spacing: 0; }
+  body.is-playing .hud__right { max-width: 68%; flex-direction: row; align-items: baseline; gap: var(--space-1); }
+  body.is-playing .pitch { font-size: 14px; }
+  body.is-playing .feedback, body.is-playing .assessment-hint { font-size: 9px; line-height: 1.15; }
+}
+
+.game-stage { touch-action: none; cursor: grab; }
+.game-stage:active { cursor: grabbing; }
+.practice-diagram { border-radius: var(--radius-ctl); border: 1px solid transparent; }
+.practice-diagram.is-current { border-color: var(--indigo); background: var(--indigo-tint); }
+
+/* Keep the workspace focused on the current task. */
+body:not(.is-game-view) .playbar { display: none; }
+.tempo-card { align-self: start; }
+.about-card summary { cursor: pointer; margin: 0; }
+.about-card[open] summary { margin-bottom: var(--space-3); }
+.playbar__extra { display: contents; }
+.playbar__more, .cat__more, #btnView { display: none; }
+body[data-ui="phone"] .mic__text { display: inline; font-size: 12px; }
+body[data-ui="phone"] .mic__level { display: none; }
+body[data-ui="phone"] .cat__nav { display: none; }
+body[data-ui="phone"] .cat__rail { display: flex; flex-direction: column; overflow: visible; }
+body[data-ui="phone"] .exc-card { width: 100%; }
+body[data-ui="phone"] .cat:not(.is-expanded) .exc-card:nth-child(n+3) { display: none; }
+body[data-ui="phone"] .cat__more:not([hidden]) { display: inline-flex; margin-top: var(--space-2); }
+body[data-ui="phone"] .playbar__more { display: inline-flex; order: 2; }
+body[data-ui="phone"] .playbar__group { order: 1; }
+body[data-ui="phone"] .playbar__speedwrap { order: 3; }
+body[data-ui="phone"] .playbar__extra { display: none; }
+body[data-ui="phone"].show-extra-controls .playbar__extra { display: flex; flex-wrap: wrap; flex-basis: 100%; gap: var(--space-2); order: 4; }
+body[data-ui="phone"]:not(.show-extra-controls) #btnRestart { display: none; }
+@media (max-height: 650px) {
+  body.is-playing[data-ui="phone"] .playbar__scroll-hint { display: none; }
+  body.is-playing[data-ui="phone"] .playbar__controls { display: contents; }
 }

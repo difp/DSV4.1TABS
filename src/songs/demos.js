@@ -45,7 +45,7 @@ function fiveInARow() {
 function scaleOneString() {
   const notes = [];
   let beat = 0;
-  for (const f of [3, 5, 7, 8, 10, 12, 10, 8, 7, 5, 3]) { notes.push(N(beat, 2, f, 0.9)); beat += 1; }
+  for (const f of [3, 5, 7, 8, 10, 12, 14, 15, 14, 12, 10, 8, 7, 5, 3]) { notes.push(N(beat, 2, f, 0.9)); beat += 1; }
   return { id: 'scale-one-string', title: 'Гамма на одной струне', artist: 'Упражнение', bpm: 90, notes };
 }
 
@@ -69,7 +69,7 @@ function pentatonic() {
 }
 
 function majorScale() {
-  const up = [[2, 3], [2, 5], [3, 2], [3, 3], [3, 5], [4, 2], [4, 4], [4, 5], [5, 3], [5, 5], [6, 2], [6, 3], [6, 5], [6, 7], [6, 8]];
+  const up = [[2, 3], [2, 5], [3, 2], [3, 3], [3, 5], [4, 2], [4, 4], [4, 5], [5, 3], [5, 5], [6, 1], [6, 3], [6, 5], [6, 7], [6, 8]];
   const notes = [];
   let beat = 0;
   for (const [s, f] of up) { notes.push(N(beat, s, f, 0.45)); beat += 0.5; }
@@ -80,8 +80,8 @@ function majorScale() {
 function spider() {
   const notes = [];
   let beat = 0;
-  for (const s of [1, 2, 3, 4]) for (const f of [0, 2, 1, 3]) { notes.push(N(beat, s, f, 0.45)); beat += 0.5; }
-  return { id: 'spider-1-3-2-4', title: 'Спуск и подъём 1-3-2-4', artist: 'Упражнение', bpm: 100, notes };
+  for (const s of [1, 2, 3, 4]) for (const f of [1, 3, 2, 4]) { notes.push(N(beat, s, f, 0.45)); beat += 0.5; }
+  return { id: 'spider-1-3-2-4', title: 'Паук: пальцы 1-3-2-4', artist: 'Упражнение', bpm: 100, notes };
 }
 
 // --- Level 4 ---
@@ -106,7 +106,7 @@ function fifths() {
 }
 
 function fingerstyle() {
-  const seq = [[1, 0], [3, 2], [4, 2], [5, 1], [4, 2], [3, 2]];
+  const seq = [[2, 0], [3, 2], [4, 2], [5, 1], [4, 2], [3, 2]];
   const notes = [];
   let beat = 0;
   for (let i = 0; i < 4; i++) for (const [s, f] of seq) { notes.push(N(beat, s, f, 0.45)); beat += 0.5; }
@@ -142,7 +142,11 @@ function pentatonic16() {
 function odeToJoy() {
   const q = [[5, 0], [5, 0], [5, 1], [5, 3], [5, 3], [5, 1], [5, 0], [4, 2], [4, 0], [4, 0], [4, 2], [5, 0], [5, 0], [4, 2], [4, 2]];
   const notes = [];
-  q.forEach(([s, f], i) => notes.push(N(i, s, f, i === q.length - 1 ? 2 : 0.95)));
+  q.forEach(([s, f], i) => {
+    const beat = i === 13 ? 13.5 : i;
+    const duration = i === 12 ? 1.5 : i === 13 ? 0.5 : i === 14 ? 2 : 1;
+    notes.push(N(beat, s, f, duration));
+  });
   return { id: 'ode-to-joy', title: 'Ode to Joy', artist: 'Бетховен · PD', bpm: 100, timeSignature: [4, 4], notes };
 }
 
@@ -165,17 +169,17 @@ function spanishRomance() {
   const notes = [];
   let b = 0;
   const em = [[1, 0], [5, 0], [6, 0], [4, 0], [6, 0], [5, 0]];
-  const b7 = [[2, 2], [5, 0], [6, 2], [4, 2], [6, 2], [5, 0]];
+  const b7 = [[2, 2], [5, 0], [6, 2], [4, 2], [6, 2], [3, 1]];
   for (const bar of [em, em, b7, b7, em, em, b7, b7]) {
     for (const [s, f] of bar) { notes.push(N(b, s, f, 0.45)); b += 0.5; }
   }
-  return { id: 'spanish-romance', title: 'Испанский романс (перебор Em)', artist: 'Классика · PD', bpm: 96, timeSignature: [3, 4], notes };
+  return { id: 'spanish-romance', title: 'Перебор Em–B7 (3/4)', artist: 'Упражнение', bpm: 96, timeSignature: [3, 4], notes };
 }
 
 function houseOfRisingSun() {
   const notes = [];
   let b = 0;
-  const am = [[1, 0], [2, 0], [3, 2], [4, 2], [5, 1], [6, 0]];
+  const am = [[2, 0], [3, 2], [4, 2], [5, 1], [6, 0], [5, 1]];
   const c = [[2, 3], [3, 2], [4, 0], [5, 1], [6, 0], [4, 0]];
   const d = [[3, 0], [4, 2], [5, 3], [6, 2], [5, 3], [4, 2]];
   const f = [[3, 3], [4, 2], [5, 1], [6, 1], [5, 1], [4, 2]];
@@ -222,8 +226,10 @@ function bluesShuffle() {
   const E5 = [1, 0, 2, 2];
   const bars = [A5, A5, A5, A5, D5, D5, A5, A5, E5, D5, A5, A5];
   for (const [rs, rf, fs, ff] of bars) {
-    const pattern = [[rs, rf, 0.66], [fs, ff, 0.33], [rs, rf, 0.66], [fs, ff, 0.33]];
-    for (const [s, f, d] of pattern) { notes.push(N(b, s, f, d * 0.95)); b += d; }
+    for (let beat = 0; beat < 4; beat++) {
+      notes.push(N(b, rs, rf, (2 / 3) * 0.95)); b += 2 / 3;
+      notes.push(N(b, fs, ff, (1 / 3) * 0.95)); b += 1 / 3;
+    }
   }
   return { id: 'blues-shuffle-12', title: 'Блюзовый шаффл (12 тактов)', artist: 'Блюз · оригинал', bpm: 100, timeSignature: [4, 4], notes };
 }
@@ -255,30 +261,31 @@ const SHAPES = {
   E: [0, 2, 2, 1, 0, 0], Dm: [null, null, 0, 2, 3, 1], D: [null, null, 0, 2, 3, 2],
   G: [3, 2, 0, 0, 0, 3], C: [null, 3, 2, 0, 1, 0], B7: [null, 2, 1, 2, 0, 2],
 };
-function fingersForShape(frets) {
-  const uniq = [...new Set(frets.filter((f) => f != null && f > 0))].sort((a, b) => a - b);
-  const map = new Map(); uniq.forEach((f, i) => map.set(f, Math.min(4, i + 1)));
-  return frets.map((f) => (f == null || f === 0 ? 0 : map.get(f)));
-}
+// One conventional fingering for each shape; 0 marks an open string.
+export const SHAPE_FINGERS = {
+  Em: [0, 2, 3, 0, 0, 0], A: [0, 0, 1, 2, 3, 0], Am: [0, 0, 2, 3, 1, 0],
+  E: [0, 2, 3, 1, 0, 0], Dm: [0, 0, 0, 2, 3, 1], D: [0, 0, 0, 1, 3, 2],
+  G: [2, 1, 0, 0, 0, 3], C: [0, 3, 2, 0, 1, 0], B7: [0, 2, 1, 3, 0, 4],
+};
 function strumChord(notes, name, beat, strums) {
   const shape = SHAPES[name]; if (!shape) return beat;
-  const fingers = fingersForShape(shape);
+  const fingers = SHAPE_FINGERS[name];
   for (let k = 0; k < strums; k++) {
-    for (let i = 0; i < 6; i++) { const fr = shape[i]; if (fr == null) continue; notes.push(N(beat, i + 1, fr, 0.9)); }
+    for (let i = 0; i < 6; i++) { const fr = shape[i]; if (fr == null) continue; notes.push({ ...N(beat, i + 1, fr, 0.9), finger: fingers[i] }); }
     beat += 1;
   }
   return beat;
 }
 function arpChord(notes, name, beat, beats) {
   const shape = SHAPES[name]; if (!shape) return beat + beats;
-  const fingers = fingersForShape(shape);
+  const fingers = SHAPE_FINGERS[name];
   const strs = [];
   for (let i = 0; i < 6; i++) if (shape[i] != null) strs.push(i + 1);
   const step = 0.5;
   let k = 0;
   for (let t = 0; t < beats - 1e-9; t += step) {
     const s = strs[k % strs.length];
-    notes.push(N(beat + t, s, shape[s - 1], 0.5));
+    notes.push({ ...N(beat + t, s, shape[s - 1], 0.5), finger: fingers[s - 1] });
     k++;
   }
   return beat + beats;
@@ -293,6 +300,21 @@ function arpExercise(id, title, bpm, chords, cycles, beats = 4) {
   for (let c = 0; c < cycles; c++) for (const name of chords) beat = arpChord(notes, name, beat, beats);
   return { id, title, artist: 'По самоучителю', bpm, timeSignature: [4, 4], notes };
 }
+
+// Learn a single chord: each sounding string separately, then the complete shape.
+function introChord(name) {
+  const shape = SHAPES[name]; const fingers = SHAPE_FINGERS[name];
+  const notes = []; let beat = 0;
+  for (let i = 0; i < shape.length; i++) {
+    if (shape[i] == null) continue;
+    notes.push({ ...N(beat, i + 1, shape[i], 0.9), finger: fingers[i] });
+    beat++;
+  }
+  beat++; // A beat to prepare the full chord.
+  strumChord(notes, name, beat, 4);
+  return { id: 'intro-' + name.toLowerCase(), title: 'Знакомство с аккордом ' + name, artist: 'Упражнение', bpm: 60, timeSignature: [4, 4], notes };
+}
+const INTRO_CHORDS = ['Em', 'Am', 'A', 'E', 'Dm', 'D', 'G', 'C', 'B7'];
 
 // Single-chord practice (Em — the easiest), then alternating chord pairs.
 // Отработка одного аккорда (Em — самый лёгкий), затем чередования пар аккордов.
@@ -346,10 +368,10 @@ function frereJacques() {
     M(4, 60, 1), M(5, 62, 1), M(6, 64, 1), M(7, 60, 1),
     M(8, 64, 1), M(9, 65, 1), M(10, 67, 2),
     M(12, 64, 1), M(13, 65, 1), M(14, 67, 2),
-    M(16, 67, 0.5), M(17, 69, 0.5), M(18, 67, 0.5), M(19, 65, 0.5), M(20, 64, 1), M(21, 60, 1),
-    M(22, 67, 0.5), M(23, 69, 0.5), M(24, 67, 0.5), M(25, 65, 0.5), M(26, 64, 1), M(27, 60, 1),
+    M(16, 67, 0.5), M(16.5, 69, 0.5), M(17, 67, 0.5), M(17.5, 65, 0.5), M(18, 64, 1), M(19, 60, 1),
+    M(20, 67, 0.5), M(20.5, 69, 0.5), M(21, 67, 0.5), M(21.5, 65, 0.5), M(22, 64, 1), M(23, 60, 1),
+    M(24, 60, 1), M(25, 55, 1), M(26, 60, 2),
     M(28, 60, 1), M(29, 55, 1), M(30, 60, 2),
-    M(32, 60, 1), M(33, 55, 1), M(34, 60, 2),
   ];
   return { id: 'frere-jacques', title: 'Frère Jacques', artist: 'Народная · PD', bpm: 96, timeSignature: [4, 4], notes };
 }
@@ -396,8 +418,8 @@ const RAW = [
   spanishStrum(),
   bluesShuffle(),
   rockRoll(),
-  // Chords from the method
-  // Аккорды по самоучителю
+  // Chord introductions and method exercises.
+  ...INTRO_CHORDS.map(introChord),
   bookEm(),
   bookEmAm(),
   bookAmA(),
@@ -425,9 +447,9 @@ const TIPS = {
   'open-strings': 'Разминка: играйте открытые струны ровно и чисто, под метроном ~70.',
   'first-fret': 'Чередуйте открытую струну и 1-й лад одним пальцем — готовим левую руку.',
   'five-in-a-row': 'Пять нот подряд на трёх струнах: ровный перебор, слушайте метроном.',
-  'scale-one-string': 'Гамма на одной струне развивает координацию и растяжку пальцев.',
+  'scale-one-string': 'До мажор на одной струне: до–ре–ми–фа–соль–ля–си–до. Играйте вверх и вниз.',
   'chromatic-warmup': 'Хроматика 0-1-2-3 по всем струнам вверх и вниз. Начните с 70–80 и постепенно ускоряйтесь.',
-  'a-minor-pentatonic': 'Пентатоника ля-минор в 1-й позиции — играйте и вверх, и вниз.',
+  'a-minor-pentatonic': 'Пентатоника ля-минор в V позиции — играйте и вверх, и вниз.',
   'c-major-scale': 'Мажорная гамма C — базовый звукоряд; следите за аппликатурой левой руки.',
   'spider-1-3-2-4': '«Паук» 1-3-2-4 тренирует независимость пальцев левой руки.',
   'hands-sync': 'Синхронизация рук: короткие ноты, играйте медленно и ровно.',
@@ -437,7 +459,7 @@ const TIPS = {
   'rock-power-riff': 'Рифф на квинтах: играйте с ощущением восьмых, акцентируйте сильные доли.',
   'ode-to-joy': 'Простая мелодия: следите за длительностями и чистой сменой нот.',
   'greensleeves': 'Трёхдольный размер: ведите мелодию плавно, без пауз.',
-  'spanish-romance': 'Классический перебор: бас + поочерёдно остальные пальцы.',
+  'spanish-romance': 'Учебный перебор Em–B7 в размере 3/4: бас и поочерёдные звуки аккорда.',
   'house-of-rising-sun': 'Перебор в 3/4: бас на сильную долю, арпеджио ровно.',
   'la-bamba': 'Простой ритм с быстрыми нотами — начинайте медленно.',
   'spanish-strum-cfgam': 'Бой C–F–G–Am: отрабатывайте смену аккордов без пауз.',
@@ -462,13 +484,14 @@ const TIPS = {
   'when-the-saints': 'Мелодия в C-мажоре — хорошая разминка для беглости.',
 };
 
-export const DEMO_SONGS = RAW.map((s) => { s.tip = TIPS[s.id] || ''; return s; });
+export const DEMO_SONGS = RAW.map((s) => { s.tip = TIPS[s.id] || (s.id.startsWith('intro-') ? 'Зажмите форму аккорда. Сначала сыграйте каждую звучащую струну отдельно, затем четыре раза проведите по ним вместе. Не играйте струны, отмеченные × на схеме.' : ''); return s; });
 
 // Categories by stable id (names are localized via i18n).
 // Категории по стабильным id (названия локализуются через i18n).
 export const CATEGORIES = [
   { key: 'warmup', ids: ['open-strings', 'first-fret', 'five-in-a-row', 'scale-one-string', 'chromatic-warmup'] },
   { key: 'scales', ids: ['a-minor-pentatonic', 'c-major-scale', 'spider-1-3-2-4', 'hands-sync', 'pentatonic-16ths'] },
+  { key: 'intro', ids: INTRO_CHORDS.map(name => 'intro-' + name.toLowerCase()) },
   { key: 'book', ids: ['book-em', 'book-em-am', 'book-am-a', 'book-em-e', 'book-dm-d', 'book-g-c', 'book-b7-em'] },
   { key: 'chords', ids: ['fifths-up', 'fingerstyle-am', 'rock-power-riff', 'spanish-strum-cfgam', 'book-prog-am-dm-e', 'book-prog-c-g-dm-am', 'book-prog-em-am-d-g', 'book-arp-am-dm-e', 'book-arp-g-c', 'blues-shuffle-12'] },
   { key: 'classics', ids: ['ode-to-joy', 'greensleeves', 'spanish-romance', 'house-of-rising-sun', 'la-bamba', 'rock-n-roll-fifths', 'twinkle-twinkle', 'mary-lamb', 'frere-jacques', 'jingle-bells', 'when-the-saints'] },

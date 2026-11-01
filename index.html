@@ -54,18 +54,31 @@
     </nav>
 
     <main class="area">
-      <canvas id="stage"></canvas>
+      <section class="practice-diagrams" id="practiceDiagrams" aria-labelledby="practiceDiagramsTitle" hidden>
+        <div class="practice-diagrams__header">
+          <div><h2 id="practiceDiagramsTitle">Схемы грифа</h2><p id="practiceDiagramsHint">Схемы идут по порядку ↔. Трассу можно перемотать колесом или перетаскиванием.</p></div>
+          <button class="btn btn--sm" id="btnAllPracticeDiagrams">Все схемы</button>
+        </div>
+        <div class="practice-diagrams__rail" id="practiceDiagramsRail" tabindex="0" role="region" aria-label="Схемы грифа выбранного упражнения"></div>
+      </section>
+      <div class="game-stage">
+      <canvas id="stage" aria-hidden="true"></canvas>
+      <p id="accessibleNotes" class="sr-only" aria-live="polite" aria-atomic="true"></p>
       <div class="hud">
         <div class="hud__stats">
           <div class="stat stat--score"><span class="stat__value" id="score">0</span><span class="stat__label">Очки</span></div>
           <div class="stat"><span class="stat__value" id="combo">0</span><span class="stat__label">Серия</span></div>
-          <div class="stat"><span class="stat__value" id="accuracy">100%</span><span class="stat__label">Точность</span></div>
+          <div class="stat"><span class="stat__value" id="accuracy">—</span><span class="stat__label">Точность</span></div>
         </div>
         <div class="hud__right">
           <div class="pitch" id="pitchNote">— <span id="pitchCents"></span></div>
           <div class="feedback" id="feedback" aria-live="polite"></div>
+          <div class="assessment-hint" id="assessmentHint"></div>
+          <div class="assessment-hint" id="guideMutedHint" role="status"></div>
+          <p class="assessment-hint hidden" id="gameWarning"></p>
           <div class="loop-badge hidden" id="loopBadge">A–B</div>
         </div>
+      </div>
       </div>
 
       <!-- ===================== Home ===================== -->
@@ -81,9 +94,10 @@
                     <h2 class="card__hero-title" id="heroTitle">—</h2>
                     <div class="hero-artist" id="heroArtist"></div>
                     <p class="hero-tip" id="heroTip"></p>
+                    <p class="warning hidden" id="heroWarning" role="status"></p>
                   </div>
                   <div class="hero-stats">
-                    <div><div class="hero-stat__v mono" id="heroBpm">—</div><div class="hero-stat__k">BPM</div></div>
+                    <div><div class="hero-stat__v mono" id="heroBpm">—</div><div class="hero-stat__k">Оригинальный темп, BPM</div></div>
                     <div><div class="hero-stat__v mono" id="heroDur">—</div><div class="hero-stat__k">Длительность</div></div>
                     <div><div class="hero-stat__v mono" id="heroNotes">—</div><div class="hero-stat__k">Нот</div></div>
                     <div><div class="hero-stat__v mono" id="heroTuning">—</div><div class="hero-stat__k">Строй</div></div>
@@ -100,7 +114,7 @@
                     </div>
                     <div class="hero-actions">
                       <a class="btn btn--ghost btn--sm hidden" id="heroYt" target="_blank" rel="noopener">Видео</a>
-                      <button class="btn btn--ghost btn--sm" id="btnViewHero">Аккорды</button>
+                      <button class="btn btn--ghost btn--sm" id="btnViewHero">Схемы грифа</button>
                       <button class="btn btn--ghost btn--sm" id="btnGoLibrary">Выбрать занятие</button>
                       <button class="btn btn--accent" id="btnPlaySelected">Играть</button>
                     </div>
@@ -116,8 +130,8 @@
               <p class="hero-hint">Смахните карточку или нажмите ‹ ›, чтобы выбрать занятие</p>
             </section>
 
-            <section class="card col-2">
-              <h2 class="card__title">Темп</h2>
+            <section class="card col-2 tempo-card">
+              <h2 class="card__title">Выбранный темп</h2>
               <div class="speed-big" id="speedBpm">90<span class="speed-big__u">BPM</span></div>
               <div class="speed-chips" id="speedChips">
                 <button class="chip" data-speed="50" aria-pressed="false">50%</button>
@@ -148,8 +162,8 @@
               <div class="switch-row"><span>Автоигра</span><button class="switch" id="autoplaySwitch" role="switch" aria-checked="false" aria-label="Автоигра"></button></div>
             </section>
 
-            <section class="card col-3" id="aboutCard">
-              <h2 class="card__title">О проекте</h2>
+            <details class="card col-3 about-card" id="aboutCard">
+              <summary class="card__title">О проекте</summary>
               <p class="muted" style="margin-top:0">RiffHero — лёгкий тренажёр в духе Rocksmith. Собран «вайбкодингом»: короткими итерациями в паре с ИИ, без сборки и зависимостей.</p>
               <div class="chips">
                 <span>Web Audio</span><span>YIN</span><span>Гоерцель</span><span>Canvas</span><span>0 зависимостей</span>
@@ -168,7 +182,7 @@
                 </div>
               </div>
               <p class="muted small" style="margin-top:var(--space-3)">Классика и фольклор — общественное достояние, рок- и блюз-паттерны — оригинальные.</p>
-            </section>
+            </details>
           </div>
         </div>
       </section>
@@ -177,6 +191,7 @@
       <!-- ===================== Занятия ===================== -->
       <section class="screen hidden" id="screenLibrary">
         <div class="screen__body">
+          <p class="warning hidden" id="libraryWarning" role="status"></p>
           <div class="lib-tools">
             <input type="search" id="libSearch" placeholder="Поиск по названию или исполнителю" aria-label="Поиск занятий" />
             <select id="libSort" aria-label="Сортировка">
@@ -228,6 +243,7 @@
               <label class="field__label" for="profileName">Имя</label>
               <input type="text" id="profileName" maxlength="24" placeholder="Имя игрока" />
               <div class="metrics" id="profileStats" style="margin-top:var(--space-4)"></div>
+              <p class="muted small hidden" id="profileEmpty">Пока нет результатов для расчёта точности.</p>
             </section>
             <section class="card col-3">
               <h2 class="card__title">Ошибки по струнам</h2>
@@ -258,11 +274,15 @@
     </main>
 
     <footer class="playbar">
+      <span class="playbar__scroll-hint">Управление: прокрутите в сторону ↔</span>
+      <div class="playbar__controls" role="region" aria-label="Панель управления: прокрутите в сторону" tabindex="0">
       <div class="playbar__group">
         <button class="btn btn--sm" id="btnExit" data-tip="Выйти к занятиям">Выход</button>
         <button class="btn btn--action" id="btnPlay" disabled>Играть</button>
         <button class="btn" id="btnRestart" disabled>Сначала</button>
       </div>
+      <button class="btn btn--sm playbar__more" id="btnMoreControls" aria-expanded="false" aria-controls="extraControls">Ещё</button>
+      <div class="playbar__extra" id="extraControls">
       <div class="playbar__loop" role="group" aria-label="Зацикливание A–B">
         <span class="playbar__loop-label" aria-hidden="true">Повтор</span>
         <button class="btn btn--icon" id="btnLoopA" aria-label="Отметить точку A зацикливания" data-tip="Точка A">A</button>
@@ -270,24 +290,27 @@
         <button class="btn btn--icon btn--ghost" id="btnLoopClear" aria-label="Сбросить зацикливание" data-tip="Сбросить A–B">✕</button>
       </div>
       <div class="playbar__view">
-        <button class="btn btn--icon" id="btnView" aria-label="Просмотр аккордов и нот" data-tip="Просмотр">
+        <button class="btn btn--icon" id="btnView" aria-label="Схемы грифа, табы и ноты" data-tip="Схемы грифа">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true">
             <path d="M2 12s3.6-6 10-6 10 6 10 6-3.6 6-10 6-10-6-10-6z" /><circle cx="12" cy="12" r="3" />
-          </svg>
+          </svg><span class="playbar__text">Схемы</span>
         </button>
         <button class="btn btn--icon" id="btnOrient" aria-label="Вид: табы или падающие ноты" aria-pressed="true" data-tip="Вид">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
             <path d="M4 9h13" /><path d="M13 5l4 4-4 4" /><path d="M20 15H7" /><path d="M11 11l-4 4 4 4" />
-          </svg>
+          </svg><span class="playbar__text">Вид</span>
         </button>
         <button class="btn btn--icon" id="btnFinger" aria-label="Показать аппликатуру" aria-pressed="true" data-tip="Аппликатура">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
             <circle cx="5" cy="12" r="2" /><circle cx="10.3" cy="12" r="2" /><circle cx="15.6" cy="12" r="2" /><circle cx="20.9" cy="12" r="2" />
-          </svg>
+          </svg><span class="playbar__text">Пальцы</span>
         </button>
+      </div>
       </div>
       <div class="playbar__speedwrap">
         <button class="btn" id="btnSpeedQuick" aria-haspopup="dialog" aria-expanded="false" aria-label="Изменить темп" title="Изменить темп"><span class="mono" id="speedQuickVal">100%</span></button>
+      </div>
+      </div>
         <div class="speed-pop hidden" id="speedPop" role="dialog" aria-label="Темп">
           <div class="speed-pop__head"><span class="mono" id="speedPopBpm">— BPM</span><span class="mono muted" id="speedPopPct">100%</span></div>
           <input type="range" id="speedPopRange" min="25" max="150" step="1" value="90" aria-label="Темп, ударов в минуту" />
@@ -297,7 +320,6 @@
             <button class="chip" data-speed="100">100%</button>
           </div>
         </div>
-      </div>
       <div class="progress">
         <input type="range" id="progressBar" min="0" max="1000" value="0" aria-label="Позиция воспроизведения" />
         <div class="progress__marks" id="loopMarkers">
@@ -318,7 +340,8 @@
         <div class="sheet__body">
           <h2 class="card__title">Устройства</h2>
           <div class="field"><div class="field__row"><span class="field__label">Микрофон</span></div><select id="micSelect" aria-label="Микрофон"></select></div>
-          <div class="field"><div class="field__row"><span class="field__label">Вывод (наушники)</span></div><select id="outputSelect" aria-label="Устройство вывода"></select></div>
+          <div class="field"><div class="field__row"><span class="field__label">Устройство вывода</span></div><select id="outputSelect" aria-label="Устройство вывода"></select></div>
+          <div class="field"><label class="field__label" for="outputMode">Как вы слушаете</label><select id="outputMode" aria-describedby="outputModeHint"><option value="speakers">Динамики</option><option value="headphones">Наушники</option></select><p id="outputModeHint" class="muted small">В режиме динамиков звук нот отключается, пока включён микрофон. Метроном остаётся включённым.</p></div>
           <button class="btn btn--sm" id="btnRefreshDevices">Обновить список</button>
           <p class="muted small" id="deviceHint"></p>
 
@@ -343,7 +366,7 @@
           </div>
           <div class="field"><div class="field__row"><span class="field__label">Аккорды</span></div>
             <select id="chordMode" aria-label="Режим распознавания аккордов">
-              <option value="any">Любая нота аккорда</option><option value="root">Только корневая нота</option><option value="all">Все ноты аккорда</option>
+              <option value="any">Любая нота аккорда</option><option value="root">Только самая низкая нота</option><option value="all">Все ноты аккорда</option>
             </select>
           </div>
           <button class="btn btn--ghost" id="btnOpenWizard" style="width:100%">Мастер настройки</button>
@@ -393,6 +416,12 @@
       </div>
     </div>
 
+    <dialog id="resetProfileDialog" aria-labelledby="resetProfileTitle" aria-describedby="resetProfileDescription">
+      <h2 id="resetProfileTitle">Сбросить статистику?</h2>
+      <p id="resetProfileDescription">История занятий, результаты и имя профиля будут удалены с этого устройства. Отменить это действие нельзя.</p>
+      <div class="dialog-actions"><button class="btn" id="cancelProfileReset">Отмена</button><button class="btn btn--action" id="confirmProfileReset">Сбросить статистику</button></div>
+    </dialog>
+
     <!-- ===================== Results ===================== -->
     <!-- ===================== Результаты ===================== -->
     <div class="overlay overlay--center hidden" id="resultsOverlay" role="dialog" aria-modal="true" aria-labelledby="resultsTitle">
@@ -403,6 +432,7 @@
         </div>
         <div class="sheet__body">
           <div class="metrics metrics--row" id="resultGrid"></div>
+          <p class="muted small" id="resultAssessment"></p>
           <p class="result-delta" id="resultDelta"></p>
           <p class="result-errors" id="resultErrors"></p>
           <div class="err-chips" id="resultErrorChips"></div>
@@ -471,9 +501,12 @@
         </div>
         <div class="sheet__body">
           <div class="filters" id="viewTabs">
-            <button class="chip is-active" data-view="chords" aria-pressed="true">Аккорды</button>
+            <button class="chip is-active" data-view="diagrams" aria-pressed="true">Схемы грифа</button>
+            <button class="chip" data-view="tab" aria-pressed="false">Табулатура</button>
+            <button class="chip" data-view="chords" aria-pressed="false">Аккорды</button>
             <button class="chip" data-view="notes" aria-pressed="false">Ноты</button>
           </div>
+          <p class="muted small">Схемы показывают положения на грифе, табулатура — последовательность нот во времени.</p>
           <div id="viewBody" class="viewer"></div>
         </div>
       </div>
@@ -500,6 +533,7 @@
             <div class="keys__row"><kbd>?</kbd><span>Эта справка</span></div>
             <div class="keys__row"><kbd>Esc</kbd><span>Закрыть окно · выйти из занятия</span></div>
           </div>
+          <p class="muted small">Прокрутите колесо над трассой или перетащите её, чтобы перемотать. Во время перемотки воспроизведение ставится на паузу.</p>
           <h2 class="card__title" style="margin-top:var(--space-6)">Панель воспроизведения</h2>
           <div class="keys">
             <div class="keys__row"><span class="k-ico">Просмотр</span><span>Аккорды и ноты выбранного упражнения</span></div>

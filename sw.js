@@ -1,12 +1,12 @@
 // RiffHero service worker: offline mode (network-first, cache as fallback).
 // RiffHero — service worker: офлайн-режим (network-first, кэш как запасной вариант).
-const CACHE = 'riffhero-v1';
+const CACHE = 'riffhero-v2';
 const ASSETS = [
   './', 'index.html', 'styles.css', 'manifest.json',
   'icons/favicon-64.png', 'icons/icon-192.png', 'icons/icon-512.png',
   'icons/icon-maskable-512.png', 'icons/apple-touch-icon.png',
   'src/main.js', 'src/i18n.js', 'src/parser-catalog.js', 'src/profile.js',
-  'src/engine/audio.js', 'src/engine/pitch.js', 'src/engine/spectral.js',
+  'src/engine/audio.js', 'src/engine/tablature.js', 'src/engine/pitch.js', 'src/engine/spectral.js',
   'src/engine/renderer.js', 'src/engine/game.js', 'src/engine/theory.js',
   'src/parsers/index.js', 'src/parsers/native.js', 'src/parsers/midi.js',
   'src/parsers/guitarpro.js', 'src/parsers/zip.js', 'src/songs/demos.js',

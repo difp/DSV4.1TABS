@@ -76,20 +76,23 @@ export function applyDom(root = document) {
 // -------- Built-in exercise and category texts (by stable id) --------
 // -------- Тексты встроенных упражнений и категорий (по стабильному id) --------
 export function songTitle(id, fallback) {
+  if (lang === 'en' && id && id.startsWith('intro-')) return 'Meet the ' + fallback.replace('Знакомство с аккордом ', '') + ' chord';
   return (lang === 'en' && SONG_EN[id] && SONG_EN[id].title) || fallback;
 }
 export function songArtist(id, fallback) {
+  if (lang === 'en' && id && id.startsWith('intro-')) return 'Exercise';
   return (lang === 'en' && SONG_EN[id] && SONG_EN[id].artist) || fallback;
 }
 export function songTip(id, fallback) {
+  if (lang === 'en' && id && id.startsWith('intro-')) return 'Hold the chord shape. Play each sounding string separately, then strum them together four times. Do not play strings marked × on the diagram.';
   return (lang === 'en' && SONG_TIP_EN[id]) || fallback || '';
 }
 export function categoryName(key) {
   return (lang === 'en' && CAT_EN[key]) || CAT_RU[key] || key;
 }
 
-const CAT_RU = { warmup: 'Разминка и техника', scales: 'Гаммы и лады', chords: 'Аккорды и ритм', classics: 'Классика и фолк', book: 'Аккорды по самоучителю', mine: 'Свои и каталог' };
-const CAT_EN = { warmup: 'Warm-up & technique', scales: 'Scales & modes', chords: 'Chords & rhythm', classics: 'Classical & folk', book: 'Chords from the method', mine: 'Mine & catalog' };
+const CAT_RU = { intro: 'Знакомство с аккордами', warmup: 'Разминка и техника', scales: 'Гаммы и лады', chords: 'Аккорды и ритм', classics: 'Классика и фолк', book: 'Аккорды по самоучителю', mine: 'Свои и каталог' };
+const CAT_EN = { intro: 'Getting to know chords', warmup: 'Warm-up & technique', scales: 'Scales & modes', chords: 'Chords & rhythm', classics: 'Classical & folk', book: 'Chords from the method', mine: 'Mine & catalog' };
 
 const SONG_EN = {
   'open-strings': { title: 'Open strings', artist: 'Exercise' },
@@ -107,7 +110,7 @@ const SONG_EN = {
   'pentatonic-16ths': { title: 'Pentatonic 16ths', artist: 'Exercise' },
   'ode-to-joy': { title: 'Ode to Joy', artist: 'Beethoven · PD' },
   'greensleeves': { title: 'Greensleeves', artist: 'Folk · PD' },
-  'spanish-romance': { title: 'Spanish Romance (Em arpeggio)', artist: 'Classical · PD' },
+  'spanish-romance': { title: 'Em–B7 arpeggio (3/4)', artist: 'Exercise' },
   'house-of-rising-sun': { title: 'House of the Rising Sun (arpeggio)', artist: 'Folk · PD' },
   'la-bamba': { title: 'La Bamba', artist: 'Folk · PD' },
   'spanish-strum-cfgam': { title: 'Spanish strum C–F–G–Am', artist: 'Folk · PD' },
@@ -140,9 +143,9 @@ const SONG_TIP_EN = {
   'open-strings': 'Warm-up: play the open strings evenly and cleanly, with a metronome around 70.',
   'first-fret': 'Alternate the open string and the 1st fret with one finger — warm up the left hand.',
   'five-in-a-row': 'Five notes in a row on three strings: steady picking, follow the metronome.',
-  'scale-one-string': 'A scale on a single string builds coordination and finger stretch.',
+  'scale-one-string': 'C major on one string: C–D–E–F–G–A–B–C. Play up and down.',
   'chromatic-warmup': 'Chromatic 0-1-2-3 up and down every string. Start at 70–80 and speed up gradually.',
-  'a-minor-pentatonic': 'A minor pentatonic in 1st position — play both up and down.',
+  'a-minor-pentatonic': 'A minor pentatonic in 5th position — play both up and down.',
   'c-major-scale': 'C major scale — the basic scale; watch your left-hand fingering.',
   'spider-1-3-2-4': 'The “spider” 1-3-2-4 builds left-hand finger independence.',
   'hands-sync': 'Hand synchronization: short notes; play slowly and evenly.',
@@ -152,7 +155,7 @@ const SONG_TIP_EN = {
   'rock-power-riff': 'Power-chord riff: play with an eighth-note feel, accent the strong beats.',
   'ode-to-joy': 'A simple melody: watch the note lengths and clean note changes.',
   'greensleeves': 'In 3/4: keep the melody flowing, without pauses.',
-  'spanish-romance': 'Classic arpeggio: bass note plus the other fingers in turn.',
+  'spanish-romance': 'Practice the Em–B7 arpeggio in 3/4, starting with the bass note.',
   'house-of-rising-sun': 'Arpeggio in 3/4: bass on the downbeat, even arpeggio.',
   'la-bamba': 'A simple rhythm with fast notes — start slowly.',
   'spanish-strum-cfgam': 'Strum C–F–G–Am: practise changing chords without pauses.',
@@ -180,6 +183,10 @@ const SONG_TIP_EN = {
 // -------- UI dictionary (ru source → en) --------
 // -------- Словарь интерфейса (ru источник → en) --------
 const EN = {
+  'Показать все': 'Show all',
+  'Показать меньше': 'Show less',
+  'Пока нет результатов для расчёта точности.': 'No results to calculate accuracy yet.',
+  'Схемы показывают положения на грифе, табулатура — последовательность нот во времени.': 'Diagrams show fretboard positions; tablature shows notes in time order.',
   // Top bar / navigation
   // Шапка / навигация
   'Микрофон выключен': 'Microphone off',
@@ -595,6 +602,59 @@ const EN = {
   'Не удалось загрузить каталог: HTTP {status}': 'Could not load the catalog: HTTP {status}',
   'Не удалось скачать песню: HTTP {status}': 'Could not download the song: HTTP {status}',
 
+  'Оригинальный темп, BPM': 'Original tempo, BPM',
+  'Выбранный темп': 'Selected tempo',
+  'Только самая низкая нота': 'Lowest note only',
+  'Аккорды и ноты': 'Chords and notes',
+  'Вид': 'View',
+  'Пальцы': 'Fingers',
+  'Сбросить статистику?': 'Reset statistics?',
+  'История занятий, результаты и имя профиля будут удалены с этого устройства. Отменить это действие нельзя.': 'Practice history, results and profile name will be removed from this device. This cannot be undone.',
+  'Сбросить статистику': 'Reset statistics',
+  'Аккорды: достаточно одной ноты; остальные не проверяются.': 'Chords: one note is enough; the others are not checked.',
+  'Аккорды: проверяется только самая низкая нота.': 'Chords: only the lowest note is checked.',
+  'Аккорды: проверяются все ноты; распознавание приблизительное.': 'Chords: all notes are checked; detection is approximate.',
+  '{note}, струна {string}, лад {fret}': '{note}, string {string}, fret {fret}',
+  'Следующие ноты: {list}': 'Next notes: {list}',
+  'Как вы слушаете': 'Listening through',
+  'Динамики': 'Speakers',
+  'Наушники': 'Headphones',
+  'В режиме динамиков звук нот отключается, пока включён микрофон. Метроном остаётся включённым.': 'In speaker mode, guide notes are muted while the microphone is on. The metronome stays on.',
+  'Динамики: звук нот отключён, пока включён микрофон': 'Speakers: guide notes are muted while the microphone is on',
+  'Пропущено нот вне диапазона строя: {count} ({notes}). Они не отображаются и не оцениваются. Выберите другую дорожку или измените исходный файл.': '{count} notes outside this tuning’s range were skipped ({notes}). They are not displayed or scored. Choose another track or edit the source file.',
+  'Результат неполного прохождения не сохранён в статистике.': 'An incomplete run is not saved in your statistics.',
+  'Табулатура': 'Tablature',
+  'Табы': 'Tab',
+  'Табы, аккорды и ноты': 'Tab, chords and notes',
+  'Цифры — лады, 0 — открытая струна, × — заглушённая нота; пустая ячейка означает, что новая нота не играется. Первая струна сверху. Время и длительность указаны в секундах при исходном темпе и округлены до тысячных. При необходимости прокрутите таблицу вправо.': 'Numbers are frets, 0 is an open string, × is a muted note; an empty cell means no new note. String 1 is at the top. Times and durations are in seconds at the original tempo, rounded to milliseconds. Scroll the table right if needed.',
+  'Время, с': 'Time, s',
+  'с': 's',
+  'Струна и строй': 'String and tuning',
+  'Длительность: {duration} с': 'Duration: {duration} s',
+  'Нет нот для табулатуры.': 'No notes to show in tablature.',
+  'Фрагмент {n}': 'Section {n}',
+  'Схемы грифа': 'Fretboard diagrams',
+  'Схемы': 'Diagrams',
+  'Схемы грифа, табы и ноты': 'Fretboard diagrams, tab and notes',
+  'Нет нот для схем грифа.': 'No notes to show on the fretboard.',
+  'Цифры под схемой — пальцы левой руки; 0 и пустой кружок — открытая струна, × — нет нового звука на струне, – — палец не указан. Для отдельных нот пальцы подобраны автоматически. Слева направо струны от толстой к тонкой. Порядок и ритм смотрите во вкладке «Табулатура».': 'Numbers below the diagram are left-hand fingers; 0 and an empty circle mark an open string, × means no new note on that string, and – means the finger is unspecified. Fingers for individual notes are suggested automatically. Strings run from thick to thin, left to right. See Tab for order and rhythm.',
+  'Струна {string}: заглушённая нота': 'String {string}: muted note',
+  'Струна {string}, лад {fret}, палец {finger}': 'String {string}, fret {fret}, finger {finger}',
+  'Созвучие: {n} нот': 'Simultaneous notes: {n}',
+  'Позиция {n}': 'Position {n}',
+  'Встречается: {n}': 'Occurrences: {n}',
+  'Листайте схемы в сторону; порядок нот показан на трассе.': 'Scroll sideways through the diagrams; note order is shown on the track.',
+  'Все схемы': 'All diagrams',
+  'Схемы грифа выбранного упражнения': 'Fretboard diagrams for the selected exercise',
+  'Показаны первые {shown} из {total}. Откройте все схемы.': 'Showing the first {shown} of {total}. Open all diagrams.',
+  'Управление: прокрутите в сторону ↔': 'Controls: scroll sideways ↔',
+  'Панель управления: прокрутите в сторону': 'Playback controls: scroll sideways',
+  'Схемы идут по порядку ↔. Трассу можно перемотать колесом или перетаскиванием.': 'Diagrams follow playback order ↔. Scroll or drag the track to seek.',
+  'Событие {n}, время {time} с': 'Event {n}, time {time} s',
+  'Время: {time} с': 'Time: {time} s',
+  'Перемотка: воспроизведение на паузе': 'Seeking: playback paused',
+  'Цифры под схемой — пальцы левой руки; 0 и пустой кружок — открытая струна, × — нет нового звука на струне, – — палец не указан. Для отдельных нот пальцы подобраны автоматически. Слева направо струны от толстой к тонкой. Схемы идут в порядке воспроизведения.': 'Numbers below the diagram are left-hand fingers; 0 and an empty circle mark an open string, × means no new note on that string, and – means the finger is unspecified. Fingers for individual notes are suggested automatically. Strings run from thick to thin, left to right. Diagrams follow playback order.',
+  'Прокрутите колесо над трассой или перетащите её, чтобы перемотать. Во время перемотки воспроизведение ставится на паузу.': 'Scroll over the track or drag it to seek. Playback pauses while seeking.',
   // Additions
   // Дополнения
   'Измеряю…': 'Measuring…',

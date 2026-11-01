@@ -14,6 +14,8 @@ export class AudioEngine {
     this._micBuf = null;
     this._sources = new Set();
     this._pluckCache = new Map();
+    this.guideVolume = 0.7;
+    this.outputMode = 'speakers';
   }
 
   async ensure() {
@@ -29,17 +31,21 @@ export class AudioEngine {
     this.master.gain.value = 0.9;
     this.master.connect(this.ctx.destination);
     this.guide = this.ctx.createGain();
-    this.guide.gain.value = 0.7;
+    this.guide.gain.value = this.guideVolume;
     this.guide.connect(this.master);
     this.metro = this.ctx.createGain();
     this.metro.gain.value = 0.6;
     this.metro.connect(this.master);
+    this._updateGuideVolume();
     return this.ctx;
   }
 
   get now() { return this.ctx ? this.ctx.currentTime : 0; }
 
-  setGuideVolume(v) { if (this.guide) this.guide.gain.value = v; }
+  setGuideVolume(v) { this.guideVolume = v; this._updateGuideVolume(); }
+  setOutputMode(mode) { this.outputMode = mode === 'headphones' ? 'headphones' : 'speakers'; this._updateGuideVolume(); }
+  get guideMutedForMic() { return this.outputMode === 'speakers' && this.micReady; }
+  _updateGuideVolume() { if (this.guide) this.guide.gain.value = this.guideMutedForMic ? 0 : this.guideVolume; }
   setMetroVolume(v) { if (this.metro) this.metro.gain.value = v; }
 
   // Karplus–Strong plucked-string buffer, cached per pitch (guitar-like guide tone).
@@ -145,6 +151,7 @@ export class AudioEngine {
       throw new Error('Микрофон недоступен: нет navigator.mediaDevices (нужен https или localhost)');
     }
     const constraints = {
+      // Preserve the guitar signal and acoustic latency calibration.
       echoCancellation: false,
       noiseSuppression: false,
       autoGainControl: false,
@@ -162,6 +169,7 @@ export class AudioEngine {
     this.micAnalyser = an;
     this.micSource.connect(an);
     this._micBuf = new Float32Array(an.fftSize);
+    this._updateGuideVolume();
     return true;
   }
 
@@ -201,6 +209,7 @@ export class AudioEngine {
     this.micSource = null;
     this.micAnalyser = null;
     this._micBuf = null;
+    this._updateGuideVolume();
   }
 
   get micReady() { return !!this.micAnalyser; }

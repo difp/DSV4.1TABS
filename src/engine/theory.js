@@ -61,20 +61,13 @@ export function pitchFor(tuning, string, fret, capo = 0) {
 }
 
 export function assignFret(pitch, tuning, capo = 0, maxFret = 24) {
-  const tryAssign = (p) => {
-    let best = null;
-    for (let s = 1; s <= tuning.length; s++) {
-      const fret = p - (tuning[s - 1] + capo);
-      if (fret >= 0 && fret <= maxFret && (!best || fret < best.fret)) {
-        best = { string: s, fret, midi: p };
-      }
+  let best = null;
+  for (let s = 1; s <= tuning.length; s++) {
+    const fret = pitch - (tuning[s - 1] + capo);
+    if (Number.isInteger(fret) && fret >= 0 && fret <= maxFret && (!best || fret < best.fret)) {
+      best = { string: s, fret, midi: pitch };
     }
-    return best;
-  };
-  let best = tryAssign(pitch);
-  let p = pitch;
-  while (!best && p > 24) { p -= 12; best = tryAssign(p); }
-  while (!best && p < 108) { p += 12; best = tryAssign(p); }
+  }
   return best;
 }
 
@@ -88,10 +81,14 @@ export function assignFingers(notes) {
   let base = 1;
   let started = false;
   let lastT = -Infinity;
-  for (const n of notes) {
+  for (let i = 0; i < notes.length; i++) {
+    const n = notes[i];
+    if (Number.isFinite(n.finger) && n.finger < 0) { lastT = n.t; continue; }
     if (Number.isFinite(n.finger) && n.finger >= 0) { lastT = n.t; if (n.fret > 0) started = true; continue; }
     if (n.dead) { n.finger = 0; continue; }
     if (!Number.isFinite(n.fret) || n.fret <= 0) { n.finger = 0; started = false; lastT = n.t; continue; }
+    const simultaneous = (i > 0 && Math.abs(n.t - notes[i - 1].t) <= 0.035) || (i + 1 < notes.length && Math.abs(notes[i + 1].t - n.t) <= 0.035);
+    if (simultaneous) { n.finger = -1; lastT = n.t; continue; }
     const phraseBreak = n.t - lastT > 1.5;
     if (!started || phraseBreak) {
       base = Math.max(1, n.fret);
@@ -187,8 +184,11 @@ export function buildSong(raw, trackIndex = 0) {
   const tuning = (track.tuning && track.tuning.length) ? track.tuning.slice() : TUNING_PRESETS.standard.pitches.slice();
   const capo = track.capo || 0;
   const notes = [];
+  const unplayableNotes = [];
+  let duration = 0;
 
   for (const n of track.notes || []) {
+    if (Number.isFinite(n.t)) duration = Math.max(duration, n.t + (Number.isFinite(n.dur) && n.dur > 0 ? n.dur : 0.25));
     let midi = n.midi;
     let string = n.string;
     let fret = n.fret;
@@ -198,6 +198,7 @@ export function buildSong(raw, trackIndex = 0) {
     if ((string == null || fret == null) && Number.isFinite(midi)) {
       const a = assignFret(midi, tuning, capo);
       if (a) { string = a.string; fret = a.fret; }
+      else { unplayableNotes.push({ t: n.t, midi }); continue; }
     }
     if (!Number.isFinite(midi)) continue;
     notes.push({
@@ -213,9 +214,6 @@ export function buildSong(raw, trackIndex = 0) {
   }
   notes.sort((a, b) => a.t - b.t || a.string - b.string);
   assignFingers(notes);
-
-  let duration = 0;
-  for (const n of notes) duration = Math.max(duration, n.t + n.dur);
 
   const tempoMap = raw.tempoMap instanceof TempoMap
     ? raw.tempoMap
@@ -235,6 +233,7 @@ export function buildSong(raw, trackIndex = 0) {
     tuning,
     capo,
     notes,
+    unplayableNotes,
     duration,
     tempoMap,
     grid,

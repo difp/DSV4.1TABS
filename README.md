@@ -8,7 +8,7 @@ A lightweight browser guitar trainer in the spirit of Rocksmith: notes fall down
 
 ## Features
 
-- Falling tabs with fret numbers, sustain tails, beat and bar lines
+- Falling tabs with fret numbers, sustain tails, beat and bar lines; ordered fretboard diagrams above the track; seek by scrolling or dragging
 - Microphone note recognition: accuracy, combo, S–E grade
 - Import Guitar Pro (`.gp`, `.gpx`), MIDI (`.mid`) and native `.json`
 - Song catalogs by file or link, with search, sorting and difficulty filter
@@ -30,6 +30,10 @@ Dark theme and the built-in help:
 |---|---|
 | ![Dark](docs/screenshots/dark.png) | ![Help](docs/screenshots/help.png) |
 
+Mobile practice view:
+
+<img src="docs/screenshots/mobile.png" alt="Mobile practice screen with fretboard diagrams" width="300">
+
 ## Getting started
 
 1. Open the page and allow microphone access.
@@ -37,6 +41,8 @@ Dark theme and the built-in help:
 3. Play along — the app listens and scores every note.
 
 Keyboard: `Space` play/pause · `R` restart · `←/→` choose lesson or seek · `−/+` speed · `[`/`]` set loop A/B · `\` clear loop · `T` switch view · `?` help · `Esc` close/leave.
+
+When importing MIDI, pitches outside the selected tuning are skipped with a warning instead of being silently transposed. Partial runs and tracks with skipped notes are not saved as complete profile results. A/B repeats retain the latest attempt for each event in the repeated section.
 
 ## Development
 

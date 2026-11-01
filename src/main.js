@@ -8,11 +8,12 @@ import { AudioEngine } from './engine/audio.js';
 import { PitchDetector } from './engine/pitch.js';
 import { SpectralAnalyzer } from './engine/spectral.js';
 import { HighwayRenderer } from './engine/renderer.js';
+import { buildTabColumns, buildFretboardEvents } from './engine/tablature.js';
 import { Game } from './engine/game.js';
 import { buildSong, midiToName } from './engine/theory.js';
 import { parseNative } from './parsers/native.js';
 import { parseBytes } from './parsers/index.js';
-import { DEMO_SONGS, CATEGORIES } from './songs/demos.js';
+import { DEMO_SONGS, CATEGORIES, SHAPE_FINGERS } from './songs/demos.js';
 import { loadCatalogFromUrl, loadCatalogFromFile, resolveEntry } from './parser-catalog.js';
 import { loadProfile, saveProfile, resetProfile, recordSession, streak, accuracyOf, fmtDuration, normalizeProfile } from './profile.js';
 import { t, applyDom, setLang, resolveLang, langLabel, songTitle, songArtist, songTip, categoryName } from './i18n.js';
@@ -28,12 +29,13 @@ const el = {
   menuWizard: $('menuWizard'), menuHelp: $('menuHelp'), menuTheme: $('menuTheme'), menuThemeVal: $('menuThemeVal'), menuLang: $('menuLang'), menuLangVal: $('menuLangVal'), menuAbout: $('menuAbout'),
   tabbar: $('tabbar'),
   screenHome: $('screenHome'), screenLibrary: $('screenLibrary'), screenProfile: $('screenProfile'),
-  stage: $('stage'), score: $('score'), combo: $('combo'), accuracy: $('accuracy'),
+  gameStage: document.querySelector('.game-stage'), practiceDiagrams: $('practiceDiagrams'), practiceDiagramsRail: $('practiceDiagramsRail'), practiceDiagramsHint: $('practiceDiagramsHint'), btnAllPracticeDiagrams: $('btnAllPracticeDiagrams'),
+  stage: $('stage'), accessibleNotes: $('accessibleNotes'), assessmentHint: $('assessmentHint'), resultAssessment: $('resultAssessment'), score: $('score'), combo: $('combo'), accuracy: $('accuracy'),
   pitchNote: $('pitchNote'), pitchCents: $('pitchCents'), feedback: $('feedback'),
   heroCard: $('heroCard'), heroSlide: $('heroSlide'),
   heroType: $('heroType'), heroTitle: $('heroTitle'), heroArtist: $('heroArtist'), heroTip: $('heroTip'),
   heroBpm: $('heroBpm'), heroDur: $('heroDur'), heroNotes: $('heroNotes'), heroTuning: $('heroTuning'),
-  heroBest: $('heroBest'), heroDifficulty: $('heroDifficulty'), tabPreview: $('tabPreview'),
+  heroBest: $('heroBest'), heroDifficulty: $('heroDifficulty'), heroWarning: $('heroWarning'), libraryWarning: $('libraryWarning'), gameWarning: $('gameWarning'), tabPreview: $('tabPreview'),
   heroPrev: $('heroPrev'), heroNext: $('heroNext'), heroDots: $('heroDots'), heroCount: $('heroCount'),
   btnPlaySelected: $('btnPlaySelected'), btnGoLibrary: $('btnGoLibrary'), heroYt: $('heroYt'),
   speedBpm: $('speedBpm'), speedChips: $('speedChips'), speed: $('speed'), speedVal: $('speedVal'), speedRange: $('speedRange'),
@@ -49,13 +51,14 @@ const el = {
   ytUrl: $('ytUrl'), btnYoutube: $('btnYoutube'),
   trackPicker: $('trackPicker'), trackSelect: $('trackSelect'),
   profileName: $('profileName'), profileStats: $('profileStats'), profileErrStrings: $('profileErrStrings'), profileErrFrets: $('profileErrFrets'), profileCalendar: $('profileCalendar'), profileSongs: $('profileSongs'),
+  resetProfileDialog: $('resetProfileDialog'), confirmProfileReset: $('confirmProfileReset'), cancelProfileReset: $('cancelProfileReset'),
   btnProfileReset: $('btnProfileReset'), btnProfileExport: $('btnProfileExport'), profileImport: $('profileImport'),
   advancedOverlay: $('advancedOverlay'), btnAdvancedClose: $('btnAdvancedClose'),
   guideVol: $('guideVol'), guideVolVal: $('guideVolVal'), metroVol: $('metroVol'), metroVolVal: $('metroVolVal'),
   latency: $('latency'), latencyVal: $('latencyVal'), btnAutoLatency: $('btnAutoLatency'), btnVerifyLatency: $('btnVerifyLatency'), latencyVerify: $('latencyVerify'),
   sens: $('sens'), sensVal: $('sensVal'), btnAutoSens: $('btnAutoSens'), btnOpenWizard: $('btnOpenWizard'),
   chordMode: $('chordMode'), sensPreset: $('sensPreset'),
-  micSelect: $('micSelect'), outputSelect: $('outputSelect'), btnRefreshDevices: $('btnRefreshDevices'), deviceHint: $('deviceHint'),
+  micSelect: $('micSelect'), outputSelect: $('outputSelect'), outputMode: $('outputMode'), guideMutedHint: $('guideMutedHint'), btnRefreshDevices: $('btnRefreshDevices'), deviceHint: $('deviceHint'),
   wizardOverlay: $('wizardOverlay'), wizSkip: $('wizSkip'), wizSkip2: $('wizSkip2'), wizPrev: $('wizPrev'), wizNext: $('wizNext'),
   wizPane1: $('wizPane1'), wizPane2: $('wizPane2'), wizPane3: $('wizPane3'),
   wizAllow: $('wizAllow'), wizMicState: $('wizMicState'), wizLevelBar: $('wizLevelBar'), wizLevelHint: $('wizLevelHint'),
@@ -109,7 +112,7 @@ const state = {
   lastPrevBest: null,
   settings: Object.assign({
     rate: 1, metronome: true, countIn: true, showFret: true, showFinger: true, orientation: 'h',
-    guideVol: 70, metroVol: 60, latency: 0, sens: 6, clarity: 0.5,
+    guideVol: 70, metroVol: 60, outputMode: 'speakers', latency: 0, sens: 6, clarity: 0.5,
     chordMode: 'any', sensPreset: 'room', micDeviceId: '', outputDeviceId: '',
     autoplay: false, onboarded: false, recent: [], youtube: {}, theme: 'auto', lang: 'auto',
   }, loadStoredSettings()),
@@ -159,6 +162,8 @@ function focusFirst(node) {
 function currentView() { return (history.state && history.state.view) || 'home'; }
 
 function showScreen(view) {
+  document.body.classList.toggle('is-game-view', view === 'game');
+  el.practiceDiagrams.hidden = view !== 'game';
   el.screenHome.classList.toggle('hidden', view !== 'home');
   el.screenLibrary.classList.toggle('hidden', view !== 'library');
   el.screenProfile.classList.toggle('hidden', view !== 'profile');
@@ -305,6 +310,7 @@ function applySettingsToUi() {
   setSwitch(el.autoplaySwitch, s.autoplay);
   el.btnOrient.setAttribute('aria-pressed', s.orientation === 'h' ? 'true' : 'false');
   el.btnFinger.setAttribute('aria-pressed', s.showFinger ? 'true' : 'false');
+  audio.setOutputMode(s.outputMode); el.outputMode.value = audio.outputMode;
   el.guideVol.value = String(s.guideVol); el.guideVolVal.textContent = s.guideVol + '%';
   el.metroVol.value = String(s.metroVol); el.metroVolVal.textContent = s.metroVol + '%';
   el.latency.value = String(s.latency); el.latencyVal.textContent = t('{n} мс', { n: s.latency }); state.latencySec = s.latency / 1000;
@@ -417,11 +423,8 @@ function makeRail(list) {
     card.innerHTML = `<div class="exc-card__title">${escapeHtml(item.title)}</div>`
       + `<div class="exc-card__meta"><span>${item.raw ? t('{n} нот', { n: item.noteCount }) : t('каталог')}</span><span>${item.difficulty ? difficultyDots(item.difficulty) : ''}</span></div>`
       + `<div class="exc-card__meta"><span>${best != null ? Math.round(best * 100) + '%' : ''}</span><span class="muted">${escapeHtml(item.artist || '')}</span></div>`;
-    card.addEventListener('click', () => {
-      const already = item.id === state.selectedId;
-      selectItem(item, already);
-    });
-    card.addEventListener('dblclick', () => selectItem(item, true));
+    card.setAttribute('aria-pressed', item.id === state.selectedId ? 'true' : 'false');
+    card.addEventListener('click', () => selectItem(item, false));
     rail.appendChild(card);
   }
   return rail;
@@ -437,10 +440,22 @@ function addCategory(name, list) {
   nav.append(prev, next);
   head.append(title, nav);
   const rail = makeRail(list);
+  const more = document.createElement('button');
+  more.className = 'btn btn--sm cat__more';
+  const selectedBeyondPreview = list.findIndex((item) => item.id === state.selectedId) >= 2;
+  sec.classList.toggle('is-expanded', selectedBeyondPreview);
+  more.textContent = t(selectedBeyondPreview ? 'Показать меньше' : 'Показать все');
+  more.setAttribute('aria-expanded', String(selectedBeyondPreview));
+  more.hidden = list.length <= 2;
+  more.addEventListener('click', () => {
+    const expanded = sec.classList.toggle('is-expanded');
+    more.setAttribute('aria-expanded', String(expanded));
+    more.textContent = t(expanded ? 'Показать меньше' : 'Показать все');
+  });
   const step = () => Math.max(120, rail.firstElementChild ? rail.firstElementChild.getBoundingClientRect().width + 12 : 180);
   prev.addEventListener('click', () => rail.scrollBy({ left: -step(), behavior: reducedMotion() ? 'auto' : 'smooth' }));
   next.addEventListener('click', () => rail.scrollBy({ left: step(), behavior: reducedMotion() ? 'auto' : 'smooth' }));
-  sec.append(head, rail);
+  sec.append(head, rail, more);
   el.categories.appendChild(sec);
 }
 
@@ -469,7 +484,7 @@ function renderCategories() {
 
 function updateCategorySelection() {
   const cards = el.categories.querySelectorAll('.exc-card');
-  for (const card of cards) card.classList.toggle('is-selected', card.dataset.id === state.selectedId);
+  for (const card of cards) { const selected = card.dataset.id === state.selectedId; card.classList.toggle('is-selected', selected); card.setAttribute('aria-pressed', String(selected)); }
   const sel = el.categories.querySelector('.exc-card.is-selected');
   if (sel && sel.scrollIntoView) sel.scrollIntoView({ block: 'nearest', inline: 'nearest' });
 }
@@ -724,7 +739,7 @@ function applyTip() {
 // Загрузка песни
 // ---------------------------------------------------------------------------
 function loadRaw(raw) {
-  state.raw = raw; state.trackIndex = pickDefaultTrack(raw);
+  state.raw = raw; state.trackIndex = pickDefaultTrack(raw); state.accessibleNotesKey = null;
   state.loopA = null; state.loopB = null;
   buildCurrentSong(); buildTrackPicker(); updateLoopMarkers();
 }
@@ -736,7 +751,7 @@ function pickDefaultTrack(raw) {
 function buildCurrentSong() {
   const song = buildSong(state.raw, state.trackIndex);
   state.song = song;
-  state.game = new Game(song);
+  state.game = new Game(song, { chordMode: state.settings.chordMode, clarity: state.settings.clarity });
   state.game.autoplay = state.settings.autoplay;
   resetPlayback(); applySongUi();
 }
@@ -745,9 +760,15 @@ function applySongUi() {
   el.songTitle.textContent = song.title + (song.artist ? ' — ' + song.artist : '');
   const tuning = song.tuning.map((m) => midiToName(m, false)).join(' ');
   el.songMeta.textContent = `${t('{n} нот', { n: song.notes.length })} · ${fmtTime(song.duration)} · ${Math.round(song.bpm)} BPM · ${tuning}${song.trackName ? ' · ' + song.trackName : ''}`;
-  el.btnPlay.disabled = false; el.btnRestart.disabled = false;
+  const playable = song.notes.length > 0;
+  el.btnPlay.disabled = !playable; el.btnPlaySelected.disabled = !playable; el.btnRestart.disabled = !playable;
+  const missing = song.unplayableNotes || [];
+  const pitches = [...new Set(missing.map(n => midiToName(n.midi)))];
+  const shown = pitches.slice(0, 8).join(', ') + (pitches.length > 8 ? '…' : '');
+  const warning = missing.length ? t('Пропущено нот вне диапазона строя: {count} ({notes}). Они не отображаются и не оцениваются. Выберите другую дорожку или измените исходный файл.', { count: missing.length, notes: shown }) : '';
+  for (const node of [el.heroWarning, el.libraryWarning, el.gameWarning]) { node.textContent = warning; node.classList.toggle('hidden', !warning); }
   el.progressBar.value = 0; el.timeReadout.textContent = `0:00 / ${fmtTime(song.duration)}`;
-  updateSpeedUi(); updateLoopMarkers(); updateHud();
+  updateSpeedUi(); updateLoopMarkers(); updateHud(); renderPracticeDiagrams(song);
 }
 function buildTrackPicker() {
   const tracks = state.raw.tracks || [];
@@ -800,7 +821,8 @@ function renderErrBars(container, obj, labeler) {
 function renderProfile() {
   const p = state.profile;
   el.profileName.value = p.name || '';
-  el.profileStats.innerHTML = [[t('Практика'), fmtDuration(p.practiceSec)], [t('Точность'), Math.round(accuracyOf(p) * 100) + '%'], [t('Ноты'), String(p.notesHit)], [t('Серия'), t('{n} дн.', { n: streak(p) })], [t('Сессий'), String(p.sessions)], [t('Песен'), String(Object.keys(p.songs).length)]]
+  $('profileEmpty').classList.toggle('hidden', p.notesHit + p.notesMissed > 0);
+  el.profileStats.innerHTML = [[t('Практика'), fmtDuration(p.practiceSec)], [t('Точность'), p.notesHit + p.notesMissed > 0 ? Math.round(accuracyOf(p) * 100) + '%' : '—'], [t('Ноты'), String(p.notesHit)], [t('Серия'), t('{n} дн.', { n: streak(p) })], [t('Сессий'), String(p.sessions)], [t('Песен'), String(Object.keys(p.songs).length)]]
     .map(([k, v]) => `<div class="m"><b>${v}</b><span>${k}</span></div>`).join('');
   renderErrBars(el.profileErrStrings, p.missByString, (k) => t('Струна {n}', { n: k }));
   renderErrBars(el.profileErrFrets, p.missByFret, (k) => t('Лад {n}', { n: k }));
@@ -910,23 +932,23 @@ function resetPlayback() {
 function firstNoteIndex(t) { return lowerBound(state.song.notes, t); }
 function firstBeatIndex(t) { return lowerBound(state.song.grid.beats, t); }
 async function play() {
-  if (!state.song) return;
+  if (!state.song || !state.song.notes.length) return;
   await audio.ensure();
   audio.setGuideVolume(state.settings.guideVol / 100);
   audio.setMetroVolume(state.settings.metroVol / 100);
   if (currentView() !== 'game') goView('game');
   if (state.playing && !state.paused) return;
   if (state.playing && state.paused) { state.paused = false; state.startCtx = audio.now; state.startSong = state.pauseSong; state.schedulePtr = firstNoteIndex(state.startSong - 0.05); state.metroPtr = firstBeatIndex(state.startSong - 0.05); setPlayingFlag(true); }
-  else startFrom(0);
+  else startFrom(state.startSong >= state.song.duration ? 0 : state.startSong);
   updatePlayButton();
   if (!audio.micReady && !state.settings.autoplay) toast(t('Включите микрофон или автоигру, чтобы ноты засчитывались'));
 }
-function startFrom(pos, noCountIn) {
+function startFrom(pos, noCountIn, replayEnd = Infinity) {
   audio.stopAll(); flushPractice();
   state.playing = true; state.paused = false;
   state.startSong = pos; state.pauseSong = pos;
   state.schedulePtr = firstNoteIndex(pos - 0.05); state.metroPtr = firstBeatIndex(pos - 0.05);
-  state.game.rewind(pos);
+  state.game.rewind(pos, replayEnd);
   const beat = 60 / (state.song.bpm || 120); let lead = 0;
   if (state.settings.countIn && pos === 0 && !noCountIn) { lead = (4 * beat) / state.rate; const t0 = audio.now + 0.08; for (let k = 0; k < 4; k++) audio.click(t0 + (k * beat) / state.rate, k === 0); }
   state.startCtx = audio.now + lead;
@@ -943,6 +965,51 @@ function exitGame() {
   goView('library');
 }
 function seekBy(delta) { if (!state.song) return; const pos = clamp(currentTime() + delta, 0, state.song.duration); if (state.playing && !state.paused) startFrom(pos, true); else { state.startSong = pos; state.pauseSong = pos; state.game.rewind(pos); updateHud(pos); } }
+// Manual track browsing pauses playback; commit one rewind after a drag.
+function seekTrackTo(pos) {
+  if (!state.song) return;
+  if (state.playing && !state.paused) { pause(); toast(t('Перемотка: воспроизведение на паузе')); }
+  pos = clamp(pos, 0, state.song.duration);
+  state.startSong = pos; state.pauseSong = pos; state.game.rewind(pos);
+  updateHud(pos); updatePracticePosition(pos);
+}
+function bindTrackScrubbing() {
+  let drag = null;
+  el.gameStage.addEventListener('wheel', (e) => {
+    if (!state.song || currentView() !== 'game' || visibleModal() || e.ctrlKey) return;
+    const delta = Math.abs(e.deltaX) > Math.abs(e.deltaY) ? e.deltaX : e.deltaY;
+    if (!delta) return;
+    e.preventDefault();
+    const unit = e.deltaMode === 1 ? 16 : e.deltaMode === 2 ? el.gameStage.clientHeight : 1;
+    seekTrackTo(currentTime() + delta * unit / 230);
+  }, { passive: false });
+  el.gameStage.addEventListener('pointerdown', (e) => {
+    if (!state.song || currentView() !== 'game' || visibleModal() || !e.isPrimary || (e.pointerType === 'mouse' && e.button !== 0)) return;
+    drag = { id: e.pointerId, x: e.clientX, y: e.clientY, origin: currentTime(), preview: currentTime(), moved: false };
+    el.gameStage.setPointerCapture(e.pointerId);
+  });
+  el.gameStage.addEventListener('pointermove', (e) => {
+    if (!drag || drag.id !== e.pointerId) return;
+    const dx = e.clientX - drag.x, dy = e.clientY - drag.y;
+    if (!drag.moved && Math.hypot(dx, dy) < 6) return;
+    if (!drag.moved) { drag.moved = true; if (state.playing && !state.paused) { pause(); toast(t('Перемотка: воспроизведение на паузе')); } }
+    const pixels = state.settings.orientation === 'v' ? dy : -dx;
+    drag.preview = clamp(drag.origin + pixels / 230, 0, state.song.duration);
+    state.startSong = drag.preview; state.pauseSong = drag.preview;
+    updateHud(drag.preview); updatePracticePosition(drag.preview);
+  });
+  const finish = (e, cancelled) => {
+    if (!drag || drag.id !== e.pointerId) return;
+    const pending = drag; drag = null;
+    if (!pending.moved) return;
+    if (cancelled) { state.startSong = pending.origin; state.pauseSong = pending.origin; updateHud(pending.origin); updatePracticePosition(pending.origin); }
+    else seekTrackTo(pending.preview);
+  };
+  el.gameStage.addEventListener('pointerup', (e) => finish(e, false));
+  el.gameStage.addEventListener('pointercancel', (e) => finish(e, true));
+  el.gameStage.addEventListener('lostpointercapture', (e) => finish(e, true));
+}
+
 function scheduleAhead() {
   const song = state.song; const songTime = computeSongTime(); const horizon = songTime + 1.0 * state.rate; const guideVol = state.settings.guideVol / 100;
   while (state.schedulePtr < song.notes.length) {
@@ -968,7 +1035,7 @@ function frameStep() {
   const playingNow = state.playing && !state.paused;
   setPlayingFlag(playingNow);
   let songTime = state.playing ? (state.paused ? state.pauseSong : computeSongTime()) : state.startSong;
-  if (state.playing && !state.paused && loopActive() && songTime >= state.loopB) { startFrom(state.loopA, true); songTime = state.loopA; }
+  if (state.playing && !state.paused && loopActive() && songTime >= state.loopB) { startFrom(state.loopA, true, state.loopB); songTime = state.loopA; }
   if (state.playing && !state.paused) {
     state.practiceBuffer += realDt;
     if (state.practiceBuffer > 5) flushPractice();
@@ -979,13 +1046,15 @@ function frameStep() {
   let countIn = null;
   if (state.playing && !state.paused && songTime < -0.001) { const beatLen = 60 / (state.song.bpm || 120); countIn = Math.max(1, Math.min(4, Math.ceil((-songTime) / beatLen))); }
   renderer.render({ song: state.song, game: state.game, songTime, pxPerSec: 230, detected: state.detected, showFret: state.settings.showFret, showFinger: state.settings.showFinger, orientation: state.settings.orientation, countIn, theme: document.body.dataset.theme, judgeText: { perfect: t('ИДЕАЛЬНО'), good: t('ХОРОШО'), ok: t('ОК'), miss: t('ПРОМАХ') } });
-  updateHud(songTime); updateMicStatus(); updateWizardLive();
+  updateHud(songTime); updatePracticePosition(songTime); updateMicStatus(); updateWizardLive();
 }
 function updateHud(songTime) {
   if (!state.song) return;
   const g = state.game;
   el.score.textContent = String(g.score); el.combo.textContent = String(g.combo);
-  el.accuracy.textContent = Math.round(g.accuracy * 100) + '%';
+  el.accuracy.textContent = g.hits + g.misses ? Math.round(g.accuracy * 100) + '%' : '—';
+  el.assessmentHint.textContent = g.groups.some(group => group.notes.length > 1) ? chordAssessment(g.opts.chordMode) : '';
+  updateAccessibleNotes(g, songTime == null ? 0 : songTime);
   const dur = state.song.duration || 1; const cur = songTime == null ? 0 : songTime;
   if (!state.seeking) { el.progressBar.value = Math.max(0, Math.min(1000, Math.round((cur / dur) * 1000))); el.timeReadout.textContent = `${fmtTime(cur)} / ${fmtTime(dur)}`; }
   const d = state.detected;
@@ -1017,6 +1086,20 @@ function updateHud(songTime) {
   }
   updateLoopMarkers();
 }
+function chordAssessment(mode) {
+  if (mode === 'any') return t('Аккорды: достаточно одной ноты; остальные не проверяются.');
+  if (mode === 'root') return t('Аккорды: проверяется только самая низкая нота.');
+  return t('Аккорды: проверяются все ноты; распознавание приблизительное.');
+}
+function updateAccessibleNotes(game, now) {
+  const group = game.groups.find(g => !g.judged && g.t >= now - game.opts.late);
+  const key = group ? `${state.song.title}:${group.t}` : '';
+  if (key === state.accessibleNotesKey) return;
+  state.accessibleNotesKey = key;
+  if (!group) { el.accessibleNotes.textContent = ''; return; }
+  const list = group.notes.map(n => t('{note}, струна {string}, лад {fret}', { note: midiToName(n.midi), string: state.song.stringCount - n.string + 1, fret: n.fret })).join('; ');
+  el.accessibleNotes.textContent = t('Следующие ноты: {list}', { list });
+}
 function nearestGroup(now) {
   const g = state.game; if (!g) return null;
   let best = null, bd = Infinity;
@@ -1027,7 +1110,8 @@ function updateMicStatus() {
   const d = state.detected; const rms = d && Number.isFinite(d.rms) ? d.rms : 0; const gate = pitch.rmsGate || 0.006;
   let stateName = 'off', text = t('Микрофон выключен');
   if (audio.micReady) { if (rms >= gate * 2) { stateName = 'signal'; text = t('Слышу сигнал'); } else { stateName = 'ready'; text = t('Микрофон готов'); } }
-  if (el.micStatus.dataset.state !== stateName) { el.micStatus.dataset.state = stateName; el.micText.textContent = text; el.micStatus.setAttribute('aria-label', text + '. ' + (audio.micReady ? t('Выключить микрофон') : t('Включить микрофон'))); }
+  el.guideMutedHint.textContent = audio.guideMutedForMic ? t('Динамики: звук нот отключён, пока включён микрофон') : '';
+  el.micStatus.dataset.state = stateName; el.micText.textContent = text; el.micStatus.setAttribute('aria-label', text + '. ' + (audio.micReady ? t('Выключить микрофон') : t('Включить микрофон')));
   el.micLevelBar.style.width = clamp((rms / (gate * 8)) * 100, 0, 100) + '%';
   if (state.wizardActive && state.wizardStep === 2) { el.wizLevelBar.style.width = clamp((rms / (gate * 8)) * 100, 0, 100) + '%'; el.wizLevelHint.textContent = rms >= gate * 2 ? t('Сигнал есть') : (rms >= gate ? t('Слабый сигнал') : t('Тишина')); }
   if (state.wizardActive && state.wizardStep === 3) {
@@ -1055,17 +1139,21 @@ function onFinish() {
   const key = song.id ? 'b:' + song.id : `${song.title}|${song.artist}|${song.trackName}`.toLowerCase();
   const prevEntry = state.profile.songs[key];
   const prevBest = prevEntry ? prevEntry.bestAccuracy : null;
-  recordSession(state.profile, { key, title: song.title + (song.trackName ? ' · ' + song.trackName : ''), score: g.score, accuracy: g.accuracy, maxCombo: g.maxCombo, hits: g.hits, misses: g.misses, missByString: g.missByString, missByFret: g.missByFret });
+  const complete = g.groups.every(group => group.outcome) && !(song.unplayableNotes || []).length;
+  if (complete) recordSession(state.profile, { key, title: song.title + (song.trackName ? ' · ' + song.trackName : ''), score: g.score, accuracy: g.accuracy, maxCombo: g.maxCombo, hits: g.hits, misses: g.misses, missByString: g.missByString, missByFret: g.missByFret });
   saveProfile(state.profile); updatePlayButton(); showResults(prevBest); renderTip();
   if (currentView() === 'game') showScreen('game');
 }
 function showResults(prevBest) {
   const g = state.game; const acc = Math.round(g.accuracy * 100);
   state.lastPrevBest = prevBest == null ? null : prevBest;
+  el.resultAssessment.textContent = [...g.chordModes].map(chordAssessment).join(' ');
   const grade = acc >= 98 ? 'S' : acc >= 92 ? 'A' : acc >= 82 ? 'B' : acc >= 70 ? 'C' : acc >= 55 ? 'D' : 'E';
   el.resultsTitle.textContent = t('Результат — {title}', { title: state.song.title });
   el.resultGrid.innerHTML = [[t('Оценка'), grade], [t('Точность'), acc + '%'], [t('Промахи'), String(g.misses)], [t('Серия'), String(g.maxCombo)], [t('Очки'), String(g.score)], [t('Попадания'), String(g.hits)]].map(([k, v]) => `<div class="m"><b>${v}</b><span>${k}</span></div>`).join('');
-  if (prevBest == null) el.resultDelta.textContent = t('Первый результат по этому упражнению');
+  const complete = g.groups.every(group => group.outcome) && !(state.song.unplayableNotes || []).length;
+  if (!complete) el.resultDelta.textContent = t('Результат неполного прохождения не сохранён в статистике.');
+  else if (prevBest == null) el.resultDelta.textContent = t('Первый результат по этому упражнению');
   else {
     const prev = Math.round(prevBest * 100);
     if (acc > prev) el.resultDelta.textContent = t('Новый рекорд! Раньше было {prev}%', { prev });
@@ -1124,9 +1212,9 @@ function updatePlayButton() { el.btnPlay.textContent = (!state.playing || state.
 // Микрофон и устройства
 // ---------------------------------------------------------------------------
 async function toggleMic() {
-  if (audio.micReady) { audio.disableMic(); el.micStatus.dataset.state = 'off'; el.micText.textContent = t('Микрофон выключен'); el.micLevelBar.style.width = '0%'; el.pitchNote.firstChild.textContent = '— '; el.pitchCents.textContent = ''; toast(t('Микрофон выключен')); return true; }
-  try { await audio.enableMic(state.settings.micDeviceId || undefined); pitch.setSampleRate(audio.ctx.sampleRate); el.micStatus.dataset.state = 'ready'; el.micText.textContent = t('Микрофон готов'); toast(t('Микрофон включён'), 'ok'); refreshDevices(); return true; }
-  catch (e) { el.micStatus.dataset.state = 'denied'; el.micText.textContent = t('Нет доступа'); toast(t('Микрофон недоступен: ') + e.message, 'err', 6000); return false; }
+  if (audio.micReady) { audio.disableMic(); updateMicStatus(); el.micLevelBar.style.width = '0%'; el.pitchNote.firstChild.textContent = '— '; el.pitchCents.textContent = ''; toast(t('Микрофон выключен')); return true; }
+  try { await audio.enableMic(state.settings.micDeviceId || undefined); pitch.setSampleRate(audio.ctx.sampleRate); spectral.setSampleRate(audio.ctx.sampleRate); updateMicStatus(); toast(t('Микрофон включён'), 'ok'); refreshDevices(); return true; }
+  catch (e) { el.micStatus.dataset.state = 'denied'; el.micText.textContent = t('Нет доступа'); el.micStatus.setAttribute('aria-label', t('Нет доступа') + '. ' + t('Включить микрофон')); toast(t('Микрофон недоступен: ') + e.message, 'err', 6000); return false; }
 }
 function fillSelect(sel, items, defaultLabel, value) {
   sel.innerHTML = ''; const def = document.createElement('option'); def.value = ''; def.textContent = defaultLabel; sel.appendChild(def);
@@ -1285,16 +1373,11 @@ function normalizeChord(name) {
   if (CHORD_SHAPES[cap]) return cap;
   return null;
 }
-function fingersForShape(frets) {
-  const uniq = [...new Set(frets.filter((f) => f != null && f > 0))].sort((a, b) => a - b);
-  const map = new Map(); uniq.forEach((f, i) => map.set(f, Math.min(4, i + 1)));
-  return frets.map((f) => (f == null || f === 0 ? 0 : map.get(f)));
-}
 function makeChordExercise(title, chordNames) {
   const bpm = 90; const notes = []; let beat = 0;
   for (const cname of chordNames) {
     const shape = CHORD_SHAPES[cname]; if (!shape) continue;
-    const fingers = fingersForShape(shape);
+    const fingers = SHAPE_FINGERS[cname] || shape.map((f) => f === 0 ? 0 : -1);
     for (let k = 0; k < 4; k++) {
       for (let i = 0; i < 6; i++) { const fr = shape[i]; if (fr == null) continue; notes.push({ beat, string: i + 1, fret: fr, dur: 0.9, finger: fingers[i] }); }
       beat += 1;
@@ -1349,36 +1432,126 @@ function chordName(midis) {
   }
   return names[best.root] + best.q;
 }
-function diagramSVG(notes) {
-  const frets = [null, null, null, null, null, null];
-  for (const n of notes) if (n.string >= 1 && n.string <= 6) frets[n.string - 1] = n.fret;
-  const fingers = fingersForShape(frets.filter((f) => f != null));
-  const fretted = frets.filter((f) => f != null && f > 0);
-  const base = fretted.length ? Math.max(1, Math.min(...fretted)) : 1;
-  const span = 4, W = 118, H = 138, padX = 16, padY = 26, gapX = (W - 2 * padX) / 5, gapY = (H - padY - 16) / span;
-  let s = `<svg viewBox="0 0 ${W} ${H}" class="diagram" role="img">`;
-  for (let i = 0; i < 6; i++) { const x = padX + i * gapX; s += `<line x1="${x}" y1="${padY}" x2="${x}" y2="${H - 16}" stroke="currentColor" stroke-opacity="0.4"/>`; }
-  for (let f = 0; f <= span; f++) { const y = padY + f * gapY; s += `<line x1="${padX}" y1="${y}" x2="${W - padX}" y2="${y}" stroke="currentColor" stroke-opacity="0.4"/>`; }
-  if (base > 1) s += `<text x="3" y="${padY + gapY * 0.7}" font-size="9" fill="currentColor">${base}</text>`;
-  for (let i = 0; i < 6; i++) {
-    const fr = frets[i]; const x = padX + i * gapX;
-    if (fr == null) { s += `<text x="${x}" y="${padY - 9}" font-size="10" text-anchor="middle" fill="currentColor" opacity="0.7">×</text>`; continue; }
-    if (fr === 0) { s += `<circle cx="${x}" cy="${padY - 12}" r="4" fill="none" stroke="currentColor" stroke-width="1.5"/>`; continue; }
-    const rel = fr - base; if (rel < 0 || rel >= span) continue;
-    const y = padY + rel * gapY + gapY / 2;
-    s += `<circle cx="${x}" cy="${y}" r="7" fill="var(--indigo)"/>`;
-    const fg = fingers[i]; if (fg) s += `<text x="${x}" y="${y + 3}" font-size="9" text-anchor="middle" fill="#fff">${fg}</text>`;
+function diagramSVG(notes, song) {
+  const count = song.stringCount;
+  const strings = Array.from({ length: count }, () => []);
+  for (const n of notes) if (n.string >= 1 && n.string <= count) strings[n.string - 1].push(n);
+  const fretted = notes.filter(n => !n.dead && n.fret > 0).map(n => n.fret);
+  const lowestFret = fretted.length ? Math.min(...fretted) : 1;
+  const base = lowestFret <= 4 ? 1 : lowestFret;
+  const span = Math.max(4, fretted.length ? Math.max(...fretted) - base + 1 : 4);
+  const padX = 20, gapX = 18, gapY = 19, top = 29;
+  const width = padX * 2 + (count - 1) * gapX, bottom = top + span * gapY, height = bottom + 24;
+  const description = notes.map(n => n.dead
+    ? t('Струна {string}: заглушённая нота', { string: count - n.string + 1 })
+    : t('Струна {string}, лад {fret}, палец {finger}', { string: count - n.string + 1, fret: n.fret, finger: n.finger > 0 ? n.finger : '—' })).join('; ');
+  let svg = `<svg viewBox="0 0 ${width} ${height}" class="diagram" role="img" aria-label="${escapeHtml(description)}">`;
+  for (let i = 0; i < count; i++) { const x = padX + i * gapX; svg += `<line x1="${x}" y1="${top}" x2="${x}" y2="${bottom}" stroke="currentColor" stroke-width="1"/>`; }
+  for (let f = 0; f <= span; f++) { const y = top + f * gapY; svg += `<line x1="${padX}" y1="${y}" x2="${width - padX}" y2="${y}" stroke="currentColor" stroke-width="${f === 0 && base === 1 ? 2.5 : 1}"/>`; }
+  if (base > 1) svg += `<text x="2" y="${top + gapY * 0.7}" font-size="10" fill="currentColor">${base}</text>`;
+  for (let i = 0; i < count; i++) {
+    const x = padX + i * gapX; const entries = strings[i];
+    if (!entries.length) { svg += `<text x="${x}" y="${bottom + 16}" font-size="11" text-anchor="middle" fill="currentColor">×</text>`; continue; }
+    for (const n of entries) {
+      if (n.dead) svg += `<text x="${x}" y="${top - 9}" font-size="12" text-anchor="middle" fill="currentColor">×</text>`;
+      else if (n.fret === 0) svg += `<circle cx="${x}" cy="${top - 11}" r="5" fill="none" stroke="currentColor" stroke-width="1"/>`;
+      else if (n.fret > 0) { const y = top + (n.fret - base + 0.5) * gapY; svg += `<circle cx="${x}" cy="${y}" r="6" fill="currentColor"/>`; }
+    }
+    const labels = entries.map(n => n.dead ? '×' : n.fret === 0 ? '0' : n.finger > 0 ? String(n.finger) : '–').join('/');
+    svg += `<text x="${x}" y="${bottom + 16}" font-size="11" text-anchor="middle" fill="currentColor">${escapeHtml(labels)}</text>`;
   }
-  return s + '</svg>';
+  return svg + '</svg>';
+}
+
+const INTRO_CHORD_NAMES = { 'intro-em': 'Em', 'intro-am': 'Am', 'intro-a': 'A', 'intro-e': 'E', 'intro-dm': 'Dm', 'intro-d': 'D', 'intro-g': 'G', 'intro-c': 'C', 'intro-b7': 'B7' };
+function fretboardPositionTitle(song, notes) {
+  return notes.length === 1 ? midiToName(notes[0].midi) : (INTRO_CHORD_NAMES[song.id] || t('Созвучие: {n} нот', { n: notes.length }));
+}
+// Append events in small batches so long imported songs remain usable.
+const PRACTICE_DIAGRAM_BATCH = 40;
+let practiceEvents = [], practiceRendered = 0, practiceCurrent = -1, practiceManualUntil = 0;
+function appendPracticeDiagrams(through = practiceRendered) {
+  if (!state.song) return;
+  const end = Math.min(practiceEvents.length, Math.max(practiceRendered + PRACTICE_DIAGRAM_BATCH, through + 1));
+  let html = '';
+  for (let i = practiceRendered; i < end; i++) {
+    const event = practiceEvents[i]; const title = fretboardPositionTitle(state.song, event.notes);
+    const label = t('Событие {n}, время {time} с', { n: i + 1, time: event.time.toFixed(3) });
+    html += `<figure class="practice-diagram" data-index="${i}" aria-label="${escapeHtml(label)}"><figcaption>${escapeHtml(title)}</figcaption>${diagramSVG(event.notes, state.song)}</figure>`;
+  }
+  el.practiceDiagramsRail.insertAdjacentHTML('beforeend', html);
+  practiceRendered = end;
+}
+function renderPracticeDiagrams(song) {
+  practiceEvents = buildFretboardEvents(song); practiceRendered = 0; practiceCurrent = -1; practiceManualUntil = 0;
+  el.practiceDiagramsHint.textContent = t('Схемы идут по порядку ↔. Трассу можно перемотать колесом или перетаскиванием.');
+  el.practiceDiagramsRail.innerHTML = '';
+  appendPracticeDiagrams();
+  el.practiceDiagramsRail.scrollLeft = 0;
+  updatePracticePosition(0);
+  scheduleResize();
+}
+function updatePracticePosition(songTime) {
+  if (!practiceEvents.length || !Number.isFinite(songTime)) return;
+  let lo = 0, hi = practiceEvents.length;
+  while (lo < hi) { const mid = (lo + hi) >> 1; if (practiceEvents[mid].time <= songTime + 0.001) lo = mid + 1; else hi = mid; }
+  const index = Math.max(0, lo - 1);
+  if (index === practiceCurrent) return;
+  while (practiceRendered <= index) appendPracticeDiagrams(index);
+  const rail = el.practiceDiagramsRail;
+  const previous = rail.querySelector('.practice-diagram.is-current');
+  if (previous) { previous.classList.remove('is-current'); previous.removeAttribute('aria-current'); }
+  const current = rail.querySelector(`.practice-diagram[data-index="${index}"]`);
+  if (!current) return;
+  current.classList.add('is-current'); current.setAttribute('aria-current', 'step'); practiceCurrent = index;
+  if (state.playing && !state.paused && performance.now() >= practiceManualUntil && !rail.contains(document.activeElement)) {
+    const r = rail.getBoundingClientRect(), c = current.getBoundingClientRect();
+    if (c.left < r.left || c.right > r.right) rail.scrollLeft += c.left - r.left;
+  }
+}
+
+function renderFretboard(song) {
+  const events = buildFretboardEvents(song);
+  if (!events.length) return `<p class="muted">${t('Нет нот для схем грифа.')}</p>`;
+  let html = `<p class="muted small">${t('Цифры под схемой — пальцы левой руки; 0 и пустой кружок — открытая струна, × — нет нового звука на струне, – — палец не указан. Для отдельных нот пальцы подобраны автоматически. Слева направо струны от толстой к тонкой. Схемы идут в порядке воспроизведения.')}</p><div class="fretboard-grid">`;
+  events.forEach((event, i) => {
+    const title = fretboardPositionTitle(song, event.notes);
+    const when = t('Время: {time} с', { time: event.time.toFixed(3) });
+    html += `<figure class="fretboard-card"><figcaption><strong>${escapeHtml(title)}</strong><span>${t('Позиция {n}', { n: i + 1 })} · ${escapeHtml(when)}</span></figcaption>${diagramSVG(event.notes, song)}</figure>`;
+  });
+  return html + '</div>';
+}
+function renderTablature(song) {
+  const columns = buildTabColumns(song);
+  if (!columns.length) return `<p class="muted">${t('Нет нот для табулатуры.')}</p>`;
+  let html = `<p class="muted small">${t('Цифры — лады, 0 — открытая струна, × — заглушённая нота; пустая ячейка означает, что новая нота не играется. Первая струна сверху. Время и длительность указаны в секундах при исходном темпе и округлены до тысячных. При необходимости прокрутите таблицу вправо.')}</p>`;
+  const size = 8;
+  for (let offset = 0; offset < columns.length; offset += size) {
+    const section = columns.slice(offset, offset + size);
+    html += `<div class="tab-scroll" tabindex="0" role="region" aria-label="${t('Фрагмент {n}', { n: Math.floor(offset / size) + 1 })}"><table class="tablature"><thead><tr><th scope="col">${t('Струна и строй')}<br><span>${t('Время, с')}</span></th>`;
+    html += section.map(c => `<th scope="col">${c.time.toFixed(3)}</th>`).join('') + '</tr></thead><tbody>';
+    for (let string = song.stringCount; string >= 1; string--) {
+      const label = `${song.stringCount - string + 1} · ${midiToName(song.tuning[string - 1] + (song.capo || 0))}`;
+      html += `<tr><th scope="row">${escapeHtml(label)}</th>`;
+      for (const c of section) {
+        const cell = c.strings[string - 1];
+        html += '<td>' + cell.map(n => `<span class="tab-note">${n.dead ? '×' : escapeHtml(n.fret)}<small title="${t('Длительность: {duration} с', { duration: n.dur.toFixed(3) })}">${n.dur.toFixed(3)} ${t('с')}</small></span>`).join(' / ') + '</td>';
+      }
+      html += '</tr>';
+    }
+    html += '</tbody></table></div>';
+  }
+  return html;
 }
 function renderViewer(mode) {
   const song = state.song;
   if (!song) { el.viewBody.innerHTML = `<p class="muted">${t('Нет выбранной песни.')}</p>`; return; }
+  if (mode === 'diagrams') { el.viewBody.innerHTML = renderFretboard(song); return; }
+  if (mode === 'tab') { el.viewBody.innerHTML = renderTablature(song); return; }
   if (mode === 'notes') {
-    let html = `<div class="note-table"><div class="tr head"><span>#</span><span>${t('Время')}</span><span>${t('Стр.')}</span><span>${t('Лад')}</span><span>${t('Палец')}</span><span>${t('Нота')}</span></div>`;
-    const list = song.notes.slice(0, 500);
-    html += list.map((n, i) => `<div class="tr"><span>${i + 1}</span><span>${fmtTime(n.t)}</span><span>${n.string}</span><span>${n.fret}</span><span>${n.finger > 0 ? n.finger : '—'}</span><span>${midiToName(n.midi)}</span></div>`).join('');
-    html += `</div><p class="muted small">${song.notes.length > list.length ? t('Показаны первые {shown} из {total}', { shown: list.length, total: song.notes.length }) : t('Всего нот: {n}', { n: song.notes.length })}</p>`;
+    let html = `<table class="note-table"><thead><tr><th scope="col">#</th><th scope="col">${t('Время')}</th><th scope="col">${t('Стр.')}</th><th scope="col">${t('Лад')}</th><th scope="col">${t('Палец')}</th><th scope="col">${t('Нота')}</th></tr></thead><tbody>`;
+    html += song.notes.map((n, i) => `<tr><td>${i + 1}</td><td>${fmtTime(n.t)}</td><td>${song.stringCount - n.string + 1}</td><td>${n.fret}</td><td>${n.finger > 0 ? n.finger : '—'}</td><td>${midiToName(n.midi)}</td></tr>`).join('');
+    html += `</tbody></table><p class="muted small">${t('Всего нот: {n}', { n: song.notes.length })}</p>`;
     el.viewBody.innerHTML = html;
     return;
   }
@@ -1389,11 +1562,11 @@ function renderViewer(mode) {
   const names = [...seen.values()].map((g) => chordName(g.notes.map((n) => n.midi)));
   let html = '<div class="chord-seq">' + names.map((n) => `<span>${n}</span>`).join('<i>→</i>') + '</div>';
   html += '<div class="chord-grid">';
-  for (const g of seen.values()) { html += `<figure class="chord"><figcaption>${chordName(g.notes.map((n) => n.midi))}</figcaption>${diagramSVG(g.notes)}</figure>`; }
+  for (const g of seen.values()) { html += `<figure class="chord"><figcaption>${chordName(g.notes.map((n) => n.midi))}</figcaption>${diagramSVG(g.notes, song)}</figure>`; }
   html += '</div>';
   el.viewBody.innerHTML = html;
 }
-function openViewer(mode = 'chords') {
+function openViewer(mode = 'diagrams') {
   renderViewer(mode);
   for (const b of el.viewTabs.querySelectorAll('.chip')) { const on = b.dataset.view === mode; b.setAttribute('aria-pressed', on ? 'true' : 'false'); b.classList.toggle('is-active', on); }
   openModal('view');
@@ -1404,6 +1577,12 @@ function openViewer(mode = 'chords') {
 // События
 // ---------------------------------------------------------------------------
 function bindEvents() {
+  bindTrackScrubbing();
+  el.practiceDiagramsRail.addEventListener('scroll', () => {
+    const rail = el.practiceDiagramsRail;
+    if (rail.scrollLeft + rail.clientWidth >= rail.scrollWidth - 160 && practiceRendered < practiceEvents.length) appendPracticeDiagrams();
+  }, { passive: true });
+  for (const event of ['pointerdown', 'wheel', 'keydown']) el.practiceDiagramsRail.addEventListener(event, () => { practiceManualUntil = performance.now() + 5000; }, { passive: true });
   el.btnPlay.addEventListener('click', togglePlay);
   el.btnRestart.addEventListener('click', restart);
   el.btnExit.addEventListener('click', exitGame);
@@ -1451,6 +1630,7 @@ function bindEvents() {
     requestAnimationFrame(() => {
       const card = el.aboutCard;
       if (!card) return;
+      card.open = true;
       card.scrollIntoView({ behavior: reducedMotion() ? 'auto' : 'smooth', block: 'center' });
       card.classList.add('card--flash');
       setTimeout(() => card.classList.remove('card--flash'), 1400);
@@ -1466,8 +1646,24 @@ function bindEvents() {
   el.btnWizardHome.addEventListener('click', openWizard);
   el.btnAdvancedClose.addEventListener('click', () => goBack());
   el.btnRefreshDevices.addEventListener('click', refreshDevices);
-  el.micSelect.addEventListener('change', async () => { state.settings.micDeviceId = el.micSelect.value; saveSettings(); if (audio.micReady) { try { await audio.enableMic(state.settings.micDeviceId || undefined); pitch.setSampleRate(audio.ctx.sampleRate); toast(t('Микрофон переключён'), 'ok'); refreshDevices(); } catch (e) { toast(t('Не удалось переключить: ') + e.message, 'err', 6000); } } });
-  if (el.wizMicSelect) el.wizMicSelect.addEventListener('change', async () => { state.settings.micDeviceId = el.wizMicSelect.value; saveSettings(); if (audio.micReady) { try { await audio.enableMic(state.settings.micDeviceId || undefined); pitch.setSampleRate(audio.ctx.sampleRate); toast(t('Микрофон переключён'), 'ok'); refreshDevices(); } catch (e) { toast(t('Не удалось переключить: ') + e.message, 'err', 6000); } } });
+  el.micSelect.addEventListener('change', async () => { state.settings.micDeviceId = el.micSelect.value; saveSettings(); if (audio.micReady) { try { await audio.enableMic(state.settings.micDeviceId || undefined); pitch.setSampleRate(audio.ctx.sampleRate); spectral.setSampleRate(audio.ctx.sampleRate); toast(t('Микрофон переключён'), 'ok'); refreshDevices(); } catch (e) { toast(t('Не удалось переключить: ') + e.message, 'err', 6000); } } });
+  if (el.wizMicSelect) el.wizMicSelect.addEventListener('change', async () => { state.settings.micDeviceId = el.wizMicSelect.value; saveSettings(); if (audio.micReady) { try { await audio.enableMic(state.settings.micDeviceId || undefined); pitch.setSampleRate(audio.ctx.sampleRate); spectral.setSampleRate(audio.ctx.sampleRate); toast(t('Микрофон переключён'), 'ok'); refreshDevices(); } catch (e) { toast(t('Не удалось переключить: ') + e.message, 'err', 6000); } } });
+  el.outputMode.addEventListener('change', async () => {
+    const previous = audio.outputMode;
+    const next = el.outputMode.value;
+    audio.setOutputMode(next);
+    if (audio.micReady) {
+      try {
+        await audio.enableMic(state.settings.micDeviceId || undefined);
+        pitch.setSampleRate(audio.ctx.sampleRate); spectral.setSampleRate(audio.ctx.sampleRate);
+      } catch (e) {
+        audio.setOutputMode(previous); el.outputMode.value = previous;
+        toast(t('Не удалось переключить: ') + e.message, 'err', 6000);
+        updateMicStatus(); return;
+      }
+    }
+    state.settings.outputMode = audio.outputMode; saveSettings(); updateMicStatus();
+  });
   el.outputSelect.addEventListener('change', async () => { state.settings.outputDeviceId = el.outputSelect.value; saveSettings(); try { await audio.setOutputDevice(state.settings.outputDeviceId || ''); toast(t('Вывод переключён'), 'ok'); } catch (e) { toast(t('Вывод: ') + e.message, 'err', 6000); } });
 
   // tempo
@@ -1497,7 +1693,7 @@ function bindEvents() {
   el.btnCatalogLoad.addEventListener('click', loadCatalogUrl);
   el.catalogUrl.addEventListener('keydown', (e) => { if (e.key === 'Enter') loadCatalogUrl(); });
   el.catalogFileInput.addEventListener('change', (e) => { const f = e.target.files && e.target.files[0]; if (f) loadCatalogFile(f); e.target.value = ''; });
-  el.trackSelect.addEventListener('change', () => { state.trackIndex = parseInt(el.trackSelect.value, 10) || 0; const wasPlaying = state.playing && !state.paused; buildCurrentSong(); updateHero(); if (wasPlaying) startFrom(0); });
+  el.trackSelect.addEventListener('change', () => { state.trackIndex = parseInt(el.trackSelect.value, 10) || 0; const wasPlaying = state.playing && !state.paused; buildCurrentSong(); updateHero(); if (wasPlaying && state.song.notes.length) startFrom(0); });
 
   // YouTube
   el.btnYoutube.addEventListener('click', () => { openModal('youtube'); if (el.ytUrl.value) el.ytUrl2.value = el.ytUrl.value; });
@@ -1505,8 +1701,13 @@ function bindEvents() {
   el.btnYtResolve.addEventListener('click', () => doYoutubeResolve(el.ytUrl2));
   el.btnYtAttach.addEventListener('click', () => { const url = el.btnYtAttach.dataset.url; if (url) attachYoutube(url); });
   el.btnYtCreate.addEventListener('click', createExerciseFromChords);
-  el.btnView.addEventListener('click', () => openViewer('chords'));
-  el.btnViewHero.addEventListener('click', () => openViewer('chords'));
+  el.btnAllPracticeDiagrams.addEventListener('click', () => openViewer('diagrams'));
+  $('btnMoreControls').addEventListener('click', (event) => {
+    const open = document.body.classList.toggle('show-extra-controls');
+    event.currentTarget.setAttribute('aria-expanded', String(open));
+  });
+  el.btnView.addEventListener('click', () => openViewer('diagrams'));
+  el.btnViewHero.addEventListener('click', () => openViewer('diagrams'));
   el.btnViewClose.addEventListener('click', () => goBack());
   el.viewTabs.addEventListener('click', (e) => {
     const b = e.target.closest('.chip'); if (!b) return;
@@ -1517,22 +1718,11 @@ function bindEvents() {
   // profile
   // профиль
   el.profileName.addEventListener('input', () => { state.profile.name = el.profileName.value; saveProfile(state.profile); });
-  let resetArmed = false, resetTimer = 0;
-  const disarmReset = () => {
-    resetArmed = false; clearTimeout(resetTimer);
-    el.btnProfileReset.removeAttribute('data-confirm');
-    el.btnProfileReset.textContent = t('Сбросить');
-  };
-  el.btnProfileReset.addEventListener('click', () => {
-    if (!resetArmed) {
-      resetArmed = true;
-      el.btnProfileReset.dataset.confirm = '1';
-      el.btnProfileReset.textContent = t('Точно сбросить?');
-      resetTimer = setTimeout(disarmReset, 5000);
-      return;
-    }
-    disarmReset();
-    state.profile = resetProfile(); renderProfile(); renderTip(); toast(t('Статистика сброшена'));
+  el.btnProfileReset.addEventListener('click', () => el.resetProfileDialog.showModal());
+  el.cancelProfileReset.addEventListener('click', () => el.resetProfileDialog.close());
+  el.confirmProfileReset.addEventListener('click', () => {
+    state.profile = resetProfile(); renderProfile(); renderTip();
+    el.resetProfileDialog.close(); toast(t('Статистика сброшена'));
   });
   el.btnProfileExport.addEventListener('click', exportProfile);
   el.profileImport.addEventListener('change', (e) => { const f = e.target.files && e.target.files[0]; if (f) importProfile(f); e.target.value = ''; });
@@ -1571,10 +1761,11 @@ function bindEvents() {
   // клавиатура
   document.addEventListener('keydown', (e) => {
     const typing = e.target && /input|select|textarea/i.test(e.target.tagName);
+    if (el.resetProfileDialog.open) return;
     if (e.key === 'Escape') { const ov = visibleModal(); if (ov) { if (ov === el.wizardOverlay) finishWizard(); else goBack(); } else if (currentView() === 'game') { exitGame(); } return; }
     if (e.key === '?' && !typing) { e.preventDefault(); openModal('help'); return; }
     overlayKeydown(e);
-    if (typing) return;
+    if (typing || visibleModal() || (e.target && e.target.closest('button, a, [role=button], .practice-diagrams__rail, .playbar__controls, .tab-scroll'))) return;
     const inLibrary = currentView() === 'library';
     const inHome = currentView() === 'home';
     if (e.code === 'Space') { e.preventDefault(); togglePlay(); }
